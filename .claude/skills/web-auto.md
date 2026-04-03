@@ -122,7 +122,7 @@ Validate:
 - Typing: verify the entered text exists in the correct field, not just visually on the page.
 - Clicking: verify a state change such as URL change, active tab state, modal open, element count change, or result text.
 - Waiting: poll for the disappearance of skeletons/loaders/CSS animations AND the appearance of the expected result — never use fixed time delays.
-- Downloading: prefer real download controls first, then asset extraction, then screenshot as the last resort.
+- Downloading: prefer direct URL extraction + `chrome.downloads.download()`, then asset extraction, then screenshot as the last resort. Button `.click()` often fails on React download handlers.
 - Saved recipe steps must be proven steps only. Failed attempts belong in notes, not in the final recipe.
 
 ### Typing
@@ -137,14 +137,39 @@ Validate:
 - NEVER: hardcoded coordinates as a stored selector strategy
 - WHY: Radix UI / MUI often require trusted browser events. Programmatic `.click()` is not trusted.
 
+### Hidden / Hover-Only Buttons (Tailwind `group-hover`, `opacity-0`, `pointer-events-none`)
+- Many modern UIs hide action buttons behind CSS hover states (download, share, delete, edit overlays).
+- CDP `mouseMoved` does NOT reliably trigger Tailwind `group-hover` or CSS `:hover` pseudo-classes.
+- JS `el.click()` and CDP `mousePressed` both fail when `pointer-events: none` is active.
+- **Strategy 1 — Force-enable via JS**: Remove `pointer-events-none` and `opacity-0` classes from the button and all ancestors, set inline `pointerEvents:'auto'` + `opacity:'1'`, then CDP click.
+- **Strategy 2 — Bypass buttons entirely**: If the button triggers a download/action via a React handler that doesn't respond to programmatic clicks, skip the button. Instead, extract the underlying data (image `src` URLs, `href` values, API endpoints) and use browser APIs directly (`chrome.downloads.download()`, `fetch()`, etc).
+- Strategy 2 is more reliable than Strategy 1. Prefer it when the data URL is accessible in the DOM.
+
+### Downloading Assets
+- **Prefer direct URL extraction** over clicking download buttons.
+- Most AI image generators render results as `<img>` tags with CDN URLs (fbcdn.net, googleusercontent.com, cloudfront.net, etc).
+- Extract URLs: `document.querySelectorAll('img')` filtered by `naturalWidth > 200`.
+- Download via: `chrome.downloads.download({ url, conflictAction: 'uniquify' })`.
+- React download buttons often use synthetic event handlers that don't fire from CDP/JS click.
+- Only fall back to button clicking if no extractable URL exists (canvas-rendered, blob-only).
+
 ### Finding Elements
 - USE: previously learned selectors first when available
 - USE: XPath for stable structural targets
 - USE: `[role="tab"][id$="-trigger-VALUE"]` for Radix UI tabs
+- USE: `[role="option"]` matched by `textContent` for Radix Select dropdowns (IDs are dynamic)
 - USE: `textContent.includes('ButtonText')` for dynamic buttons
 - USE: `chrome.scripting.executeScript` with `world: "MAIN"` to bypass CSP
-- NEVER: `eval` or `new Function` in content scripts
+- USE: CDP `Runtime.evaluate` when `executeScript` with `new Function()` is blocked by strict CSP
+- NEVER: `eval` or `new Function` in content scripts or in MAIN world exec on CSP-strict sites
 - NEVER: fixed pixel coordinates as a persisted automation rule
+
+### Hidden Inputs (React/contentEditable)
+- Many React apps have a **visible contentEditable div** and a **hidden textarea** (width=0, height=0).
+- The hidden textarea is for accessibility/form submission — DO NOT target it for typing.
+- Always verify the found input has `width > 0` and `height > 0` before using it.
+- Selector priority: `//div[@contenteditable="true"]` > `//textarea` > `//input`
+- After finding the visible input, CDP click it to focus, then Ctrl+A+Backspace to clear, then CDP type.
 
 ### Extension Architecture
 - Service worker = brain (CDP + MAIN world exec)
@@ -158,9 +183,22 @@ Validate:
 
 ### Radix UI Settings Panels
 - Open: CDP click on trigger (`aria-haspopup="menu"` or XPath)
-- Select: CDP click on `[role="tab"][id$="-trigger-VALUE"]`
+- Select tab: CDP click on `[role="tab"][id$="-trigger-VALUE"]`
 - Close: CDP Escape
 - Verify: `el.getAttribute('data-state') === 'active'`
+
+### Radix UI Select Dropdowns
+- IDs are **dynamic** (`radix-_r_4f_`, etc) — never match by ID.
+- Click the trigger button (shows current value text) to open.
+- Options are `[role="option"]` with `data-state="checked/unchecked"` and `aria-selected`.
+- Match by `textContent` — find all `[role="option"]` and compare `.textContent.trim()`.
+- Verify: after selecting, the trigger button text should update to the new value.
+
+### CSP-Strict Sites
+- Sites with strict CSP block `new Function()`, `eval()`, and `execCommand`.
+- `chrome.scripting.executeScript({ world: "MAIN", func })` works IF `func` is a real function reference (not a string).
+- For arbitrary string code on CSP-strict sites, use CDP `Runtime.evaluate` which bypasses CSP entirely.
+- Always try `executeScript` with a function ref first — it's simpler. Fall back to `Runtime.evaluate` only when needed.
 
 ## Template: background.js
 

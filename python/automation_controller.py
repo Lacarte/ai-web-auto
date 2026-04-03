@@ -168,18 +168,65 @@ async def main():
         if cmd.lower() == "discover":
             r = await agent.execute_script("""
                 var results = [];
-                document.querySelectorAll('button,[role=tab],[role=button],input,textarea,[contenteditable]').forEach(function(el) {
+                document.querySelectorAll('a, button, input, select, textarea, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [onclick], [tabindex], [contenteditable="true"], [aria-haspopup]').forEach(function(el) {
                     var r = el.getBoundingClientRect();
-                    if (r.width < 5) return;
-                    results.push({tag: el.tagName.toLowerCase(), text: (el.textContent||'').trim().slice(0,40), id: el.id||'', role: el.getAttribute('role')||''});
+                    if (r.width < 5 || r.height < 5) return;
+                    var tag = el.tagName.toLowerCase();
+                    var role = 'clickable';
+                    if (tag === 'input' || tag === 'textarea' || tag === 'select' || el.contentEditable === 'true') role = 'input';
+                    else if (tag === 'button' || el.getAttribute('role') === 'button') role = 'button';
+                    else if (tag === 'a') role = 'link';
+                    else if (tag === 'img') role = 'image';
+                    results.push({
+                        tag: tag,
+                        text: (el.textContent || el.value || el.placeholder || '').trim().slice(0, 40),
+                        id: el.id || '',
+                        ariaRole: el.getAttribute('role') || '',
+                        role: role,
+                        rect: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }
+                    });
                 });
                 return JSON.stringify(results);
             """)
             import json as _json
             elements = _json.loads(r.data.extracted_data.get("result", "[]"))
             print(f"  Found {len(elements)} interactive elements:")
-            for el in elements[:20]:
+            for el in elements[:30]:
                 print(f"    [{el['tag']}] text=\"{el['text']}\" id={el['id']} role={el['role']}")
+
+            # Inject border highlights on the page
+            highlight_js = """
+            (function(elements) {
+                document.querySelectorAll('.discover-highlight').forEach(e => e.remove());
+                var colors = { input: '#00ff00', button: '#ff6600', link: '#6699ff', image: '#ff00ff', clickable: '#ffff00' };
+                elements.forEach(function(el, i) {
+                    var div = document.createElement('div');
+                    div.className = 'discover-highlight';
+                    var c = colors[el.role] || '#ffffff';
+                    Object.assign(div.style, {
+                        position: 'fixed', zIndex: '999999',
+                        left: el.rect.x + 'px', top: el.rect.y + 'px',
+                        width: el.rect.w + 'px', height: el.rect.h + 'px',
+                        border: '2px solid ' + c,
+                        borderRadius: '3px',
+                        pointerEvents: 'none',
+                    });
+                    var label = document.createElement('span');
+                    Object.assign(label.style, {
+                        position: 'absolute', top: '-16px', left: '0',
+                        fontSize: '10px', color: c, fontWeight: 'bold',
+                        backgroundColor: 'rgba(0,0,0,0.8)', padding: '1px 4px',
+                        borderRadius: '2px', whiteSpace: 'nowrap',
+                    });
+                    label.textContent = i + ':' + el.role + (el.text ? '=' + el.text.slice(0,20) : '');
+                    div.appendChild(label);
+                    document.body.appendChild(div);
+                });
+                return 'highlighted ' + elements.length;
+            })(""" + _json.dumps(elements) + """);
+            """
+            await agent.execute_script(highlight_js)
+            print(f"  Highlighted {len(elements)} elements on page (borders visible)")
             continue
 
         if cmd.lower().startswith("type "):

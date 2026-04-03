@@ -542,21 +542,28 @@ ws.onCommand(async (command) => {
         return;
       }
 
-      // ── EXECUTE_SCRIPT — MAIN world execution (bypasses CSP) ──────────
+      // ── EXECUTE_SCRIPT — runs JS via CDP Runtime.evaluate (bypasses CSP) ──
       case 'execute_script': {
         const tabId = await getTargetTabId();
         if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
 
-        const result = await exec(tabId, (code) => {
-          try {
-            const fn = new Function(code);
-            return fn();
-          } catch (e) {
-            return { _error: e.message };
+        // Use CDP Runtime.evaluate which bypasses CSP entirely
+        // (unlike new Function() in exec() which CSP blocks on strict sites)
+        await cdpAttach(tabId);
+        try {
+          const { result: evalResult, exceptionDetails } = await cdpSend(tabId, 'Runtime.evaluate', {
+            expression: params.script,
+            returnByValue: true,
+            awaitPromise: true,
+          });
+          if (exceptionDetails) {
+            ws.sendResponse(id, 'success', { extracted_data: { result: { _error: exceptionDetails.text || exceptionDetails.exception?.description } } });
+          } else {
+            ws.sendResponse(id, 'success', { extracted_data: { result: evalResult?.value } });
           }
-        }, [params.script]);
-
-        ws.sendResponse(id, 'success', { extracted_data: { result } });
+        } catch (e) {
+          ws.sendResponse(id, 'success', { extracted_data: { result: { _error: e.message } } });
+        }
         return;
       }
 
@@ -596,7 +603,7 @@ ws.onCommand(async (command) => {
         const tabId = await getTargetTabId();
         if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
         const elements = await discover(tabId);
-        ws.sendResponse(id, 'success', { elements });
+        ws.sendResponse(id, 'success', { extracted_data: { elements } });
         return;
       }
 
@@ -679,13 +686,38 @@ ws.onCommand(async (command) => {
         return;
       }
 
+      // ── HOVER — CDP mouseMoved to trigger CSS :hover state ────────────
+      case 'hover': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        let x = params.x || 0, y = params.y || 0;
+        const selector = params.selector || params.xpath || target?.value;
+        if (selector) {
+          const pos = await findPos(tabId, selector);
+          if (!pos?.found) {
+            ws.sendResponse(id, 'failure', { extracted_data: {} }, `Element not found: ${selector}`);
+            return;
+          }
+          x = pos.x;
+          y = pos.y;
+        }
+
+        await cdpAttach(tabId);
+        await cdpSend(tabId, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+        await sleep(params.delay_after || 300);
+
+        ws.sendResponse(id, 'success', { extracted_data: { hovered: true, x, y } });
+        return;
+      }
+
       // ── FIND — just find element position without clicking ────────────
       case 'find': {
         const tabId = await getTargetTabId();
         if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
         const selector = params.selector || params.xpath || target?.value;
         const pos = await findPos(tabId, selector);
-        ws.sendResponse(id, pos?.found ? 'success' : 'failure', pos || {}, pos?.found ? null : `Not found: ${selector}`);
+        ws.sendResponse(id, pos?.found ? 'success' : 'failure', { extracted_data: pos || {} }, pos?.found ? null : `Not found: ${selector}`);
         return;
       }
 

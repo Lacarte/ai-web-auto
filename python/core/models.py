@@ -37,6 +37,9 @@ class ActionType(str, Enum):
     UPLOAD = "upload"
     TYPE_CDP = "type_cdp"
     CLICK_CDP = "click_cdp"
+    DISCOVER = "discover"
+    FIND = "find"
+    HOVER_CDP = "hover"
 
 
 class TargetMethod(str, Enum):

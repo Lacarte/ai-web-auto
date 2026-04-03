@@ -136,12 +136,34 @@ DON'T: hardcoded coordinates
 ### Finding elements: MAIN world `executeScript`
 ```
 DO: chrome.scripting.executeScript({ world: "MAIN" })  # bypasses CSP
+DO: CDP Runtime.evaluate for string code on CSP-strict sites (bypasses CSP entirely)
 DO: reuse prior working selectors first
 DO: XPath for stable elements
-DO: [role="tab"][id$="-trigger-PORTRAIT"] for Radix UI
+DO: [role="tab"][id$="-trigger-PORTRAIT"] for Radix UI tabs
+DO: [role="option"] matched by textContent for Radix Select dropdowns (IDs are dynamic)
 DO: textContent.includes("Create") for dynamic buttons
-DON'T: new Function() in content scripts
+DO: verify found input has width>0 and height>0 (React hides real textarea, shows contentEditable div)
+DON'T: new Function() in content scripts or MAIN world on CSP-strict sites
 DON'T: document.querySelector in content script eval
+DON'T: target hidden textarea (width=0) when a visible contentEditable div exists
+```
+
+### Hidden/hover-only buttons (Tailwind `group-hover`, `opacity-0`, `pointer-events-none`)
+```
+DO: extract underlying URLs (img.src, href) and use chrome.downloads.download() directly
+DO: JS force-remove pointer-events-none + opacity-0 from button ancestors as fallback
+DON'T: assume CDP mouseMoved triggers Tailwind group-hover (it often doesn't)
+DON'T: assume el.click() or CDP click works on React download handlers
+DON'T: click hidden buttons without first checking pointer-events and opacity CSS
+```
+
+### Downloading assets
+```
+DO: extract <img> src URLs (naturalWidth>200) from CDN domains (fbcdn, googleusercontent, cloudfront)
+DO: chrome.downloads.download({ url, conflictAction: 'uniquify' })
+DO: check for blob: URLs or canvas elements as fallback sources
+DON'T: rely on clicking download buttons — React synthetic events often don't fire from CDP/JS
+DON'T: assume the download button triggers a real browser download
 ```
 
 ### Extension architecture
