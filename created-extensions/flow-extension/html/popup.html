@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flow Automator</title>
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Flow Automator</h1>
+
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="3" placeholder="Describe what you want to generate..."></textarea>
+
+    <div class="row">
+      <div class="field">
+        <label>Mode</label>
+        <div class="btn-group" id="mode-group">
+          <button class="sel active" data-value="Image">Image</button>
+          <button class="sel" data-value="Video">Video</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Ratio</label>
+        <div class="btn-group" id="ratio-group">
+          <button class="sel" data-value="16:9">16:9</button>
+          <button class="sel" data-value="4:3">4:3</button>
+          <button class="sel" data-value="1:1">1:1</button>
+          <button class="sel" data-value="3:4">3:4</button>
+          <button class="sel active" data-value="9:16">9:16</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Count</label>
+        <div class="btn-group" id="count-group">
+          <button class="sel" data-value="1">x1</button>
+          <button class="sel active" data-value="2">x2</button>
+          <button class="sel" data-value="3">x3</button>
+          <button class="sel" data-value="4">x4</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row toggle-row">
+      <label for="auto-download">Auto-download</label>
+      <input type="checkbox" id="auto-download" checked>
+    </div>
+
+    <button id="generate" class="primary">Generate</button>
+
+    <div id="status" class="status hidden">
+      <div id="status-text"></div>
+      <div id="progress-bar" class="progress-bar hidden">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/popup.js"></script>
+</body>
+</html>

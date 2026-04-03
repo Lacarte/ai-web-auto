@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../css/popup.css">
+  <title>AI Automation</title>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Web-Auto</h1>
+
+    <div class="status-section">
+      <div class="status-row">
+        <span class="label">WebSocket</span>
+        <span id="ws-status" class="badge disconnected">Disconnected</span>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <label for="auth-token">Auth Token</label>
+      <div class="input-row">
+        <input id="auth-token" type="text" value="local-dev-token">
+        <button id="save-token">Save</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-reconnect">Reconnect</button>
+      <button id="btn-screenshot">Screenshot</button>
+      <button id="btn-extract">Extract DOM</button>
+    </div>
+
+    <div class="log-section">
+      <h3>Activity Log</h3>
+      <div id="log-container"></div>
+    </div>
+  </div>
+
+  <script src="../js/popup.js"></script>
+</body>
+</html>

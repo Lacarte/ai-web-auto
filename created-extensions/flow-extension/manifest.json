@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Flow Automator",
+  "version": "1.0.0",
+  "description": "Automate Google Labs Flow (ImageFX) generation and download",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "debugger",
+    "downloads",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_popup": "html/popup.html"
+  }
+}

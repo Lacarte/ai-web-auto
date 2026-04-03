@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+output/
+*.png
+*.jpg
+.env
+node_modules/
