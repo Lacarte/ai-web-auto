@@ -89,10 +89,39 @@ Validate:
 - Keep a single `debugger.attach` across an interaction sequence that depends on trusted events.
 - Build the extension only after the recipe is proven. Do not debug the live site and generated extension at the same time.
 
+### Waiting for Assets / Processing
+- NEVER use fixed `setTimeout` or `asyncio.sleep` to wait for content to load or processing to finish.
+- DO poll for the disappearance of loading indicators: skeleton screens, CSS animations, spinners, progress bars, and loader overlays.
+- Detection strategy (poll every 200-500ms, timeout after 30s):
+  1. **Skeleton screens**: `document.querySelector('[class*="skeleton"], [class*="shimmer"], [class*="placeholder"]')` — wait until gone.
+  2. **CSS animations / transitions**: `document.getAnimations().length === 0` or check `el.getAnimations()` on the target container.
+  3. **Spinner / loader elements**: `document.querySelector('.loader, .spinner, [class*="loading"], [aria-busy="true"]')` — wait until removed or hidden.
+  4. **Opacity / visibility transitions**: poll `getComputedStyle(el).opacity !== '0'` on the expected result element.
+  5. **DOM mutation**: use `MutationObserver` (wrapped in a promise with timeout) to detect when the result element is inserted.
+- In generated extensions, wrap this as a reusable helper:
+  ```javascript
+  async function waitForReady(tabId, {gone, appear, timeout = 30000, interval = 300} = {}) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const ready = await exec(tabId, (g, a) => {
+        const loaderGone = g ? !document.querySelector(g) : true;
+        const resultHere = a ? !!document.querySelector(a) : true;
+        const noAnims = document.getAnimations().filter(a => a.playState === 'running').length === 0;
+        return loaderGone && resultHere && noAnims;
+      }, [gone || null, appear || null]);
+      if (ready) return true;
+      await new Promise(r => setTimeout(r, interval));
+    }
+    return false; // timed out
+  }
+  ```
+- Combine signals: wait for the loader selector to disappear AND the result selector to appear AND animations to finish.
+- The only acceptable fixed sleep is the initial SPA hydration wait (~3-5s) after navigation.
+
 ### Verification
 - Typing: verify the entered text exists in the correct field, not just visually on the page.
 - Clicking: verify a state change such as URL change, active tab state, modal open, element count change, or result text.
-- Waiting: poll for a concrete ready signal such as result images, active state, or a download button.
+- Waiting: poll for the disappearance of skeletons/loaders/CSS animations AND the appearance of the expected result — never use fixed time delays.
 - Downloading: prefer real download controls first, then asset extraction, then screenshot as the last resort.
 - Saved recipe steps must be proven steps only. Failed attempts belong in notes, not in the final recipe.
 
