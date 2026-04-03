@@ -1,6 +1,7 @@
 """Prompt templates for the AI decision-making layer."""
 
 from __future__ import annotations
+
 from typing import Any
 
 
@@ -8,7 +9,9 @@ class PromptBuilder:
     SYSTEM = (
         "You are a web automation expert controlling a browser via API. "
         "You analyze the current page state and decide the next action to take. "
-        "Always return valid JSON. Never guess selectors — use the provided DOM data. "
+        "Always return valid JSON. Never guess selectors - use the provided DOM data. "
+        "Prefer reusing selectors that already worked in the action history. "
+        "Every action should have an observable verification goal. "
         "If the task is complete, return action: \"done\"."
     )
 
@@ -25,13 +28,16 @@ PREVIOUS ACTIONS ({step}/{max_steps} steps taken):
 {history}
 
 RULES:
-1. Pick the single best next action.
-2. Prefer CSS selectors; fall back to XPath only when CSS is ambiguous.
-3. For typing, always specify clear_first: true unless appending.
-4. If a confirmation dialog or CAPTCHA appears, return action: "wait" so a human can intervene.
-5. If the objective is achieved, return action: "done" with extracted data in params.result.
+1. Pick the single best next action with a clear expected outcome.
+2. Reuse a previously successful selector from history before proposing a new one.
+3. Prefer CSS selectors backed by stable id, name, aria-label, placeholder, or role patterns; fall back to XPath only when it is clearly more stable.
+4. For typing, always specify clear_first: true unless appending.
+5. If the previous action failed, do not repeat the exact same selector more than once without changing strategy.
+6. Prefer "wait" for async loading or generation and "extract" for text or state checks before asking for an extra screenshot.
+7. If a confirmation dialog, login wall, or CAPTCHA appears, return action: "wait" so a human can intervene.
+8. If the objective is achieved, return action: "done" with extracted data in params.result.
 
-Return JSON only — no markdown fences, no commentary:
+Return JSON only - no markdown fences, no commentary:
 {{
   "reasoning": "brief explanation",
   "action": "click|type|scroll|screenshot|extract|wait|navigate|done",
@@ -57,7 +63,7 @@ Return JSON only — no markdown fences, no commentary:
         return cls.ACTION_TEMPLATE.format(
             url=url,
             title=title,
-            elements=elements_str or "  (none detected — try scrolling or taking a screenshot)",
+            elements=elements_str or "  (none detected - try scrolling or taking a screenshot)",
             objective=objective,
             history=history_str or "  (none yet)",
             step=step,
@@ -90,5 +96,5 @@ Return JSON only — no markdown fences, no commentary:
             action = h.get("action", "?")
             target = h.get("target", {}).get("value", "")
             status = h.get("status", "?")
-            lines.append(f"  {i+1}. {action} → {target} [{status}]")
+            lines.append(f"  {i+1}. {action} -> {target} [{status}]")
         return "\n".join(lines)
