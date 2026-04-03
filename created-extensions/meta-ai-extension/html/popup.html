@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Meta AI Image Gen</h1>
+
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="3" placeholder="Describe your image..."></textarea>
+
+    <label for="ratio">Aspect Ratio</label>
+    <select id="ratio">
+      <option value="9:16" selected>9:16 (Portrait)</option>
+      <option value="1:1">1:1 (Square)</option>
+      <option value="16:9">16:9 (Landscape)</option>
+    </select>
+
+    <label>
+      <input type="checkbox" id="autoDownload" checked>
+      Auto-download images
+    </label>
+
+    <button id="generate">Generate</button>
+    <div id="status" class="status"></div>
+  </div>
+  <script src="../js/popup.js"></script>
+</body>
+</html>

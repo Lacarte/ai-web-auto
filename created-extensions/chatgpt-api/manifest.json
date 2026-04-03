@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT API Bridge",
+  "version": "1.0.0",
+  "description": "Send prompts to ChatGPT via extension popup or REST API, get responses as JSON",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "debugger",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": ["https://chatgpt.com/*"],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_popup": "html/popup.html"
+  }
+}

@@ -1,0 +1,65 @@
+### Health check
+GET http://localhost:8767/health
+
+###
+
+### Simple prompt
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "What is 2+2? Answer with just the number."
+}
+
+###
+
+### JSON response test
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "Return a JSON object with keys: name, age, city. Use fake data. Return ONLY the JSON, nothing else."
+}
+
+###
+
+### Raw mode (no system suffix appended)
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "Write a haiku about coding",
+  "append_suffix": false
+}
+
+###
+
+### Custom timeout (seconds)
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "List 3 programming languages and one strength of each. Be brief.",
+  "timeout": 60
+}
+
+###
+
+### Translation test
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "Translate to French: Hello, how are you today?"
+}
+
+###
+
+### Code generation
+POST http://localhost:8767/prompt
+Content-Type: application/json
+
+{
+  "prompt": "Write a Python function that checks if a string is a palindrome. Return ONLY the code, no explanation.",
+  "append_suffix": false
+}

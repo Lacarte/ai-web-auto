@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Meta AI Image Generator",
+  "version": "1.0.0",
+  "description": "Automate Meta AI image generation: select mode, aspect ratio, type prompt, generate, and download",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "debugger",
+    "downloads",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": ["https://www.meta.ai/*"],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_popup": "html/popup.html"
+  }
+}

@@ -38,6 +38,46 @@ Collect only the minimum baseline needed to move forward:
 - visible interactive elements
 - page text or HTML only when needed for selector discovery or verification
 
+**ALWAYS highlight discovered elements on the page.** After every `discover` or DOM analysis that returns interactive elements with bounding rects, inject colored border overlays so the user (and screenshots) can see what was found:
+
+```python
+highlight_js = """
+(function(elements) {
+    document.querySelectorAll('.discover-highlight').forEach(e => e.remove());
+    var colors = { input: '#00ff00', button: '#ff6600', link: '#6699ff', image: '#ff00ff', clickable: '#ffff00' };
+    elements.forEach(function(el, i) {
+        var div = document.createElement('div');
+        div.className = 'discover-highlight';
+        var c = colors[el.role] || '#ffffff';
+        Object.assign(div.style, {
+            position: 'fixed', zIndex: '999999',
+            left: el.rect.x + 'px', top: el.rect.y + 'px',
+            width: el.rect.w + 'px', height: el.rect.h + 'px',
+            border: '2px solid ' + c, borderRadius: '3px',
+            pointerEvents: 'none',
+        });
+        var label = document.createElement('span');
+        Object.assign(label.style, {
+            position: 'absolute', top: '-16px', left: '0',
+            fontSize: '10px', color: c, fontWeight: 'bold',
+            backgroundColor: 'rgba(0,0,0,0.8)', padding: '1px 4px',
+            borderRadius: '2px', whiteSpace: 'nowrap',
+        });
+        label.textContent = i + ':' + el.role + (el.text ? '=' + el.text.slice(0,20) : '');
+        div.appendChild(label);
+        document.body.appendChild(div);
+    });
+    return 'highlighted ' + elements.length;
+})(ELEMENTS_JSON);
+"""
+await s.execute_script(highlight_js.replace('ELEMENTS_JSON', json.dumps(elements)))
+await s.screenshot()  # capture with highlights visible
+```
+
+Color key: green=input, orange=button, blue=link, magenta=image, yellow=clickable.
+Take a screenshot immediately after highlighting so the visual state is captured.
+Remove old highlights before injecting new ones (the script handles this automatically).
+
 ### Phase 2: Learn the Smallest Proven Recipe
 Break the task into explicit steps with a success condition for each one.
 
@@ -81,6 +121,13 @@ Validate:
 - If the same selector fails twice, change strategy instead of repeating it.
 - Stop and ask for human help on login, CAPTCHA, MFA, payment, or consent walls.
 - Persist stable selectors and learned patterns so Claude does not rediscover the same UI every run.
+
+### Element Highlighting (mandatory)
+- ALWAYS inject colored border overlays after discovering or analyzing interactive elements on a page.
+- ALWAYS take a screenshot immediately after highlighting so the visual result is captured.
+- Use the `discover-highlight` class for overlays so old highlights are cleared before new ones are injected.
+- This applies during Phase 1 baseline, Phase 2 learning steps, and any targeted rediscovery.
+- Never skip highlighting — the user must be able to see which elements were detected.
 
 ### Efficiency
 - Prefer targeted rediscovery over full-page rediscovery after every step.
@@ -128,8 +175,10 @@ Validate:
 ### Typing
 - USE: CDP `Input.insertText` char by char
 - MUST: CDP click the input FIRST, then Ctrl+A+Backspace to clear, then type
+- MUST: Replace `\n` with spaces before typing into ProseMirror/contentEditable inputs — `\n` triggers Enter which submits forms or creates blocks
 - NEVER: `el.value=`, `execCommand('insertText')`, `new Function()` in content scripts
-- WHY: React contentEditable only accepts CDP insertText. `execCommand` may insert visually but React state stays empty.
+- NEVER: use `\n` as separator in appended suffixes for ProseMirror inputs
+- WHY: React contentEditable only accepts CDP insertText. `execCommand` may insert visually but React state stays empty. ProseMirror treats `\n` as Enter key, causing premature form submission.
 
 ### Clicking
 - USE: `findPos()` via MAIN world `executeScript` -> CDP `mousePressed+mouseReleased`
