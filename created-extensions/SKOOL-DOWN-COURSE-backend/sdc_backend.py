@@ -28,7 +28,8 @@ from loguru import logger
 logger.remove()
 logger.add(sys.stderr, level="DEBUG", colorize=True,
            format="<green>{time:HH:mm:ss}</green> | <level>{level:<7}</level> | <cyan>{message}</cyan>")
-logger.add("sdc_backend.log", rotation="5 MB", level="DEBUG",
+LOG_DIR = os.path.dirname(os.path.abspath(__file__))
+logger.add(os.path.join(LOG_DIR, "sdc_backend.log"), rotation="5 MB", level="DEBUG",
            format="{time:YYYY-MM-DD HH:mm:ss} | {level:<7} | {message}")
 
 # ============================================================

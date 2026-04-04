@@ -204,8 +204,10 @@ async def main():
                 url: '/' + group + '/classroom/' + c.name
             });
         }
+        var titleParts = document.title.split(' \\u00b7 ');
         var siteName = (pp.currentGroup && pp.currentGroup.metadata && pp.currentGroup.metadata.name) ||
-                       document.title.split(' \\u00b7 ')[0] || 'SkoolCourse';
+                       (titleParts.length > 1 ? titleParts[titleParts.length - 1] : titleParts[0]) ||
+                       'SkoolCourse';
         return JSON.stringify({group: group, groupId: groupId, modules: modules, siteName: siteName});
     })()
     """)
