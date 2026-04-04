@@ -158,8 +158,8 @@ async def main():
             import base64
             r = await agent.screenshot()
             if r.data.screenshot:
-                path = "output/screenshot.png"
-                import os; os.makedirs("output", exist_ok=True)
+                path = "learning-process/output/screenshot.png"
+                import os; os.makedirs("learning-process/output", exist_ok=True)
                 with open(path, "wb") as f:
                     f.write(base64.b64decode(r.data.screenshot))
                 print(f"  Saved: {path}")

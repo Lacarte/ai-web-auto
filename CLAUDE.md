@@ -11,11 +11,12 @@ created-extensions/        # Standalone extensions produced by the platform
   skool-down-course/
     skool-down-course-extension/  # Skool course downloader Chrome extension
     skool-down-course-backend/    # Python backend + downloader scripts
-  chatgpt-api/
+  chatgpt-ui-to-api/
   meta-ai-extension/
   flow-extension/
-scripts/                   # Test, discovery, learner, and execution scripts
-output/                    # Screenshots, element data, recipes, learned selectors
+learning-process/              # Learning process artifacts
+  scripts/                     # Test, discovery, learner, and execution scripts
+  output/                      # Screenshots, element data, recipes, learned selectors
 skool-output/              # Downloaded Skool course files (gitignored)
 .claude/skills/web-auto.md # Skill file - teaches Claude how to build automations
 ```
@@ -46,7 +47,7 @@ venv\Scripts\python -m ai_web_auto_python.automation_controller
 ### 4. Use commands
 At the `>` prompt:
 - `navigate <url>` - Open a URL in the browser
-- `screenshot` - Take a screenshot (saved to `output/`)
+- `screenshot` - Take a screenshot (saved to `learning-process/output/`)
 - `discover` - List all interactive elements on the page
 - `type <text>` - Type into focused input via CDP
 - `click <selector>` - Click element by CSS selector or XPath
@@ -95,7 +96,7 @@ Tell Claude: "automate [website] to do [task]"
 
 Claude uses the `web-auto` skill to:
 1. Run preflight checks: confirm server/extension connection, blockers, and whether prior selectors or recipes already exist.
-2. Reuse `output/discover/`, `output/learner/recipe.json`, `output/execution/learned_selectors.json`, and similar `created-extensions/` work before rediscovering.
+2. Reuse `learning-process/output/discover/`, `learning-process/output/learner/recipe.json`, `learning-process/output/execution/learned_selectors.json`, and similar `created-extensions/` work before rediscovering.
 3. Navigate to the deepest useful page and capture a minimal baseline with a screenshot and targeted DOM analysis.
 4. Learn the smallest proven recipe: action -> verify -> save, with targeted retries before full rediscovery.
 5. Build a standalone extension in `created-extensions/` from confirmed steps only.
@@ -103,13 +104,13 @@ Claude uses the `web-auto` skill to:
 
 ### Option B: Use the learner script
 ```
-venv\Scripts\python scripts/learner.py --url "https://example.com" --prompt "test input"
+venv\Scripts\python learning-process/scripts/learner.py --url "https://example.com" --prompt "test input"
 ```
 This runs the self-learning loop: screenshot -> discover -> interact -> verify -> save recipe.
 
 ### Option C: Use the execution runner
 ```
-venv\Scripts\python scripts/runner-execution.py --list scripts\execution-list.txt
+venv\Scripts\python learning-process/scripts/runner-execution.py --list learning-process/scripts/execution-list.txt
 ```
 This runs a step list with screenshots, verification, selector learning, and self-correction.
 
@@ -238,9 +239,9 @@ DON'T: assume success because the UI looked right once
 | `ai_web_auto_python/core/models.py` | Pydantic models for command protocol |
 | `ai_web_auto_python/automation_controller.py` | BrowserAgent high-level API |
 | `ai_web_auto_python/ai/prompts.py` | Claude action prompt rules for the AI agent |
-| `scripts/learner.py` | Self-learning automation loop |
-| `scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
-| `output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
+| `learning-process/scripts/learner.py` | Self-learning automation loop |
+| `learning-process/scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
+| `learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
 | `.claude/skills/web-auto.md` | Skill for building new extensions |
 | `created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
 

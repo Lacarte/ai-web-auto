@@ -14,9 +14,9 @@ TRIGGER: User asks to automate a website, build a browser extension, scrape a si
 2. Confirm the site is reachable and note blockers such as login, CAPTCHA, region gates, modal walls, or permission prompts.
 3. Open the deepest useful page for the task, not just the homepage.
 4. Check for reusable artifacts before rediscovering:
-   - `output/discover/`
-   - `output/learner/recipe.json`
-   - `output/execution/learned_selectors.json`
+   - `learning-process/output/discover/`
+   - `learning-process/output/learner/recipe.json`
+   - `learning-process/output/execution/learned_selectors.json`
    - `created-extensions/`
 5. Reuse proven selectors, recipes, and working flows when the target site or UI pattern matches.
 

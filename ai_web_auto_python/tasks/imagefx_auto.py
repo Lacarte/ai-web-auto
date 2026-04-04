@@ -30,8 +30,8 @@ from ai_web_auto_python.core.models import Command, ResponseStatus
 
 
 IMAGEFX_URL = "https://labs.google/fx/tools/flow/"
-OUTPUT_DIR = Path("output/imagefx")
-DISCOVER_DIR = Path("output/discover")
+OUTPUT_DIR = Path("learning-process/output/imagefx")
+DISCOVER_DIR = Path("learning-process/output/discover")
 
 # ── Known selectors (updated by discover mode) ──────────────────────────────
 # These will be refined iteratively. Start with best guesses.
@@ -49,7 +49,7 @@ SELECTORS = {
     "loading_indicator": None,
 }
 
-SELECTORS_FILE = Path("output/discover/imagefx_selectors.json")
+SELECTORS_FILE = Path("learning-process/output/discover/imagefx_selectors.json")
 
 
 def load_selectors():

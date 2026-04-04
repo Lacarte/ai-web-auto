@@ -1,7 +1,7 @@
 venv/
 __pycache__/
 *.pyc
-output/
+learning-process/output/
 skool-output/
 *.png
 *.jpg

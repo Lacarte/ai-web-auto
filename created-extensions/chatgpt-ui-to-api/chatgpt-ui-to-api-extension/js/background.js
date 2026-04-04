@@ -221,7 +221,7 @@ function connectWS() {
 
     ws.onopen = () => {
       console.log("[WS] Connected to API server");
-      ws.send(JSON.stringify({ type: "hello", from: "chatgpt-api-bridge" }));
+      ws.send(JSON.stringify({ type: "hello", from: "chatgpt-ui-to-api-bridge" }));
     };
 
     ws.onmessage = async (event) => {
