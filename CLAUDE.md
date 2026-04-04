@@ -5,11 +5,18 @@ A CDP-first browser automation platform that learns how to interact with any web
 
 ## Project Structure
 ```
-chrome-extension/          # AI Web-Auto - the learning/discovery extension
+ai-web-auto-extension/     # AI Web-Auto - the learning/discovery Chrome extension
+ai_web_auto_python/        # WebSocket server + AI agent + utilities
 created-extensions/        # Standalone extensions produced by the platform
-python/                    # WebSocket server + AI agent + utilities
+  skool-down-course/
+    skool-down-course-extension/  # Skool course downloader Chrome extension
+    skool-down-course-backend/    # Python backend + downloader scripts
+  chatgpt-api/
+  meta-ai-extension/
+  flow-extension/
 scripts/                   # Test, discovery, learner, and execution scripts
 output/                    # Screenshots, element data, recipes, learned selectors
+skool-output/              # Downloaded Skool course files (gitignored)
 .claude/skills/web-auto.md # Skill file - teaches Claude how to build automations
 ```
 
@@ -24,7 +31,7 @@ pip install -r requirements.txt
 
 ### 2. Load the extension
 - Open `chrome://extensions` -> Developer mode ON
-- Click "Load unpacked" -> select `chrome-extension/`
+- Click "Load unpacked" -> select `ai-web-auto-extension/`
 - The extension auto-connects to `ws://localhost:8765` with token `local-dev-token`
 
 ### 3. Run the server
@@ -33,7 +40,7 @@ runner.bat
 ```
 Or directly:
 ```
-venv\Scripts\python -m python.automation_controller
+venv\Scripts\python -m ai_web_auto_python.automation_controller
 ```
 
 ### 4. Use commands
@@ -46,6 +53,40 @@ At the `>` prompt:
 - `extract` - Extract visible page text
 - `task <objective>` - Run AI-driven automation task
 - `quit` - Exit
+
+## Skool Course Downloader
+
+### Usage
+```
+cd created-extensions\skool-down-course\skool-down-course-backend
+download-runner.bat https://www.skool.com/ai-video-creators/classroom
+```
+
+### How it works
+1. Connects to AI Web-Auto via WebSocket (same tab navigation)
+2. Scans `__NEXT_DATA__` for modules and lessons, skips locked courses
+3. For each lesson: captures HTML (inline CSS, active links), screenshot, and video
+4. Videos: Skool native (click play -> mux-player -> M3U8 -> ffmpeg), YouTube/Loom/Vimeo (yt-dlp)
+5. Output organized as `skool-output/{CourseName}/{Module}/{Lesson}/`
+
+### Proven selectors (verified on live sites)
+```
+Classroom page:   __NEXT_DATA__.props.pageProps.allCourses (modules)
+                  Locked: !hasAccess && minAccessLevel != null
+Module page:      __NEXT_DATA__.props.pageProps.course.children (lessons)
+                  Flat or nested structure (both handled)
+Lesson page:      mux-player[playback-id] (Skool native video)
+                  iframe[src*="loom.com|youtube.com|vimeo.com"] (external)
+                  [class*="VideoDuration"] -> parent (click target for play)
+                  [class*="ResourceWrapper"] (PDF/attachment elements)
+Mark complete:    button > svg[viewBox="0 0 40 40"] (done)
+                  button > svg[viewBox="0 0 24 24"] with >=2 paths (not done)
+```
+
+### Tested communities
+- `ai-video-creators` - Skool native videos (Mux M3U8)
+- `the-ai-blueprint` - Loom embeds + PDF resources
+- `learn-ai` - Mixed Skool native + YouTube
 
 ## Building a New Automation Extension
 
@@ -74,7 +115,7 @@ This runs a step list with screenshots, verification, selector learning, and sel
 
 ### Option D: Manual discovery
 ```python
-from python.core.server import WebSocketServer
+from ai_web_auto_python.core.server import WebSocketServer
 s = WebSocketServer()
 await s.start()
 await s.wait_for_connection(timeout=60)
@@ -191,16 +232,17 @@ DON'T: assume success because the UI looked right once
 
 | File | Purpose |
 |------|---------|
-| `chrome-extension/js/service-worker.js` | CDP engine + WS client + command router |
-| `chrome-extension/js/content/content-main.js` | Data extraction + fallback only |
-| `python/core/server.py` | WebSocket server with CDP/type commands |
-| `python/core/models.py` | Pydantic models for command protocol |
-| `python/automation_controller.py` | BrowserAgent high-level API |
-| `python/ai/prompts.py` | Claude action prompt rules for the AI agent |
+| `ai-web-auto-extension/js/service-worker.js` | CDP engine + WS client + command router |
+| `ai-web-auto-extension/js/content/content-main.js` | Data extraction + fallback only |
+| `ai_web_auto_python/core/server.py` | WebSocket server with CDP/type commands |
+| `ai_web_auto_python/core/models.py` | Pydantic models for command protocol |
+| `ai_web_auto_python/automation_controller.py` | BrowserAgent high-level API |
+| `ai_web_auto_python/ai/prompts.py` | Claude action prompt rules for the AI agent |
 | `scripts/learner.py` | Self-learning automation loop |
 | `scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
 | `output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
 | `.claude/skills/web-auto.md` | Skill for building new extensions |
+| `created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
 
 ## Troubleshooting
 
@@ -214,3 +256,4 @@ DON'T: assume success because the UI looked right once
 | Radix UI tabs don't switch | Use CDP click (trusted event), not `.click()` |
 | Service worker dies | `chrome.alarms` keepalive should prevent this; reload the extension |
 | Port 8765 in use | Kill the old process: `netstat -aon | findstr 8765` then `taskkill /PID <pid> /F` |
+| Navigate opens new tab | Fixed: reuses existing tab via `chrome.tabs.update()` |
