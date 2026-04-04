@@ -2,7 +2,9 @@ venv/
 __pycache__/
 *.pyc
 output/
+skool-output/
 *.png
 *.jpg
 .env
 node_modules/
+sdc_backend.log

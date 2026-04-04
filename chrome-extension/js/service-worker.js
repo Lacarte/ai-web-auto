@@ -391,8 +391,20 @@ ws.onCommand(async (command) => {
       case 'navigate': {
         const url = params.url;
         console.log(`[SW] Navigate to: ${url}`);
-        const newTab = await chrome.tabs.create({ url, active: true });
-        targetTabId = newTab.id;
+        // Reuse existing tab if we have one, otherwise create new
+        if (targetTabId) {
+          try {
+            await chrome.tabs.get(targetTabId); // check if tab still exists
+            await chrome.tabs.update(targetTabId, { url, active: true });
+          } catch {
+            // Tab was closed, create new one
+            const newTab = await chrome.tabs.create({ url, active: true });
+            targetTabId = newTab.id;
+          }
+        } else {
+          const newTab = await chrome.tabs.create({ url, active: true });
+          targetTabId = newTab.id;
+        }
         await waitForTabLoad(targetTabId, 25000);
         // Give SPA frameworks time to hydrate
         await sleep(2000);

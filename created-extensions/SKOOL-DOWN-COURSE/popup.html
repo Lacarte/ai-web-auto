@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 420px;
+      max-height: 550px;
+      overflow-y: auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 13px;
+    }
+    .header {
+      background: linear-gradient(135deg, #7c5cff, #6a4fff);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header h1 { font-size: 16px; font-weight: 700; color: #fff; }
+    .header .ver { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .section { padding: 14px 20px; border-bottom: 1px solid #2d2d44; }
+    .section-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    label { display: block; margin-bottom: 6px; font-size: 12px; color: #b0b0b0; }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px 10px;
+      background: #2d2d44;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus { border-color: #7c5cff; }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .checkbox-row input { width: 16px; height: 16px; accent-color: #7c5cff; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c5cff, #6a4fff);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(124,92,255,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(124,92,255,0.5); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-stop {
+      background: #2d2d44;
+      color: #ff6b6b;
+      border: 1px solid #ff6b6b;
+      margin-top: 8px;
+    }
+    .btn-stop:hover { background: #ff6b6b; color: #fff; }
+    #status {
+      padding: 12px 20px;
+      font-size: 12px;
+      color: #888;
+      min-height: 40px;
+    }
+    #status .status-line { margin-bottom: 4px; }
+    .progress-bar {
+      background: #2d2d44;
+      border-radius: 8px;
+      height: 6px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-bar .fill {
+      background: linear-gradient(90deg, #7c5cff, #00d2ff);
+      height: 100%;
+      width: 0%;
+      border-radius: 8px;
+      transition: width 0.5s ease;
+    }
+    .course-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #2d2d44;
+      border-radius: 6px;
+      padding: 6px;
+      margin-top: 8px;
+      display: none;
+    }
+    .course-list .item {
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #b0b0b0;
+      border-radius: 4px;
+    }
+    .course-list .item.done { color: #4caf50; }
+    .course-list .item.active { color: #7c5cff; font-weight: 600; }
+    .backend-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #666;
+    }
+    .dot.connected { background: #4caf50; }
+    .dot.error { background: #f44336; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span style="font-size:24px">📥</span>
+    <div>
+      <h1>SKOOL-DOWN-COURSE</h1>
+      <span class="ver">v1.0 - CDP Backend</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Backend Connection</div>
+    <div class="backend-status">
+      <div class="dot" id="backendDot"></div>
+      <span id="backendLabel">Checking...</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Course URL</div>
+    <label>Classroom page URL:</label>
+    <input type="text" id="courseUrl" value="https://www.skool.com/ai-video-creators/classroom" placeholder="https://www.skool.com/community/classroom">
+  </div>
+
+  <div class="section">
+    <div class="section-title">Download Options</div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="optHtml" checked>
+      <label for="optHtml" style="margin:0">Save page HTML (inline CSS + images)</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="optVideo" checked>
+      <label for="optVideo" style="margin:0">Download videos</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="optScreenshot" checked>
+      <label for="optScreenshot" style="margin:0">Full-page screenshots</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="optMark" checked>
+      <label for="optMark" style="margin:0">Mark courses complete</label>
+    </div>
+    <div style="margin-top:8px">
+      <label>Start from module:</label>
+      <select id="startFrom">
+        <option value="1">1. (scan first)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="btn btn-primary" id="btnScan">🔍 Scan Courses</button>
+    <button class="btn btn-primary" id="btnStart" style="display:none;margin-top:8px">🚀 Start Download</button>
+    <button class="btn btn-stop" id="btnStop" style="display:none">⏹ Stop</button>
+  </div>
+
+  <div id="status">
+    <div class="status-line">Ready. Navigate to a Skool classroom page first.</div>
+  </div>
+
+  <div class="progress-bar" id="progressBar" style="display:none;margin:0 20px 12px">
+    <div class="fill" id="progressFill"></div>
+  </div>
+
+  <div class="course-list" id="courseList"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

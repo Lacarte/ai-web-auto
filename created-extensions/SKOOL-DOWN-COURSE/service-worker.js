@@ -1,0 +1,570 @@
+// SKOOL-DOWN-COURSE - Service Worker
+// Orchestrates: navigate tab -> wait -> extract via executeScript -> send to backend
+
+const BACKEND = 'http://localhost:9876';
+
+// Keepalive
+chrome.alarms.create('keepalive', { periodInMinutes: 0.25 });
+chrome.alarms.onAlarm.addListener(function() {});
+
+var downloadRunning = false;
+var stopRequested = false;
+
+// ============================================================
+// MESSAGE HANDLER
+// ============================================================
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+  if (msg.action === 'startDownload') {
+    downloadRunning = true;
+    stopRequested = false;
+    console.log('[SDC SW] Received startDownload, modules:', msg.scanData ? msg.scanData.modules.length : 'NONE');
+    // Start download loop (fire and forget)
+    runDownload(msg.scanData, msg.options).catch(function(err) {
+      console.error('[SDC SW] runDownload crashed:', err);
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (msg.action === 'stopDownload') {
+    stopRequested = true;
+    downloadRunning = false;
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (msg.action === 'captureFullPage') {
+    captureScreenshot(sender.tab ? sender.tab.id : null).then(sendResponse);
+    return true;
+  }
+
+  if (msg.action === 'downloadResource') {
+    chrome.downloads.download({
+      url: msg.url,
+      filename: msg.subfolder ? msg.subfolder + '/' + msg.filename : msg.filename,
+      conflictAction: 'uniquify'
+    }, function(id) {
+      sendResponse({ success: !chrome.runtime.lastError, downloadId: id });
+    });
+    return true;
+  }
+
+  if (msg.action === 'captureHtml') {
+    // Forward to content script on the tab
+    return false;
+  }
+});
+
+// ============================================================
+// MAIN DOWNLOAD LOOP
+// ============================================================
+
+async function runDownload(scanData, options) {
+  await postBackend('/course-progress', {
+    courseIndex: -1, courseName: 'runDownload() entered', status: 'debug'
+  });
+
+  if (!scanData || !scanData.modules) {
+    await postBackend('/course-progress', {
+      courseIndex: -1, courseName: 'ERROR: scanData missing or no modules', status: 'error'
+    });
+    return;
+  }
+
+  var modules = scanData.modules;
+  var groupName = scanData.groupName || '';
+  var groupId = scanData.groupId || '';
+  var startFrom = (options.startFrom || 1) - 1;
+
+  var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs || !tabs[0]) {
+    await postBackend('/course-progress', {
+      courseIndex: -1, courseName: 'ERROR: no active tab found', status: 'error'
+    });
+    return;
+  }
+  var tabId = tabs[0].id;
+
+  await postBackend('/course-progress', {
+    courseIndex: -1,
+    courseName: 'Starting: ' + modules.length + ' modules, tab=' + tabId + ', group=' + groupName,
+    status: 'debug'
+  });
+
+  console.log('[SDC] Starting download. Modules: ' + modules.length + ', tab: ' + tabId);
+  var globalLesson = 0;
+
+  try {
+    for (var mi = 0; mi < modules.length; mi++) {
+      if (stopRequested) break;
+
+      var mod = modules[mi];
+      console.log('[SDC] Module ' + (mi + 1) + '/' + modules.length + ': ' + mod.title);
+
+      // Navigate to module page
+      await goToPage(tabId, mod.url);
+
+      // Extract lessons
+      var lessons = await extractLessons(tabId, mod.slug, groupName);
+      console.log('[SDC] Found ' + lessons.length + ' lessons in ' + mod.title);
+
+      if (lessons.length === 0) continue;
+
+      // Tell backend about this module's lessons
+      await postBackend('/course-progress', {
+        courseIndex: mi,
+        courseName: '[Module] ' + mod.title,
+        status: 'module_start',
+        lessonCount: lessons.length
+      });
+
+      // Process each lesson
+      for (var li = 0; li < lessons.length; li++) {
+        if (stopRequested) break;
+        if (globalLesson < startFrom) { globalLesson++; continue; }
+
+        var lesson = lessons[li];
+        console.log('[SDC] Lesson ' + (globalLesson + 1) + ': ' + lesson.name);
+
+        await postBackend('/course-progress', {
+          courseIndex: globalLesson,
+          courseName: lesson.name,
+          status: 'processing'
+        });
+
+        // Navigate to lesson page
+        var lessonUrl = 'https://www.skool.com' + lesson.href;
+        await goToPage(tabId, lessonUrl);
+
+        // Extract page metadata
+        var meta = await extractMeta(tabId, lesson.name, groupId);
+
+        // Capture HTML
+        var html = null;
+        if (options.html) {
+          html = await captureHtml(tabId);
+        }
+
+        // Capture screenshot
+        var screenshot = null;
+        if (options.screenshot) {
+          var ss = await captureScreenshot(tabId);
+          screenshot = ss ? ss.dataUrl : null;
+        }
+
+        // Extract video info
+        var videoInfo = null;
+        if (options.video && (meta.videoUrl || meta.videoId)) {
+          videoInfo = {
+            url: meta.videoUrl || '',
+            stream: meta.videoStream || '',
+            type: meta.videoType || '',
+            title: lesson.name,
+            thumbnail: meta.videoThumbnail || '',
+            durationMs: meta.videoDurationMs || 0,
+            videoId: meta.videoId || null
+          };
+
+          // For external videos, get iframe embed URL
+          if (meta.videoType === 'YouTube' || meta.videoType === 'Loom' ||
+              meta.videoType === 'Vimeo' || meta.videoType === 'Wistia') {
+            videoInfo.embedUrl = await getVideoIframe(tabId);
+          }
+
+          // For Skool native, click play and get M3U8
+          if (meta.videoType === 'Skool' || (!meta.videoUrl && meta.videoId)) {
+            var muxData = await clickAndGetM3U8(tabId);
+            if (muxData) {
+              videoInfo.m3u8Url = muxData.m3u8Url;
+              videoInfo.playbackId = muxData.playbackId;
+              videoInfo.customDomain = muxData.customDomain;
+            }
+          }
+        }
+
+        // Download resource attachments via chrome.downloads
+        if (meta.resources && meta.resources.length > 0) {
+          var safeMod = sanitize(mod.title);
+          var safeLes = sanitize(lesson.name);
+          for (var ri = 0; ri < meta.resources.length; ri++) {
+            var res = meta.resources[ri];
+            if (res.downloadUrl) {
+              chrome.downloads.download({
+                url: res.downloadUrl,
+                filename: safeMod + '/' + safeLes + '/' + (res.fileName || res.title || 'resource'),
+                conflictAction: 'uniquify'
+              });
+              await sleep(500);
+            }
+          }
+        }
+
+        // Send everything to backend
+        await postBackend('/course-data', {
+          courseIndex: globalLesson,
+          courseName: sanitize(lesson.name),
+          moduleName: sanitize(mod.title),
+          meta: meta,
+          html: html,
+          screenshotDataUrl: screenshot,
+          videoInfo: videoInfo
+        });
+
+        console.log('[SDC] Lesson done: ' + lesson.name);
+
+        // Mark complete
+        if (options.markComplete) {
+          await markComplete(tabId);
+        }
+
+        globalLesson++;
+        await sleep(2000);
+      }
+    }
+  } catch (err) {
+    console.error('[SDC] DOWNLOAD ERROR:', err.message, err.stack);
+    await postBackend('/course-progress', {
+      courseIndex: -1, courseName: 'ERROR: ' + err.message, status: 'error'
+    });
+  }
+
+  downloadRunning = false;
+  await postBackend('/download-complete', {});
+  console.log('[SDC] Download complete');
+}
+
+// ============================================================
+// PAGE NAVIGATION - simple: update tab URL + fixed wait
+// ============================================================
+
+async function goToPage(tabId, url) {
+  console.log('[SDC] Navigate: ' + url);
+  await chrome.tabs.update(tabId, { url: url });
+  // Wait for load via onUpdated
+  await new Promise(function(resolve) {
+    var resolved = false;
+    function onUpdate(id, info) {
+      if (id === tabId && info.status === 'complete' && !resolved) {
+        resolved = true;
+        chrome.tabs.onUpdated.removeListener(onUpdate);
+        resolve();
+      }
+    }
+    chrome.tabs.onUpdated.addListener(onUpdate);
+    // Timeout fallback 20s
+    setTimeout(function() {
+      if (!resolved) {
+        resolved = true;
+        chrome.tabs.onUpdated.removeListener(onUpdate);
+        resolve();
+      }
+    }, 20000);
+  });
+  // Extra wait for Next.js hydration + __NEXT_DATA__
+  await sleep(3000);
+}
+
+// ============================================================
+// DATA EXTRACTION via chrome.scripting.executeScript
+// All functions use ES5 to avoid issues with older Chrome
+// ============================================================
+
+async function extractLessons(tabId, moduleSlug, groupName) {
+  try {
+    var results = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function(slug, gName) {
+        try {
+          var el = document.getElementById('__NEXT_DATA__');
+          if (!el) return [];
+          var nd = JSON.parse(el.textContent);
+          var pp = nd.props && nd.props.pageProps;
+          if (!pp || !pp.course || !pp.course.children) return [];
+
+          var lessons = [];
+          var children = pp.course.children;
+          for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            if (!child.course) continue;
+            var meta = child.course.metadata || {};
+
+            if (child.children && child.children.length > 0) {
+              // Nested sections
+              for (var j = 0; j < child.children.length; j++) {
+                var sub = child.children[j];
+                if (!sub.course) continue;
+                var sm = sub.course.metadata || {};
+                if (sm.hasAccess === false) continue;
+                lessons.push({
+                  id: sub.course.id, name: sm.title || sub.course.name,
+                  href: '/' + gName + '/classroom/' + slug + '?md=' + sub.course.id,
+                  videoLink: sm.videoLink || null, videoId: sm.videoId || null,
+                  videoStream: sm.videoStream || null
+                });
+              }
+            } else {
+              // Flat
+              if (meta.hasAccess === false) continue;
+              lessons.push({
+                id: child.course.id, name: meta.title || child.course.name,
+                href: '/' + gName + '/classroom/' + slug + '?md=' + child.course.id,
+                videoLink: meta.videoLink || null, videoId: meta.videoId || null,
+                videoStream: meta.videoStream || null
+              });
+            }
+          }
+          return lessons;
+        } catch(e) { return []; }
+      },
+      args: [moduleSlug, groupName]
+    });
+    return (results && results[0] && results[0].result) || [];
+  } catch(err) {
+    console.error('[SDC] extractLessons error:', err.message);
+    return [];
+  }
+}
+
+async function extractMeta(tabId, lessonName, groupId) {
+  try {
+    var results = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function(lName, gId) {
+        try {
+          var el = document.getElementById('__NEXT_DATA__');
+          if (!el) return { title: lName, pageUrl: location.href };
+          var nd = JSON.parse(el.textContent);
+          var pp = nd.props && nd.props.pageProps;
+          var selMod = pp ? pp.selectedModule : null;
+          var meta = { title: lName, videoUrl: '', videoStream: '', videoType: '',
+            videoDurationMs: 0, videoThumbnail: '', videoId: null, resources: [],
+            description: '', pageUrl: location.href };
+
+          function find(children, id) {
+            if (!children) return null;
+            for (var i = 0; i < children.length; i++) {
+              if (children[i].course && children[i].course.id === id) return children[i].course;
+              if (children[i].children) { var f = find(children[i].children, id); if (f) return f; }
+            }
+            return null;
+          }
+
+          var mod = (pp && pp.course) ? find(pp.course.children, selMod) : null;
+          if (mod && mod.metadata) {
+            var m = mod.metadata;
+            meta.videoUrl = m.videoLink || '';
+            meta.videoStream = m.videoStream || '';
+            meta.videoId = m.videoId || null;
+            meta.videoDurationMs = m.videoLenMs || 0;
+            meta.videoThumbnail = m.videoThumbnail || '';
+            meta.description = m.desc || m.description || '';
+
+            var vl = (meta.videoUrl || '').toLowerCase();
+            if (vl.indexOf('youtube') !== -1 || vl.indexOf('youtu.be') !== -1) meta.videoType = 'YouTube';
+            else if (vl.indexOf('loom') !== -1) meta.videoType = 'Loom';
+            else if (vl.indexOf('vimeo') !== -1) meta.videoType = 'Vimeo';
+            else if (vl.indexOf('wistia') !== -1) meta.videoType = 'Wistia';
+            else if (meta.videoId) meta.videoType = 'Skool';
+
+            if (m.resources) {
+              try {
+                var res = typeof m.resources === 'string' ? JSON.parse(m.resources) : m.resources;
+                if (Array.isArray(res)) {
+                  meta.resources = [];
+                  for (var i = 0; i < res.length; i++) {
+                    meta.resources.push({
+                      title: res[i].title || 'Untitled',
+                      fileName: res[i].file_name || null,
+                      contentType: res[i].file_content_type || null,
+                      downloadUrl: (res[i].file_id && gId) ? 'https://assets.skool.com/f/' + gId + '/' + res[i].file_id : null
+                    });
+                  }
+                }
+              } catch(e) {}
+            }
+          }
+          return meta;
+        } catch(e) { return { title: lName, error: e.message, pageUrl: location.href }; }
+      },
+      args: [lessonName, groupId]
+    });
+    return (results && results[0] && results[0].result) || { title: lessonName };
+  } catch(err) {
+    console.error('[SDC] extractMeta error:', err.message);
+    return { title: lessonName, error: err.message };
+  }
+}
+
+async function captureHtml(tabId) {
+  try {
+    // Inject content script then ask it to capture HTML
+    await chrome.scripting.executeScript({ target: { tabId: tabId }, files: ['content.js'] });
+    await sleep(500);
+    var response = await chrome.tabs.sendMessage(tabId, { action: 'captureHtml' });
+    return response ? response.html : null;
+  } catch(err) {
+    console.error('[SDC] captureHtml error:', err.message);
+    return null;
+  }
+}
+
+async function getVideoIframe(tabId) {
+  try {
+    var results = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function() {
+        var iframes = document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          var src = iframes[i].src || '';
+          if (src.indexOf('youtube.com') !== -1 || src.indexOf('loom.com') !== -1 ||
+              src.indexOf('vimeo.com') !== -1 || src.indexOf('wistia') !== -1) return src;
+        }
+        return '';
+      }
+    });
+    return (results && results[0]) ? results[0].result : '';
+  } catch(err) { return ''; }
+}
+
+async function clickAndGetM3U8(tabId) {
+  // Find play button position
+  try {
+    var posResults = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function() {
+        var dur = document.querySelector('[class*="VideoDuration"]');
+        if (dur) {
+          var el = dur;
+          for (var i = 0; i < 10; i++) {
+            el = el.parentElement;
+            if (!el) break;
+            var r = el.getBoundingClientRect();
+            if (r.width > 300 && r.height > 150)
+              return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+          }
+        }
+        var cover = document.querySelector('[class*="CoverImage"], [class*="VideoPlayer"]');
+        if (cover) {
+          var r2 = cover.getBoundingClientRect();
+          return { x: Math.round(r2.x + r2.width / 2), y: Math.round(r2.y + r2.height / 2) };
+        }
+        return null;
+      }
+    });
+
+    var pos = posResults && posResults[0] ? posResults[0].result : null;
+    if (!pos) return null;
+
+    // CDP click to trigger player
+    await cdpClick(tabId, pos.x, pos.y);
+    await sleep(4000);
+
+    // Poll for mux-player + M3U8
+    for (var attempt = 0; attempt < 12; attempt++) {
+      await sleep(2000);
+      var checkResults = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: function() {
+          var mux = document.querySelector('mux-player');
+          if (!mux) return null;
+          var urls = [];
+          var entries = performance.getEntries();
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].name.indexOf('.m3u8') !== -1) urls.push(entries[i].name);
+          }
+          return {
+            playbackId: mux.getAttribute('playback-id'),
+            customDomain: mux.getAttribute('custom-domain') || 'video.skool.com',
+            m3u8Url: urls.length > 0 ? urls[0] : ''
+          };
+        }
+      });
+      var data = checkResults && checkResults[0] ? checkResults[0].result : null;
+      if (data && data.m3u8Url) return data;
+      if (data && data.playbackId) {
+        data.m3u8Url = 'https://' + data.customDomain + '/' + data.playbackId + '.m3u8';
+        return data;
+      }
+    }
+  } catch(err) {
+    console.error('[SDC] clickAndGetM3U8 error:', err.message);
+  }
+  return null;
+}
+
+async function markComplete(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function() {
+        var btns = document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+          var svg = btns[i].querySelector('svg');
+          if (!svg) continue;
+          var vb = svg.getAttribute('viewBox');
+          if (vb === '0 0 40 40') return; // already done
+          if (vb === '0 0 24 24' && svg.querySelectorAll('path').length >= 2) {
+            btns[i].click();
+            return;
+          }
+        }
+      }
+    });
+    await sleep(2000);
+  } catch(err) {}
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+function sanitize(name) {
+  return (name || '').replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim().substring(0, 100);
+}
+
+async function postBackend(path, data) {
+  try {
+    await fetch(BACKEND + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch(err) {
+    console.error('[SDC] Backend POST failed:', path, err.message);
+  }
+}
+
+async function captureScreenshot(tabId) {
+  if (!tabId) {
+    var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    tabId = tabs[0] ? tabs[0].id : null;
+  }
+  if (!tabId) return null;
+  try {
+    var dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+    return { dataUrl: dataUrl };
+  } catch(err) {
+    console.error('[SDC] Screenshot error:', err.message);
+    return null;
+  }
+}
+
+async function cdpClick(tabId, x, y) {
+  try {
+    await chrome.debugger.attach({ tabId: tabId }, '1.3');
+    var opts = { x: x, y: y, button: 'left', clickCount: 1 };
+    await chrome.debugger.sendCommand({ tabId: tabId }, 'Input.dispatchMouseEvent',
+      Object.assign({ type: 'mousePressed' }, opts));
+    await chrome.debugger.sendCommand({ tabId: tabId }, 'Input.dispatchMouseEvent',
+      Object.assign({ type: 'mouseReleased' }, opts));
+    await chrome.debugger.detach({ tabId: tabId });
+  } catch(err) {
+    console.error('[SDC] cdpClick error:', err.message);
+    try { await chrome.debugger.detach({ tabId: tabId }); } catch(e) {}
+  }
+}
+
+console.log('[SDC] Service worker loaded');

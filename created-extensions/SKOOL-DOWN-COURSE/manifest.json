@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "SKOOL-DOWN-COURSE",
+  "version": "1.0.0",
+  "description": "Navigate Skool courses, extract structure, capture screenshots, and download videos via Python backend",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "downloads",
+    "storage",
+    "offscreen",
+    "debugger"
+  ],
+  "host_permissions": [
+    "https://www.skool.com/*",
+    "https://*.skool.com/*",
+    "https://*.video.skool.com/*",
+    "https://*.b-cdn.net/*",
+    "http://localhost:9876/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.skool.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
