@@ -16,13 +16,13 @@ Your app  -->  POST /prompt  -->  Python server (:8767)
 
 1. Open `chrome://extensions` in Chrome
 2. Enable **Developer mode** (top right toggle)
-3. Click **Load unpacked** and select this folder (`chatgpt-api/`)
+3. Click **Load unpacked** and select `chatgpt-api-extension/`
 4. Open [https://chatgpt.com/](https://chatgpt.com/) and make sure you're logged in
 
 ### 2. Set up the API server
 
 ```bash
-cd backend
+cd chatgpt-api-backend
 setup.bat
 ```
 
@@ -31,7 +31,7 @@ This creates a Python venv and installs `fastapi`, `uvicorn`, `websockets`.
 ### 3. Start the server
 
 ```bash
-cd backend
+cd chatgpt-api-backend
 run.bat
 ```
 
@@ -58,7 +58,7 @@ curl -X POST http://localhost:8767/prompt ^
 }
 ```
 
-**VS Code REST Client:** open `backend/test.rest` and click "Send Request" above any block.
+**VS Code REST Client:** open `chatgpt-api-backend/test.rest` and click "Send Request" above any block.
 
 **Extension popup:** click the extension icon in Chrome toolbar, type a prompt, click Send.
 
@@ -108,19 +108,21 @@ curl -X POST http://localhost:8767/prompt ^
 
 ```
 chatgpt-api/
-├── manifest.json          # Chrome extension manifest (MV3)
-├── js/
-│   ├── background.js      # CDP automation + WebSocket client
-│   └── popup.js           # Extension popup logic
-├── html/
-│   └── popup.html         # Extension popup UI
-├── css/
-│   └── popup.css          # Popup styling
-└── backend/
-    ├── api_server.py      # FastAPI REST server + WebSocket relay
-    ├── setup.bat           # One-time: create venv + install deps
-    ├── run.bat             # Start the API server
-    └── test.rest           # REST Client test file (VS Code)
+├── README.md
+├── chatgpt-api-extension/     # Load this in Chrome
+│   ├── manifest.json          # Chrome extension manifest (MV3)
+│   ├── js/
+│   │   ├── background.js      # CDP automation + WebSocket client
+│   │   └── popup.js           # Extension popup logic
+│   ├── html/
+│   │   └── popup.html         # Extension popup UI
+│   └── css/
+│       └── popup.css          # Popup styling
+└── chatgpt-api-backend/
+    ├── api_server.py          # FastAPI REST server + WebSocket relay
+    ├── setup.bat              # One-time: create venv + install deps
+    ├── run.bat                # Start the API server
+    └── test.rest              # REST Client test file (VS Code)
 ```
 
 ## Tips
