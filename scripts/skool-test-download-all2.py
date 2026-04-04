@@ -4,7 +4,7 @@ Same tab.
 """
 import asyncio, json, sys, os, base64
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from python.core.server import WebSocketServer
+from ai_web_auto_python.core.server import WebSocketServer
 from aiohttp import ClientSession, ClientTimeout
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 

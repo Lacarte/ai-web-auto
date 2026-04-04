@@ -2,7 +2,7 @@
 Main entry point — BrowserAgent high-level API.
 
 Usage:
-    from python.automation_controller import BrowserAgent
+    from ai_web_auto_python.automation_controller import BrowserAgent
 
     agent = BrowserAgent()
     await agent.connect()

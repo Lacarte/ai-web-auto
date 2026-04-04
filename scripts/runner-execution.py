@@ -27,8 +27,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from python.core.server import WebSocketServer
-from python.core.models import Command, ResponseStatus
+from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_python.core.models import Command, ResponseStatus
 from loguru import logger
 
 # ── Config ────────────────────────────────────────────────────────────────────

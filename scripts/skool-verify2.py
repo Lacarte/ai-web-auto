@@ -1,7 +1,7 @@
 """Quick check of course.children structure inside a module."""
 import asyncio, json, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from python.core.server import WebSocketServer
+from ai_web_auto_python.core.server import WebSocketServer
 
 async def run_js(s, script):
     resp = await s.execute_script(script)

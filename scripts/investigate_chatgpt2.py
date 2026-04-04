@@ -10,8 +10,8 @@ import sys
 # Fix Windows console encoding
 sys.stdout.reconfigure(encoding='utf-8')
 
-from python.core.server import WebSocketServer
-from python.core.models import Command
+from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_python.core.models import Command
 
 
 async def save_ss(s, name):

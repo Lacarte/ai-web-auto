@@ -25,9 +25,9 @@ if "%~1"=="" (
     echo [MODE] Discover + Generate with demo prompt
     echo [INFO] Make sure Chrome extension is loaded and ImageFX is open.
     echo.
-    python -m python.tasks.imagefx_auto --prompt "A cyberpunk city at sunset with neon lights reflecting on wet streets"
+    python -m ai_web_auto_python.tasks.imagefx_auto --prompt "A cyberpunk city at sunset with neon lights reflecting on wet streets"
 ) else (
-    python -m python.tasks.imagefx_auto %*
+    python -m ai_web_auto_python.tasks.imagefx_auto %*
 )
 
 echo.
