@@ -5,8 +5,8 @@ import base64
 import os
 import time
 
-from ai_web_auto_python.core.server import WebSocketServer
-from ai_web_auto_python.core.models import Command
+from ai_web_auto_backend.core.server import WebSocketServer
+from ai_web_auto_backend.core.models import Command
 
 
 async def save_ss(s, name):

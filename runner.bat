@@ -39,7 +39,7 @@ echo   extract              - Extract page text
 echo   task ^<objective^>     - Run AI automation task
 echo.
 
-python -m ai_web_auto_python.automation_controller
+python -m ai_web_auto_backend.automation_controller
 
 echo.
 echo [INFO] Server stopped.

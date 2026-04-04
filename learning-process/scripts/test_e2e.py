@@ -3,7 +3,7 @@ import asyncio, json, base64, sys, os, time
 os.environ["PYTHONIOENCODING"] = "utf-8"
 sys.stdout.reconfigure(encoding='utf-8', errors='replace') if hasattr(sys.stdout, 'reconfigure') else None
 sys.path.insert(0, ".")
-from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_backend.core.server import WebSocketServer
 
 OUT = "output/learner"
 
@@ -112,7 +112,7 @@ async def main():
     # 5. Close panel (Escape via CDP)
     print("\n5. Close panel...")
     # Use CDP Escape
-    from ai_web_auto_python.core.models import Command
+    from ai_web_auto_backend.core.models import Command
     await s.send_command(Command(action="type_cdp", params={"text": "", "xpath": ""}))
     # Above just attaches debugger; now we need to send Escape directly
     # Actually let's just click outside the panel

@@ -6,7 +6,7 @@ A CDP-first browser automation platform that learns how to interact with any web
 ## Project Structure
 ```
 ai-web-auto-extension/     # AI Web-Auto - the learning/discovery Chrome extension
-ai_web_auto_python/        # WebSocket server + AI agent + utilities
+ai_web_auto_backend/        # WebSocket server + AI agent + utilities
 created-extensions/        # Standalone extensions produced by the platform
   skool-down-course/
     skool-down-course-extension/  # Skool course downloader Chrome extension
@@ -41,7 +41,7 @@ runner.bat
 ```
 Or directly:
 ```
-venv\Scripts\python -m ai_web_auto_python.automation_controller
+venv\Scripts\python -m ai_web_auto_backend.automation_controller
 ```
 
 ### 4. Use commands
@@ -116,7 +116,7 @@ This runs a step list with screenshots, verification, selector learning, and sel
 
 ### Option D: Manual discovery
 ```python
-from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_backend.core.server import WebSocketServer
 s = WebSocketServer()
 await s.start()
 await s.wait_for_connection(timeout=60)
@@ -235,10 +235,10 @@ DON'T: assume success because the UI looked right once
 |------|---------|
 | `ai-web-auto-extension/js/service-worker.js` | CDP engine + WS client + command router |
 | `ai-web-auto-extension/js/content/content-main.js` | Data extraction + fallback only |
-| `ai_web_auto_python/core/server.py` | WebSocket server with CDP/type commands |
-| `ai_web_auto_python/core/models.py` | Pydantic models for command protocol |
-| `ai_web_auto_python/automation_controller.py` | BrowserAgent high-level API |
-| `ai_web_auto_python/ai/prompts.py` | Claude action prompt rules for the AI agent |
+| `ai_web_auto_backend/core/server.py` | WebSocket server with CDP/type commands |
+| `ai_web_auto_backend/core/models.py` | Pydantic models for command protocol |
+| `ai_web_auto_backend/automation_controller.py` | BrowserAgent high-level API |
+| `ai_web_auto_backend/ai/prompts.py` | Claude action prompt rules for the AI agent |
 | `learning-process/scripts/learner.py` | Self-learning automation loop |
 | `learning-process/scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
 | `learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |

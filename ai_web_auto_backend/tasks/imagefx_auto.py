@@ -25,8 +25,8 @@ from loguru import logger
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from ai_web_auto_python.core.server import WebSocketServer
-from ai_web_auto_python.core.models import Command, ResponseStatus
+from ai_web_auto_backend.core.server import WebSocketServer
+from ai_web_auto_backend.core.models import Command, ResponseStatus
 
 
 IMAGEFX_URL = "https://labs.google/fx/tools/flow/"

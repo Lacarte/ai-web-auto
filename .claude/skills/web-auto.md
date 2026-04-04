@@ -22,7 +22,7 @@ TRIGGER: User asks to automate a website, build a browser extension, scrape a si
 
 ### Phase 1: Connect and Baseline
 ```python
-from python.core.server import WebSocketServer
+from ai_web_auto_backend.core.server import WebSocketServer
 s = WebSocketServer()  # port 8765, token "local-dev-token"
 await s.start()
 await s.wait_for_connection(timeout=60)

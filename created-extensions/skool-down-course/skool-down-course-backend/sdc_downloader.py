@@ -19,8 +19,8 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-from ai_web_auto_python.core.server import WebSocketServer
-from ai_web_auto_python.core.models import Command
+from ai_web_auto_backend.core.server import WebSocketServer
+from ai_web_auto_backend.core.models import Command
 
 try:
     from loguru import logger

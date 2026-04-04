@@ -1,7 +1,7 @@
 """Check which modules are locked vs unlocked on the classroom page. Same tab."""
 import asyncio, json, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_backend.core.server import WebSocketServer
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 async def run_js(s, script):

@@ -8,8 +8,8 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from ai_web_auto_python.core.server import WebSocketServer
-from ai_web_auto_python.core.models import Command
+from ai_web_auto_backend.core.server import WebSocketServer
+from ai_web_auto_backend.core.models import Command
 
 
 async def run_js(s, script):

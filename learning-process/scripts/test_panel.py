@@ -3,7 +3,7 @@ import asyncio, json, base64, sys, os
 os.environ["PYTHONIOENCODING"] = "utf-8"
 sys.stdout.reconfigure(encoding='utf-8', errors='replace') if hasattr(sys.stdout, 'reconfigure') else None
 sys.path.insert(0, ".")
-from ai_web_auto_python.core.server import WebSocketServer
+from ai_web_auto_backend.core.server import WebSocketServer
 
 URL = "https://labs.google/fx/tools/flow/project/fdd97a0e-a74c-483e-8869-261e6db306c2"
 
