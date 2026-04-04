@@ -88,9 +88,10 @@ class AIAgent:
             # Wait for page load
             await self.server.wait_for("network_idle", timeout_ms=5000)
 
-        # Get initial state
+        # Get initial state and start DOM observation
         await self.server.screenshot()
         await self.server.extract("text")
+        await self.server.observe_start()
 
         for step in range(task.max_steps):
             task.steps_taken = step + 1
@@ -122,6 +123,7 @@ class AIAgent:
 
             # Check if done
             if action == "done":
+                await self.server.observe_stop()
                 result_data = action_dict.get("params", {}).get("result", {})
                 return TaskResult(
                     task_id=task.id, objective=task.objective, success=True,
@@ -160,6 +162,7 @@ class AIAgent:
                     fb_resp = await self._execute_action(fb)
                     task.action_history.append({**fb, "status": "success" if fb_resp.status == ResponseStatus.SUCCESS else "failure"})
 
+        await self.server.observe_stop()
         return TaskResult(
             task_id=task.id, objective=task.objective, success=False,
             steps_taken=task.max_steps, screenshots=screenshots,
@@ -169,6 +172,16 @@ class AIAgent:
 
     async def _decide_next_action(self, task: Task, step: int) -> dict[str, Any] | None:
         state = self.server.session
+
+        # Get DOM diff since last action (structured change analysis)
+        dom_changes = ""
+        try:
+            diff_resp = await self.server.observe_diff()
+            if diff_resp.status == ResponseStatus.SUCCESS:
+                dom_changes = diff_resp.data.extracted_data.get("summary", "")
+        except Exception:
+            pass  # non-critical — fall back to no DOM data
+
         prompt = PromptBuilder.build_action_prompt(
             url=state.browser.url,
             title=state.browser.title,
@@ -177,6 +190,7 @@ class AIAgent:
             action_history=task.action_history,
             step=step,
             max_steps=task.max_steps,
+            dom_changes=dom_changes,
         )
 
         messages = [{"role": "user", "content": prompt}]

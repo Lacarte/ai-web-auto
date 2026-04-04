@@ -186,6 +186,50 @@ Validate:
 - NEVER: hardcoded coordinates as a stored selector strategy
 - WHY: Radix UI / MUI often require trusted browser events. Programmatic `.click()` is not trusted.
 
+### Framework Click Escalation (when CDP click fails)
+When CDP click and `.click()` both fail on a React/Vue/Angular element, follow this strict order:
+1. **Verify first**: Use `document.elementFromPoint(x,y)` to confirm coordinates hit the right element. Check `window.devicePixelRatio`. Click a known-good element (nav link) to confirm CDP works at all.
+2. **Try framework internal props**: React stores handlers under `__reactProps$xxx`, Vue under `__vue__`, Angular under `__ng__`. Walk up the parent chain until you find one with an `onClick` handler, then call it directly with a minimal fake event: `el[propsKey].onClick({preventDefault(){}, stopPropagation(){}, nativeEvent:{stopImmediatePropagation(){}}, target:el, currentTarget:el, type:'click', bubbles:true})`.
+3. **If the action breaks the execution context** (all subsequent `execute_script` calls return empty): wrap everything in a **single Promise** inside one `Runtime.evaluate` call. The Promise triggers the action, polls with `setTimeout` for new elements to appear, interacts with them, then resolves. CDP's `awaitPromise:true` keeps the script alive through framework re-renders.
+
+### React-Specific Input Filling
+- NEVER set `input.value` directly — React ignores it because it tracks state internally.
+- USE the native HTML prototype setter + dispatch input event:
+  ```javascript
+  var setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  setter.call(input, 'text');
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  ```
+- For contentEditable / ProseMirror / TipTap editors:
+  ```javascript
+  editor.focus();
+  editor.innerHTML = '<p>Content</p>';
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+  ```
+
+### Single-Promise Pattern (for framework re-render scenarios)
+When triggering a UI action causes a full framework re-render that kills the CDP execution context,
+do everything in one `Runtime.evaluate` call:
+```javascript
+new Promise(function(resolve) {
+    // 1. Trigger the action (e.g., React onClick via __reactProps)
+    triggerAction();
+    // 2. Poll for new elements to appear
+    var poll = function() {
+        var el = document.querySelector('target-selector');
+        if (el) {
+            // 3. Interact with the new elements
+            fillForm(el);
+            resolve(JSON.stringify({success: true}));
+        } else {
+            setTimeout(poll, 200);
+        }
+    };
+    setTimeout(poll, 500);
+})
+```
+This pattern keeps the script alive through re-renders because CDP awaits the Promise.
+
 ### Hidden / Hover-Only Buttons (Tailwind `group-hover`, `opacity-0`, `pointer-events-none`)
 - Many modern UIs hide action buttons behind CSS hover states (download, share, delete, edit overlays).
 - CDP `mouseMoved` does NOT reliably trigger Tailwind `group-hover` or CSS `:hover` pseudo-classes.

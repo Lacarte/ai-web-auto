@@ -110,6 +110,20 @@ class BrowserAgent:
     async def wait_for(self, condition: str, value: str = "", timeout_ms: int = 10000) -> Response:
         return await self.server.wait_for(condition, value, timeout_ms)
 
+    # ── DOM Observation ──────────────────────────────────────────────────
+
+    async def observe_start(self, selector: str = "body") -> Response:
+        """Start DOM observation — takes initial snapshot of target element."""
+        return await self.server.observe_start(selector)
+
+    async def observe_diff(self) -> Response:
+        """Get structured DOM diff since last snapshot. Returns changes, stats, and AI summary."""
+        return await self.server.observe_diff()
+
+    async def observe_stop(self) -> Response:
+        """Stop DOM observation."""
+        return await self.server.observe_stop()
+
     # ── Confirmation callback ────────────────────────────────────────────
 
     def set_confirmation_callback(self, callback: Callable):
@@ -135,6 +149,9 @@ async def main():
     print("  type <text>          — Type into focused input (CDP)")
     print("  click <selector>     — Click element by CSS/XPath")
     print("  extract              — Extract page text")
+    print("  observe [selector]   — Start DOM observation (default: body)")
+    print("  diff                 — Show DOM changes since last snapshot")
+    print("  unobserve            — Stop DOM observation")
     print("  task <objective>     — Run AI-driven automation task")
     print("  quit                 — Exit\n")
 
@@ -189,7 +206,8 @@ async def main():
                 return JSON.stringify(results);
             """)
             import json as _json
-            elements = _json.loads(r.data.extracted_data.get("result", "[]"))
+            raw = r.data.extracted_data.get("result", "[]")
+            elements = _json.loads(raw) if isinstance(raw, str) else (raw if isinstance(raw, list) else [])
             print(f"  Found {len(elements)} interactive elements:")
             for el in elements[:30]:
                 print(f"    [{el['tag']}] text=\"{el['text']}\" id={el['id']} role={el['role']}")
@@ -245,6 +263,40 @@ async def main():
             r = await agent.extract("text")
             text = r.data.extracted_data.get("text", "")
             print(f"  Page text ({len(text)} chars): {text[:200]}")
+            continue
+
+        if cmd.lower().startswith("observe"):
+            selector = cmd[7:].strip() or "body"
+            r = await agent.observe_start(selector)
+            print(f"  Observing: {selector} [{r.status}]")
+            continue
+
+        if cmd.lower() == "diff":
+            r = await agent.observe_diff()
+            if r.status == "success":
+                data = r.data.extracted_data
+                print(f"\n{data.get('summary', 'No changes')}\n")
+                stats = data.get("stats", {})
+                if stats.get("total", 0) > 0:
+                    changes = data.get("changes", [])
+                    for c in changes[:20]:
+                        if c["type"] == "add":
+                            print(f"    + <{c['tag']}> {c['selector']} -- {c['reason']}")
+                        elif c["type"] == "rem":
+                            print(f"    - <{c['tag']}> {c['selector']} -- {c['reason']}")
+                        elif c["type"] == "attr":
+                            print(f"    ~ [{c['attribute']}] {c['selector']} -- {c['reason']}")
+                        elif c["type"] == "text":
+                            print(f"    ~ text {c['selector']}: \"{c.get('oldValue','')}\" -> \"{c.get('newValue','')}\"")
+                    if len(changes) > 20:
+                        print(f"    ... and {len(changes) - 20} more")
+            else:
+                print(f"  Diff failed: {r.error}")
+            continue
+
+        if cmd.lower() == "unobserve":
+            r = await agent.observe_stop()
+            print(f"  Stopped observation [{r.status}]")
             continue
 
         # ── AI task ──────────────────────────────────────────────────────

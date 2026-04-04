@@ -170,20 +170,52 @@
     await new Promise(r => setTimeout(r, 1000));
   }
 
-  // ── DOM Mutation Observer — report significant changes ──────────────
+  // ── DOM Mutation Observer — report significant changes with context ──
 
   let _mutationTimeout = null;
-  const observer = new MutationObserver(() => {
+  let _pendingMutations = [];
+  const observer = new MutationObserver((mutations) => {
+    _pendingMutations.push(...mutations);
     clearTimeout(_mutationTimeout);
     _mutationTimeout = setTimeout(() => {
-      chrome.runtime.sendMessage({
-        channel: 'content-to-bg',
-        payload: { type: 'event', event: 'dom_mutation', data: { url: location.href } },
-      }).catch(() => {});
+      // Summarize pending mutations into structured counts
+      let adds = 0, removes = 0, attrs = 0, texts = 0;
+      const significantTags = new Set();
+      for (const m of _pendingMutations) {
+        if (m.type === 'childList') {
+          adds += m.addedNodes.length;
+          removes += m.removedNodes.length;
+          for (const n of m.addedNodes) {
+            if (n.nodeType === 1) significantTags.add(n.tagName.toLowerCase());
+          }
+        } else if (m.type === 'attributes') {
+          attrs++;
+        } else if (m.type === 'characterData') {
+          texts++;
+        }
+      }
+      _pendingMutations = [];
+
+      // Only report if there were meaningful changes
+      const total = adds + removes + attrs + texts;
+      if (total > 0) {
+        chrome.runtime.sendMessage({
+          channel: 'content-to-bg',
+          payload: {
+            type: 'event',
+            event: 'dom_mutation',
+            data: {
+              url: location.href,
+              stats: { adds, removes, attrs, texts, total },
+              tags: [...significantTags].slice(0, 10),
+            },
+          },
+        }).catch(() => {});
+      }
     }, 1000);
   });
   if (document.body) {
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
   }
 
   // ── Dialog Interception ─────────────────────────────────────────────

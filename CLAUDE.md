@@ -52,6 +52,9 @@ At the `>` prompt:
 - `type <text>` - Type into focused input via CDP
 - `click <selector>` - Click element by CSS selector or XPath
 - `extract` - Extract visible page text
+- `observe [selector]` - Start DOM observation (default: body) — takes initial snapshot
+- `diff` - Show structured DOM changes since last snapshot (adds/removes/attr/text with reasons)
+- `unobserve` - Stop DOM observation
 - `task <objective>` - Run AI-driven automation task
 - `quit` - Exit
 
@@ -175,6 +178,22 @@ DON'T: el.click() via executeScript
 DON'T: hardcoded coordinates
 ```
 
+### Framework Click Escalation (when CDP click fails on React/Vue/Angular)
+```
+1. VERIFY: elementFromPoint(x,y) confirms right element; click a nav link to prove CDP works
+2. TRY __reactProps: walk up parent chain, find __reactProps$xxx.onClick, call it with fake event
+3. IF CONTEXT BREAKS (execute_script returns empty after action): wrap trigger + poll + interact
+   in a single Promise inside one Runtime.evaluate call — CDP awaitPromise keeps it alive
+```
+
+### React Input Filling
+```
+DO: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, text)
+    + input.dispatchEvent(new Event('input', {bubbles: true}))
+DO: editor.innerHTML = '<p>text</p>' + dispatch input event (for ProseMirror/TipTap)
+DON'T: input.value = 'text'  # React ignores it, internal state stays empty
+```
+
 ### Finding elements: MAIN world `executeScript`
 ```
 DO: chrome.scripting.executeScript({ world: "MAIN" })  # bypasses CSP
@@ -220,13 +239,39 @@ DON'T: attach/detach between clicks
 DON'T: all_frames: true
 ```
 
+### DOM Observation (structured change detection)
+The platform includes a DOM diffing engine (`dom-observer.js`) that provides structured
+analysis of page changes — not just "something changed" but exactly WHAT changed and WHY.
+
+```
+DO: use observe_start before actions, observe_diff after to verify
+DO: check diff summary for loading/error/success states before proceeding
+DO: use DOM diff data alongside screenshots for AI decision-making
+DO: check for "Loading state applied" in diff → wait before next action
+DO: check for "Error state applied" in diff → change strategy
+DON'T: rely solely on screenshots for verification — DOM diff catches invisible state changes
+```
+
+The AI agent automatically uses DOM observation during `task` execution. For manual/scripted
+flows, use `observe`/`diff`/`unobserve` CLI commands or the Python API:
+```python
+await server.observe_start("#my-form")   # snapshot a specific section
+# ... perform actions ...
+resp = await server.observe_diff()        # structured diff with reasons
+changes = resp.data.extracted_data["changes"]  # [{type, tag, selector, reason, ...}]
+summary = resp.data.extracted_data["summary"]  # human-readable AI-friendly summary
+await server.observe_stop()
+```
+
 ### Verification rules
 ```
 DO: verify typed text exists in the intended input
 DO: verify a click changed state, not just that the click returned
+DO: use observe_diff to confirm DOM state changes after interactions
 DO: poll for ready signals such as active tabs, result images, or download buttons
 DO: save only proven steps to recipes and generated extensions
 DON'T: assume success because the UI looked right once
+DON'T: ignore DOM diff showing error/loading states
 ```
 
 ## Key Files
@@ -234,6 +279,7 @@ DON'T: assume success because the UI looked right once
 | File | Purpose |
 |------|---------|
 | `ai-web-auto-extension/js/service-worker.js` | CDP engine + WS client + command router |
+| `ai-web-auto-extension/js/modules/dom-observer.js` | DOM diffing engine — snapshot comparison, reason inference |
 | `ai-web-auto-extension/js/content/content-main.js` | Data extraction + fallback only |
 | `ai_web_auto_backend/core/server.py` | WebSocket server with CDP/type commands |
 | `ai_web_auto_backend/core/models.py` | Pydantic models for command protocol |

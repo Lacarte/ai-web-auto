@@ -18,10 +18,14 @@
 
 import { WebSocketClient } from './modules/ws-client.js';
 import { MessageRouter } from './modules/message-router.js';
+import { diffSnapshots, computeStats, summarizeForAI } from './modules/dom-observer.js';
 
 const WS_URL = 'ws://localhost:8765';
 const ws = new WebSocketClient(WS_URL);
 const router = new MessageRouter(ws);
+
+// ── DOM Observer state (per-tab snapshots for structured diffing) ──────────
+const domSnapshots = new Map(); // tabId → { selector, html, recording, intervalId }
 
 // Track the tab we're automating
 let targetTabId = null;
@@ -720,6 +724,252 @@ ws.onCommand(async (command) => {
         await sleep(params.delay_after || 300);
 
         ws.sendResponse(id, 'success', { extracted_data: { hovered: true, x, y } });
+        return;
+      }
+
+      // ── OBSERVE_START — begin DOM observation on a selector or full page ─
+      case 'observe_start': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const selector = params.selector || 'body';
+        const intervalMs = params.interval || 1000;
+
+        // Capture initial HTML snapshot
+        const [initResult] = await chrome.scripting.executeScript({
+          target: { tabId, allFrames: false },
+          world: 'MAIN',
+          func: (sel) => {
+            const el = sel === 'body' ? document.body : (document.querySelector(sel) || document.body);
+            return el.outerHTML.slice(0, 500000);
+          },
+          args: [selector],
+        });
+
+        // Clear previous observer for this tab
+        const prev = domSnapshots.get(tabId);
+        if (prev?.intervalId) clearInterval(prev.intervalId);
+
+        domSnapshots.set(tabId, {
+          selector,
+          html: initResult.result,
+          recording: true,
+          intervalId: null,
+          changes: [],
+          stats: { total: 0, add: 0, rem: 0, attr: 0, text: 0 },
+        });
+
+        ws.sendResponse(id, 'success', { extracted_data: { observing: selector } });
+        return;
+      }
+
+      // ── OBSERVE_DIFF — snapshot current DOM and diff against last snapshot ─
+      case 'observe_diff': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const obs = domSnapshots.get(tabId);
+        if (!obs) { ws.sendResponse(id, 'failure', {}, 'No observation started — call observe_start first'); return; }
+
+        // Capture current HTML
+        const [currResult] = await chrome.scripting.executeScript({
+          target: { tabId, allFrames: false },
+          world: 'MAIN',
+          func: (sel) => {
+            const el = sel === 'body' ? document.body : (document.querySelector(sel) || document.body);
+            return el.outerHTML.slice(0, 500000);
+          },
+          args: [obs.selector],
+        });
+
+        const currHTML = currResult.result;
+
+        // Diff using the DOM observer engine (runs in SW context with temp DOM elements)
+        // Since service worker has no DOM, we run the diff in the page context
+        const [diffResult] = await chrome.scripting.executeScript({
+          target: { tabId, allFrames: false },
+          world: 'MAIN',
+          func: (prevHTML, currentHTML) => {
+            // Inline the diff logic for page-context execution
+            function _getSelector(el) {
+              if (!el || el.nodeType !== 1) return '';
+              const parts = [];
+              let cur = el;
+              while (cur && cur !== document.body && cur !== document.documentElement) {
+                const tag = cur.tagName.toLowerCase();
+                if (cur.id) { parts.unshift(tag + '#' + cur.id); break; }
+                const cls = Array.from(cur.classList || []).filter(c => !/^(awa-|sar-)/.test(c)).slice(0, 2).join('.');
+                let sel = cls ? tag + '.' + cls : tag;
+                const parent = cur.parentElement;
+                if (parent) {
+                  const siblings = parent.querySelectorAll(':scope > ' + tag);
+                  if (siblings.length > 1) sel += ':nth-child(' + (Array.from(siblings).indexOf(cur) + 1) + ')';
+                }
+                parts.unshift(sel);
+                cur = cur.parentElement;
+              }
+              return parts.join(' > ');
+            }
+            function _getXPath(el, root) {
+              if (!el || el.nodeType !== 1) return '';
+              const parts = [];
+              let cur = el;
+              while (cur && cur !== root && cur !== document.documentElement) {
+                const tag = cur.tagName.toLowerCase();
+                const parent = cur.parentElement;
+                if (parent) {
+                  const siblings = Array.from(parent.children).filter(c => c.tagName === cur.tagName);
+                  parts.unshift(tag + '[' + (siblings.indexOf(cur) + 1) + ']');
+                } else { parts.unshift(tag); }
+                cur = cur.parentElement;
+              }
+              return '/' + parts.join('/');
+            }
+            function _trunc(s, max = 200) {
+              if (!s) return '';
+              s = s.replace(/\s+/g, ' ').trim();
+              return s.length > max ? s.substring(0, max) + '...' : s;
+            }
+            function _inferReason(c) {
+              if (c.type === 'add') {
+                const t = c.tag;
+                if (t === 'script') return 'Script injected';
+                if (t === 'style' || t === 'link') return 'Stylesheet added';
+                if (/^(img|svg|canvas|video|picture)$/.test(t)) return 'Media element inserted';
+                if (t === 'iframe') return 'Iframe embedded';
+                if (/^(input|textarea|select)$/.test(t)) return 'Form element added';
+                if (/^(li|tr|td|option)$/.test(t)) return 'List/table item added';
+                if (/^(a|button)$/.test(t)) return 'Interactive element added';
+                return 'Element inserted';
+              }
+              if (c.type === 'rem') {
+                const t = c.tag;
+                if (/^(li|tr|td|option)$/.test(t)) return 'List/table item removed';
+                return 'Element removed';
+              }
+              if (c.type === 'attr') {
+                const attr = c.attribute;
+                if (attr === 'class') {
+                  const oC = (c.oldValue || '').split(/\s+/), nC = (c.newValue || '').split(/\s+/);
+                  const added = nC.filter(x => x && !oC.includes(x)), removed = oC.filter(x => x && !nC.includes(x));
+                  if (added.some(x => /hidden|hide|collapse|invisible|d-none/.test(x))) return 'Element hidden';
+                  if (removed.some(x => /hidden|hide|collapse|invisible|d-none/.test(x))) return 'Element shown';
+                  if (added.some(x => /active|selected|open|expanded/.test(x))) return 'Element activated';
+                  if (removed.some(x => /active|selected|open|expanded/.test(x))) return 'Element deactivated';
+                  if (added.some(x => /loading|spinner|pending/.test(x))) return 'Loading state applied';
+                  if (removed.some(x => /loading|spinner|pending/.test(x))) return 'Loading completed';
+                  if (added.some(x => /error|invalid|danger/.test(x))) return 'Error state applied';
+                  if (added.some(x => /success|valid|complete/.test(x))) return 'Success state applied';
+                  return 'CSS classes changed';
+                }
+                if (attr === 'disabled') return c.newValue === '(removed)' ? 'Element enabled' : 'Element disabled';
+                if (attr === 'value') return 'Input value changed';
+                if (/^aria-/.test(attr)) return 'ARIA state changed';
+                if (/^data-/.test(attr)) return 'Data attribute changed';
+                return 'Attribute "' + attr + '" modified';
+              }
+              if (c.type === 'text') {
+                const oL = (c.oldValue || '').length, nL = (c.newValue || '').length;
+                if (oL === 0 && nL > 0) return 'Text populated';
+                if (oL > 0 && nL === 0) return 'Text cleared';
+                return 'Text updated';
+              }
+              return 'DOM mutation';
+            }
+
+            const prev = document.createElement('div');
+            prev.innerHTML = prevHTML;
+            const curr = document.createElement('div');
+            curr.innerHTML = currentHTML;
+
+            const prevMap = {}, currMap = {};
+            prev.querySelectorAll('*').forEach(el => { const s = _getSelector(el); if (s) prevMap[s] = el; });
+            curr.querySelectorAll('*').forEach(el => { const s = _getSelector(el); if (s) currMap[s] = el; });
+
+            const changes = [];
+
+            // Added
+            for (const sel of Object.keys(currMap)) {
+              if (!prevMap[sel]) {
+                const el = currMap[sel];
+                const e = { type: 'add', tag: el.tagName.toLowerCase(), id: el.id || '', classes: Array.from(el.classList || []).join(' '), selector: sel, xpath: _getXPath(el, curr), html: _trunc(el.outerHTML, 150) };
+                e.reason = _inferReason(e);
+                changes.push(e);
+              }
+            }
+            // Removed
+            for (const sel of Object.keys(prevMap)) {
+              if (!currMap[sel]) {
+                const el = prevMap[sel];
+                const e = { type: 'rem', tag: el.tagName.toLowerCase(), id: el.id || '', classes: Array.from(el.classList || []).join(' '), selector: sel, xpath: _getXPath(el, prev), html: _trunc(el.outerHTML, 150) };
+                e.reason = _inferReason(e);
+                changes.push(e);
+              }
+            }
+            // Changed
+            for (const sel of Object.keys(currMap)) {
+              if (!prevMap[sel]) continue;
+              const pEl = prevMap[sel], cEl = currMap[sel];
+              const allA = new Set([...Array.from(pEl.attributes).map(a => a.name), ...Array.from(cEl.attributes).map(a => a.name)]);
+              for (const attr of allA) {
+                let oV = pEl.getAttribute(attr) || '', nV = cEl.getAttribute(attr) || '';
+                if (attr === 'class') { oV = oV.split(/\s+/).filter(c => !/^(awa-|sar-)/.test(c)).join(' ').trim(); nV = nV.split(/\s+/).filter(c => !/^(awa-|sar-)/.test(c)).join(' ').trim(); }
+                if (oV !== nV) {
+                  const e = { type: 'attr', tag: cEl.tagName.toLowerCase(), selector: sel, xpath: _getXPath(cEl, curr), attribute: attr, oldValue: _trunc(oV || '(none)', 80), newValue: _trunc(nV || '(removed)', 80) };
+                  e.reason = _inferReason(e);
+                  changes.push(e);
+                }
+              }
+              const pT = Array.from(pEl.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('');
+              const cT = Array.from(cEl.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('');
+              if (pT.trim() !== cT.trim() && (pT.trim() || cT.trim())) {
+                const e = { type: 'text', tag: cEl.tagName.toLowerCase(), selector: sel, xpath: _getXPath(cEl, curr), oldValue: _trunc(pT.trim(), 80), newValue: _trunc(cT.trim(), 80) };
+                e.reason = _inferReason(e);
+                changes.push(e);
+              }
+            }
+
+            const stats = { total: changes.length, add: 0, rem: 0, attr: 0, text: 0 };
+            for (const c of changes) { if (stats[c.type] !== undefined) stats[c.type]++; }
+
+            // Build AI summary
+            const lines = ['DOM changes: ' + stats.total + ' total (' + stats.add + ' added, ' + stats.rem + ' removed, ' + stats.attr + ' attr, ' + stats.text + ' text)'];
+            const rc = {};
+            for (const c of changes) { rc[c.reason] = (rc[c.reason] || 0) + 1; }
+            const sorted = Object.entries(rc).sort((a, b) => b[1] - a[1]);
+            if (sorted.length) {
+              lines.push('Summary:');
+              for (const [r, n] of sorted.slice(0, 10)) lines.push('  - ' + r + ' (x' + n + ')');
+            }
+
+            return { changes: changes.slice(0, 50), stats, summary: lines.join('\n') };
+          },
+          args: [obs.html, currHTML],
+        });
+
+        const { changes, stats, summary } = diffResult.result;
+
+        // Update stored snapshot
+        obs.html = currHTML;
+        obs.changes = changes;
+        obs.stats = stats;
+
+        ws.sendResponse(id, 'success', {
+          extracted_data: { changes, stats, summary, selector: obs.selector },
+        });
+        return;
+      }
+
+      // ── OBSERVE_STOP — stop DOM observation ──────────────────────────────
+      case 'observe_stop': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const obs = domSnapshots.get(tabId);
+        if (obs?.intervalId) clearInterval(obs.intervalId);
+        domSnapshots.delete(tabId);
+
+        ws.sendResponse(id, 'success', {});
         return;
       }
 

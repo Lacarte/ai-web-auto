@@ -227,6 +227,23 @@ class WebSocketServer:
             target={"method": method, "value": selector},
         ))
 
+    # ── DOM Observation ───────────────────────────────────────────────────
+
+    async def observe_start(self, selector: str = "body", interval: int = 1000) -> Response:
+        """Start DOM observation on a selector. Takes initial snapshot."""
+        return await self.send_command(Command(
+            action="observe_start",
+            params={"selector": selector, "interval": interval},
+        ))
+
+    async def observe_diff(self) -> Response:
+        """Diff current DOM against last snapshot. Returns structured changes."""
+        return await self.send_command(Command(action="observe_diff"))
+
+    async def observe_stop(self) -> Response:
+        """Stop DOM observation and clean up."""
+        return await self.send_command(Command(action="observe_stop"))
+
     # ── Event subscription ───────────────────────────────────────────────
 
     def on_event(self, event_type: str, handler: Callable):

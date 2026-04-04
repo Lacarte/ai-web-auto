@@ -102,10 +102,30 @@ class ExecutionRunner:
             cmd = parts[0]
             args = parts[1:] if len(parts) > 1 else []
 
+            # Start DOM observation before step for verification
+            try:
+                await self.server.send_command(Command(action="observe_start", params={"selector": "body"}))
+            except Exception:
+                pass
+
             success = False
             for attempt in range(MAX_RETRIES):
                 try:
                     result = await self.execute_step(cmd, args)
+
+                    # Get DOM diff to enrich step verification
+                    try:
+                        diff_resp = await self.server.send_command(Command(action="observe_diff"))
+                        if diff_resp.status == ResponseStatus.SUCCESS:
+                            diff_data = diff_resp.data.extracted_data
+                            dom_summary = diff_data.get("summary", "")
+                            dom_stats = diff_data.get("stats", {})
+                            if dom_stats.get("total", 0) > 0:
+                                logger.info(f"  DOM changes: {dom_summary.split(chr(10))[0]}")
+                                result["dom_changes"] = diff_data
+                    except Exception:
+                        pass
+
                     if result.get("success", True):
                         success = True
                         self.kb.learn_step({"step": self.step_num, "cmd": cmd, "args": args, "status": "success"})

@@ -40,6 +40,9 @@ class ActionType(str, Enum):
     DISCOVER = "discover"
     FIND = "find"
     HOVER_CDP = "hover"
+    OBSERVE_START = "observe_start"
+    OBSERVE_DIFF = "observe_diff"
+    OBSERVE_STOP = "observe_stop"
 
 
 class TargetMethod(str, Enum):

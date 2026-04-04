@@ -27,6 +27,9 @@ TASK: {objective}
 PREVIOUS ACTIONS ({step}/{max_steps} steps taken):
 {history}
 
+DOM CHANGES SINCE LAST ACTION:
+{dom_changes}
+
 RULES:
 1. Pick the single best next action with a clear expected outcome.
 2. Reuse a previously successful selector from history before proposing a new one.
@@ -36,6 +39,9 @@ RULES:
 6. Prefer "wait" for async loading or generation and "extract" for text or state checks before asking for an extra screenshot.
 7. If a confirmation dialog, login wall, or CAPTCHA appears, return action: "wait" so a human can intervene.
 8. If the objective is achieved, return action: "done" with extracted data in params.result.
+9. Use DOM_CHANGES to verify whether previous actions succeeded. Loading states, hidden/shown elements, and text updates tell you what actually happened — not just what the screenshot shows.
+10. If DOM_CHANGES shows a loading state was applied, wait for it to clear before proceeding.
+11. If DOM_CHANGES shows an error state, change strategy rather than repeating.
 
 Return JSON only - no markdown fences, no commentary:
 {{
@@ -57,6 +63,7 @@ Return JSON only - no markdown fences, no commentary:
         action_history: list[dict[str, Any]],
         step: int,
         max_steps: int,
+        dom_changes: str = "",
     ) -> str:
         elements_str = cls._format_elements(interactive_elements)
         history_str = cls._format_history(action_history)
@@ -68,6 +75,7 @@ Return JSON only - no markdown fences, no commentary:
             history=history_str or "  (none yet)",
             step=step,
             max_steps=max_steps,
+            dom_changes=dom_changes or "  (no observation active)",
         )
 
     @staticmethod
