@@ -3,25 +3,63 @@
 
 const BACKEND = 'http://localhost:9876';
 
-// Keepalive
+// Keepalive via alarms
 chrome.alarms.create('keepalive', { periodInMinutes: 0.25 });
-chrome.alarms.onAlarm.addListener(function() {});
+chrome.alarms.onAlarm.addListener(function() {
+  if (downloadRunning) {
+    console.log('[SDC] keepalive tick - download running');
+  }
+});
 
 var downloadRunning = false;
 var stopRequested = false;
+
+// Offscreen document keepalive - prevents SW termination during download
+async function ensureOffscreen() {
+  try {
+    var contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
+    if (!contexts || contexts.length === 0) {
+      await chrome.offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['WORKERS'],
+        justification: 'Keep service worker alive during download'
+      });
+      console.log('[SDC] Offscreen document created');
+    }
+  } catch(err) {
+    console.log('[SDC] Offscreen error (ok):', err.message);
+  }
+}
+
+async function closeOffscreen() {
+  try {
+    await chrome.offscreen.closeDocument();
+    console.log('[SDC] Offscreen document closed');
+  } catch(err) {}
+}
 
 // ============================================================
 // MESSAGE HANDLER
 // ============================================================
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+  if (msg.action === 'keepalive') {
+    sendResponse({ alive: true });
+    return false;
+  }
+
   if (msg.action === 'startDownload') {
     downloadRunning = true;
     stopRequested = false;
     console.log('[SDC SW] Received startDownload, modules:', msg.scanData ? msg.scanData.modules.length : 'NONE');
-    // Start download loop (fire and forget)
-    runDownload(msg.scanData, msg.options).catch(function(err) {
+    // Create offscreen doc to keep SW alive, then start download
+    ensureOffscreen().then(function() {
+      return runDownload(msg.scanData, msg.options);
+    }).catch(function(err) {
       console.error('[SDC SW] runDownload crashed:', err);
+    }).finally(function() {
+      downloadRunning = false;
+      closeOffscreen();
     });
     sendResponse({ success: true });
     return true;
@@ -102,12 +140,26 @@ async function runDownload(scanData, options) {
       var mod = modules[mi];
       console.log('[SDC] Module ' + (mi + 1) + '/' + modules.length + ': ' + mod.title);
 
-      // Navigate to module page
-      await goToPage(tabId, mod.url);
+      // Navigate to module page (skip if already there)
+      var currentTab = await chrome.tabs.get(tabId);
+      var currentBase = (currentTab.url || '').split('?')[0];
+      var targetBase = (mod.url || '').split('?')[0];
+      if (currentBase !== targetBase) {
+        await goToPage(tabId, mod.url);
+      } else {
+        console.log('[SDC] Already on module page, skipping navigation');
+        await sleep(1000);
+      }
 
       // Extract lessons
       var lessons = await extractLessons(tabId, mod.slug, groupName);
       console.log('[SDC] Found ' + lessons.length + ' lessons in ' + mod.title);
+
+      await postBackend('/course-progress', {
+        courseIndex: mi,
+        courseName: '[DEBUG] extractLessons returned ' + lessons.length + ' for ' + mod.title + ' (slug=' + mod.slug + ', group=' + groupName + ')',
+        status: 'debug'
+      });
 
       if (lessons.length === 0) continue;
 
@@ -203,6 +255,8 @@ async function runDownload(scanData, options) {
         // Send everything to backend
         await postBackend('/course-data', {
           courseIndex: globalLesson,
+          moduleIndex: mi,
+          lessonIndex: li,
           courseName: sanitize(lesson.name),
           moduleName: sanitize(mod.title),
           meta: meta,
@@ -274,12 +328,18 @@ async function extractLessons(tabId, moduleSlug, groupName) {
   try {
     var results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
+      world: 'MAIN',
       func: function(slug, gName) {
         try {
-          var el = document.getElementById('__NEXT_DATA__');
-          if (!el) return [];
-          var nd = JSON.parse(el.textContent);
-          var pp = nd.props && nd.props.pageProps;
+          var pp = null;
+          if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+            pp = window.__NEXT_DATA__.props.pageProps;
+          } else {
+            var el = document.getElementById('__NEXT_DATA__');
+            if (!el) return [];
+            var nd = JSON.parse(el.textContent);
+            pp = nd.props && nd.props.pageProps;
+          }
           if (!pp || !pp.course || !pp.course.children) return [];
 
           var lessons = [];
@@ -330,12 +390,18 @@ async function extractMeta(tabId, lessonName, groupId) {
   try {
     var results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
+      world: 'MAIN',
       func: function(lName, gId) {
         try {
-          var el = document.getElementById('__NEXT_DATA__');
-          if (!el) return { title: lName, pageUrl: location.href };
-          var nd = JSON.parse(el.textContent);
-          var pp = nd.props && nd.props.pageProps;
+          var pp = null;
+          if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+            pp = window.__NEXT_DATA__.props.pageProps;
+          } else {
+            var el = document.getElementById('__NEXT_DATA__');
+            if (!el) return { title: lName, pageUrl: location.href };
+            var nd = JSON.parse(el.textContent);
+            pp = nd.props && nd.props.pageProps;
+          }
           var selMod = pp ? pp.selectedModule : null;
           var meta = { title: lName, videoUrl: '', videoStream: '', videoType: '',
             videoDurationMs: 0, videoThumbnail: '', videoId: null, resources: [],
@@ -522,7 +588,9 @@ async function markComplete(tabId) {
 function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
 function sanitize(name) {
-  return (name || '').replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim().substring(0, 100);
+  return (name || '')
+    .replace(/[\u{1F000}-\u{1FFFF}|\u{2600}-\u{27BF}|\u{FE00}-\u{FE0F}|\u{200D}|\u{20E3}|\u{E0020}-\u{E007F}]/gu, '')
+    .replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim().substring(0, 100);
 }
 
 async function postBackend(path, data) {

@@ -151,6 +151,13 @@ await s.click_cdp(x, y)                                 # click via CDP
 
 ## Critical Technical Rules
 
+### Working Files
+```
+DO: put all scratch/experimental/temporary scripts in scratch/
+DON'T: create working files in the project root
+```
+The scratch/ folder is gitignored. Use it for one-off scripts, experiments, and exploratory code.
+
 ### Efficiency and Reliability
 ```
 DO reuse learned selectors and recipes before rediscovering the whole page

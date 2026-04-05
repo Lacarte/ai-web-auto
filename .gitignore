@@ -8,3 +8,4 @@ skool-output/
 .env
 node_modules/
 sdc_backend.log
+scratch/

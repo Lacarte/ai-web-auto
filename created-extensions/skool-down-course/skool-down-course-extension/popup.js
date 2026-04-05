@@ -53,16 +53,32 @@ function setProgress(pct) {
 function showModuleList(modules) {
   const list = $('courseList');
   list.style.display = 'block';
-  list.innerHTML = modules.map((m, i) =>
-    `<div class="item" data-idx="${i}">${i + 1}. ${m.title}</div>`
-  ).join('');
+  // If single module with lessons (module page scan), show lessons instead
+  if (modules.length === 1 && modules[0].lessons?.length) {
+    const mod = modules[0];
+    list.innerHTML = `<div class="item" style="font-weight:bold;opacity:0.7">${mod.title}</div>` +
+      mod.lessons.map((l, i) =>
+        `<div class="item" data-idx="${i}">${i + 1}. ${l.title}</div>`
+      ).join('');
+  } else {
+    list.innerHTML = modules.map((m, i) =>
+      `<div class="item" data-idx="${i}">${i + 1}. ${m.title}</div>`
+    ).join('');
+  }
 }
 
 function populateStartFrom(modules) {
   const select = $('startFrom');
-  select.innerHTML = modules.map((m, i) =>
-    `<option value="${i + 1}">${i + 1}. ${m.title}</option>`
-  ).join('');
+  // If single module with lessons, populate with lesson names
+  if (modules.length === 1 && modules[0].lessons?.length) {
+    select.innerHTML = modules[0].lessons.map((l, i) =>
+      `<option value="${i + 1}">${i + 1}. ${l.title}</option>`
+    ).join('');
+  } else {
+    select.innerHTML = modules.map((m, i) =>
+      `<option value="${i + 1}">${i + 1}. ${m.title}</option>`
+    ).join('');
+  }
 }
 
 function showDownloadingUI() {
@@ -135,39 +151,85 @@ $('btnScan').addEventListener('click', async () => {
     return;
   }
 
-  setStatus('Scanning...');
+  setStatus('Refreshing page...');
   $('btnScan').disabled = true;
+
+  // Reload the page to get fresh __NEXT_DATA__ (client-side nav makes it stale)
+  await chrome.tabs.reload(tab.id);
+  await new Promise(resolve => {
+    const onUpdate = (id, info) => {
+      if (id === tab.id && info.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(onUpdate);
+        resolve();
+      }
+    };
+    chrome.tabs.onUpdated.addListener(onUpdate);
+    setTimeout(() => { chrome.tabs.onUpdated.removeListener(onUpdate); resolve(); }, 15000);
+  });
+  await new Promise(r => setTimeout(r, 2000));
+
+  setStatus('Scanning...');
 
   try {
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
+      world: 'MAIN',
       func: () => {
         try {
+          // Page was just reloaded, so script tag has fresh SSR data
           const el = document.getElementById('__NEXT_DATA__');
           if (!el) return { success: false, error: 'No __NEXT_DATA__ found on this page' };
           const nd = JSON.parse(el.textContent);
           const pp = nd.props?.pageProps;
           if (!pp) return { success: false, error: 'No pageProps in __NEXT_DATA__' };
 
+          const pathParts = window.location.pathname.split('/').filter(Boolean);
+          const isModulePage = pathParts.length >= 3 && pathParts[1] === 'classroom' && pathParts[2];
           const groupName = pp.currentGroup?.name || window.location.pathname.split('/')[1] || '';
           const groupId = pp.currentGroup?.id || '';
-          const allCourses = pp.allCourses || [];
-          if (!allCourses.length) return { success: false, error: 'No courses found in __NEXT_DATA__.allCourses' };
 
           const allModules = [];
           const skippedModules = [];
-          for (const c of allCourses) {
-            const meta = c.metadata || {};
-            if (!meta.hasAccess && meta.minAccessLevel != null) {
-              skippedModules.push(meta.title || c.name);
-              continue;
-            }
+
+          if (isModulePage && pp.course?.children) {
+            // On a module page — extract lessons from course.children
+            const children = pp.course.children;
+            const courseSlug = pp.course?.name || pathParts[2];
+            // Title: try metadata.title, then document title (before " · "), then slug
+            const courseTitle = pp.course?.metadata?.title
+              || document.title.split(' · ')[0].split(' - ')[0]
+              || courseSlug;
             allModules.push({
-              id: c.id, slug: c.name,
-              title: meta.title || c.name,
-              url: `https://www.skool.com/${groupName}/classroom/${c.name}`
+              id: pp.course?.id || courseSlug,
+              slug: courseSlug,
+              title: courseTitle,
+              url: window.location.href.split('?')[0],
+              lessons: children.map(c => {
+                const m = c.course?.metadata || {};
+                const title = m.title || c.course?.name || '?';
+                return { id: c.course?.id, title };
+              }).filter(l => l.title !== '?')
             });
+          } else {
+            // On classroom root — use allCourses
+            const allCourses = pp.allCourses || [];
+            if (!allCourses.length) return { success: false, error: 'No courses found. Navigate to a Skool classroom page (/classroom).' };
+
+            for (const c of allCourses) {
+              const meta = c.metadata || {};
+              if (!meta.hasAccess && meta.minAccessLevel != null) {
+                skippedModules.push(meta.title || c.name);
+                continue;
+              }
+              allModules.push({
+                id: c.id, slug: c.name,
+                title: meta.title || c.name,
+                url: `https://www.skool.com/${groupName}/classroom/${c.name}`
+              });
+            }
           }
+
+          if (!allModules.length) return { success: false, error: 'No accessible modules found on this page.' };
 
           const courseSiteName = pp.currentGroup?.metadata?.name
             || document.title.replace(' \u00b7 ', ' - ').split(' - ')[0] || 'SkoolCourse';

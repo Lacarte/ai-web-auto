@@ -62,6 +62,8 @@ session_state = {
 
 def sanitize_filename(name):
     """Make a string safe for use as a file/folder name."""
+    # Strip emojis and special Unicode symbols
+    name = re.sub(r'[\U0001F000-\U0001FFFF\u2600-\u27BF\uFE00-\uFE0F\u200D\u20E3\U000E0020-\U000E007F]', '', name)
     name = re.sub(r'[<>:"/\\|?*]', '_', name)
     name = re.sub(r'\s+', ' ', name).strip()
     return name[:100]
@@ -80,11 +82,17 @@ def get_output_dir():
     return out
 
 
-def get_course_dir(module_name, course_name):
-    """Create chapter/course subfolder structure."""
+def get_course_dir(module_name, course_name, module_index=None, lesson_index=None):
+    """Create chapter/course subfolder structure with numbered prefixes."""
     out = get_output_dir()
-    chapter_dir = out / sanitize_filename(module_name)
-    course_dir = chapter_dir / sanitize_filename(course_name)
+    safe_module = sanitize_filename(module_name)
+    safe_course = sanitize_filename(course_name)
+    if module_index is not None:
+        safe_module = f"{module_index}- {safe_module}"
+    if lesson_index is not None:
+        safe_course = f"{lesson_index + 1}- {safe_course}"
+    chapter_dir = out / safe_module
+    course_dir = chapter_dir / safe_course
     course_dir.mkdir(parents=True, exist_ok=True)
     return course_dir
 
@@ -409,6 +417,8 @@ async def handle_course_data(request):
     course_name = data.get('courseName', 'Unknown')
     module_name = data.get('moduleName', 'Unknown Module')
     course_index = data.get('courseIndex', 0)
+    module_index = data.get('moduleIndex')
+    lesson_index = data.get('lessonIndex')
     meta = data.get('meta', {})
     html = data.get('html')
     screenshot_data = data.get('screenshotDataUrl')
@@ -417,7 +427,7 @@ async def handle_course_data(request):
     logger.info(f"\n  Processing course {course_index + 1}: {course_name}")
     logger.info(f"Module: {module_name}")
 
-    course_dir = get_course_dir(module_name, course_name)
+    course_dir = get_course_dir(module_name, course_name, module_index, lesson_index)
     safe_name = sanitize_filename(course_name)
     log_entry = {
         'courseIndex': course_index,

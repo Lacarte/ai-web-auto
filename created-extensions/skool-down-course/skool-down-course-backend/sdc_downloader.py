@@ -22,15 +22,19 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 from ai_web_auto_backend.core.server import WebSocketServer
 from ai_web_auto_backend.core.models import Command
 
-try:
-    from loguru import logger
-except ImportError:
-    import logging as logger
+from loguru import logger
+
+logger.remove()
+logger.add(sys.stderr, level="DEBUG", colorize=True,
+           format="<green>{time:HH:mm:ss}</green> | <level>{level:<7}</level> | <cyan>{message}</cyan>")
+logger.add("sdc_downloader.log", rotation="5 MB", level="DEBUG",
+           format="{time:YYYY-MM-DD HH:mm:ss} | {level:<7} | {message}")
 
 OUTPUT_DIR = Path('skool-output')
 
 
 def sanitize(name):
+    name = re.sub(r'[\U0001F000-\U0001FFFF\u2600-\u27BF\uFE00-\uFE0F\u200D\u20E3\U000E0020-\U000E007F]', '', name)
     return re.sub(r'[<>:"/\\|?*]', '_', name).strip()[:100]
 
 
@@ -183,7 +187,7 @@ async def main():
     await asyncio.sleep(5)
 
     # ---- STEP 2: Scan modules from __NEXT_DATA__ ----
-    logger.info("Scanning modules...")
+    logger.info("Scanning __NEXT_DATA__...")
     scan = await run_js(s, """
     (function() {
         var el = document.getElementById('__NEXT_DATA__');
@@ -193,22 +197,37 @@ async def main():
         if (!pp) return JSON.stringify({error: 'no pageProps'});
         var group = pp.currentGroup ? pp.currentGroup.name : '';
         var groupId = pp.currentGroup ? pp.currentGroup.id : '';
-        var all = pp.allCourses || [];
+        var pathParts = window.location.pathname.split('/').filter(Boolean);
+        var isModulePage = pathParts.length >= 3 && pathParts[1] === 'classroom' && pathParts[2];
+
         var modules = [];
-        for (var i = 0; i < all.length; i++) {
-            var c = all[i];
-            var meta = c.metadata || {};
-            if (!meta.hasAccess && meta.minAccessLevel != null) continue;
+        if (isModulePage && pp.course && pp.course.children) {
+            // On a module page - single module entry
+            var cm = pp.course.metadata || {};
             modules.push({
-                id: c.id, slug: c.name, title: meta.title || c.name,
-                url: '/' + group + '/classroom/' + c.name
+                id: pp.course.id || pathParts[2],
+                slug: pp.course.name || pathParts[2],
+                title: cm.title || pp.course.name || pathParts[2],
+                url: '/' + group + '/classroom/' + (pp.course.name || pathParts[2])
             });
+        } else {
+            // On classroom root - scan all modules
+            var all = pp.allCourses || [];
+            for (var i = 0; i < all.length; i++) {
+                var c = all[i];
+                var meta = c.metadata || {};
+                if (!meta.hasAccess && meta.minAccessLevel != null) continue;
+                modules.push({
+                    id: c.id, slug: c.name, title: meta.title || c.name,
+                    url: '/' + group + '/classroom/' + c.name
+                });
+            }
         }
         var titleParts = document.title.split(' \\u00b7 ');
         var siteName = (pp.currentGroup && pp.currentGroup.metadata && pp.currentGroup.metadata.name) ||
                        (titleParts.length > 1 ? titleParts[titleParts.length - 1] : titleParts[0]) ||
                        'SkoolCourse';
-        return JSON.stringify({group: group, groupId: groupId, modules: modules, siteName: siteName});
+        return JSON.stringify({group: group, groupId: groupId, modules: modules, siteName: siteName, isModulePage: !!isModulePage});
     })()
     """)
 
@@ -221,7 +240,14 @@ async def main():
     group_name = scan['group']
     group_id = scan['groupId']
     site_name = sanitize(scan['siteName'])
-    logger.info(f"Found {len(modules)} modules for '{site_name}' (group={group_name})")
+    is_module_page = scan.get('isModulePage', False)
+
+    if not modules:
+        logger.error("No accessible modules found")
+        await s.stop()
+        return
+
+    logger.info(f"Found {len(modules)} module(s) for '{site_name}' (group={group_name}, modulePage={is_module_page})")
 
     # Create output dir
     date_str = datetime.now().strftime('%Y-%m-%d')
@@ -244,8 +270,14 @@ async def main():
         logger.info(f"{'='*50}")
 
         mod_url = f"https://www.skool.com{mod['url']}"
-        await s.navigate(mod_url)
-        await asyncio.sleep(5)
+        current_base = url.split('?')[0].rstrip('/')
+        target_base = mod_url.split('?')[0].rstrip('/')
+        if current_base != target_base or mi > 0:
+            logger.info(f"Navigating to: {mod_url}")
+            await s.navigate(mod_url)
+            await asyncio.sleep(5)
+        else:
+            logger.info("Already on module page, skipping navigation")
 
         # Extract lessons
         lessons = await run_js(s, """
@@ -303,8 +335,8 @@ async def main():
         for li, lesson in enumerate(lessons):
             logger.info(f"\n  Lesson {li+1}/{len(lessons)}: {lesson['name']}")
 
-            mod_dir = out_dir / sanitize(mod['title'])
-            lesson_dir = mod_dir / sanitize(lesson['name'])
+            mod_dir = out_dir / f"{mi}- {sanitize(mod['title'])}"
+            lesson_dir = mod_dir / f"{li + 1}- {sanitize(lesson['name'])}"
             lesson_dir.mkdir(parents=True, exist_ok=True)
             safe_name = sanitize(lesson['name'])
 
