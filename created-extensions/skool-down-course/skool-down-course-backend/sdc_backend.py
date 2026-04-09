@@ -645,6 +645,10 @@ def generate_community_html(posts, group_url):
   .post-content {{ white-space: pre-wrap; margin-bottom: 12px; font-size: 14px; }}
   .post-image {{ max-width: 100%; border-radius: 8px; margin-bottom: 12px; }}
   .post-stats {{ display: flex; gap: 16px; font-size: 12px; color: #888; padding-top: 8px; border-top: 1px solid #eee; }}
+  .post-video {{ margin: 12px 0; }}
+  .post-video video {{ max-width: 100%; border-radius: 8px; }}
+  .post-video a {{ color: #7c5cff; text-decoration: none; font-size: 13px; }}
+  .post-video a:hover {{ text-decoration: underline; }}
   .comments {{ margin-top: 16px; padding-top: 12px; border-top: 1px solid #eee; }}
   .comments-label {{ font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; }}
   .comment {{ padding: 10px 0; border-bottom: 1px solid #f0f0f0; }}
@@ -689,6 +693,17 @@ def generate_community_html(posts, group_url):
             html_parts.append(f'<div class="post-content">{content}</div>')
         if image:
             html_parts.append(f'<img class="post-image" src="{escape(image)}" loading="lazy">')
+
+        # Video
+        video_file = post.get('videoFile', '')
+        video_info = post.get('videoInfo', {})
+        if video_file:
+            html_parts.append(f'<div class="post-video"><video controls preload="metadata"><source src="{escape(video_file)}" type="video/mp4"></video></div>')
+        elif video_info:
+            vid_url = video_info.get('url', '')
+            vid_type = video_info.get('type', '')
+            if vid_url:
+                html_parts.append(f'<div class="post-video"><a href="{escape(vid_url)}" target="_blank">{vid_type} Video: {escape(vid_url[:80])}</a></div>')
 
         html_parts.append(f'<div class="post-stats"><span>{upvotes} upvotes</span><span>{comment_count} comments</span></div>')
 
@@ -742,6 +757,22 @@ async def handle_community_data(request):
     community_dir = out / 'community'
     community_dir.mkdir(parents=True, exist_ok=True)
 
+    # Download videos for posts that have them
+    video_count = 0
+    for i, post in enumerate(posts):
+        vi = post.get('videoInfo')
+        if not vi:
+            continue
+        safe_name = sanitize_filename(post.get('title') or post.get('name') or f'post_{i}')
+        vid_path = community_dir / f"{safe_name}.mp4"
+        logger.info(f"[Community] Downloading video {i+1}: {vi.get('type', '?')} for '{safe_name[:40]}'")
+        result = await download_video_m3u8(vi, community_dir, safe_name)
+        if result:
+            post['videoFile'] = Path(result).name
+            video_count += 1
+        else:
+            post['videoFile'] = None
+
     # Generate HTML
     html = generate_community_html(posts, group_url)
     html_path = community_dir / 'community_posts.html'
@@ -751,12 +782,13 @@ async def handle_community_data(request):
     json_path = community_dir / 'community_posts.json'
     json_path.write_text(json.dumps(posts, indent=2, ensure_ascii=False), encoding='utf-8')
 
-    logger.success(f"[Community] Saved {len(posts)} posts to {community_dir}")
+    logger.success(f"[Community] Saved {len(posts)} posts ({video_count} videos) to {community_dir}")
     logger.info(f"  HTML: {html_path} ({len(html)//1024} KB)")
 
     return web.json_response({
         'success': True,
         'postCount': len(posts),
+        'videoCount': video_count,
         'htmlPath': str(html_path)
     })
 

@@ -337,7 +337,7 @@ async function runDownload(scanData, options) {
   if (options.community && !stopRequested && groupName) {
     var groupUrl = 'https://www.skool.com/' + groupName;
     console.log('[SDC] Starting community download: ' + groupUrl);
-    await runCommunityDownload(groupUrl, 50);
+    await runCommunityDownload(groupUrl);
   }
 
   downloadRunning = false;
@@ -697,18 +697,19 @@ async function cdpClick(tabId, x, y) {
 // ============================================================
 
 async function runCommunityDownload(groupUrl, maxPosts) {
-  maxPosts = maxPosts || 50;
+  maxPosts = maxPosts || 9999; // default: all pages
   var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tabs || !tabs[0]) return;
   var tabId = tabs[0].id;
 
   await postBackend('/course-progress', {
-    courseIndex: -1, courseName: 'Starting community download (' + maxPosts + ' posts)', status: 'community'
+    courseIndex: -1, courseName: 'Starting community download (all pages)', status: 'community'
   });
 
-  // Step 1: Collect post summaries from listing pages
+  // Step 1: Collect post summaries from ALL listing pages
   var allPosts = [];
   var page = 1;
+  var seenIds = {};
   while (allPosts.length < maxPosts) {
     if (stopRequested) break;
     var pageUrl = groupUrl + (page > 1 ? '?p=' + page : '');
@@ -721,7 +722,7 @@ async function runCommunityDownload(groupUrl, maxPosts) {
         try {
           var pp = (window.__NEXT_DATA__ || JSON.parse(document.getElementById('__NEXT_DATA__').textContent)).props.pageProps;
           var trees = pp.postTrees || [];
-          return trees.map(function(t) {
+          return { total: pp.total || 0, posts: trees.map(function(t) {
             var p = t.post || {};
             var m = p.metadata || {};
             var u = p.user || {};
@@ -731,24 +732,43 @@ async function runCommunityDownload(groupUrl, maxPosts) {
               commentCount: m.comments || 0, pinned: m.pinned || 0,
               imagePreview: m.imagePreview || '', createdAt: p.createdAt || '',
               authorName: (u.firstName || '') + ' ' + (u.lastName || ''),
-              authorPicture: (u.metadata && u.metadata.pictureBubble) || ''
+              authorPicture: (u.metadata && u.metadata.pictureBubble) || '',
+              videoIds: m.videoIds || '',
+              videoLinks: m.videoLinks || '',
+              videoLinksData: m.videoLinksData || ''
             };
-          });
-        } catch(e) { return []; }
+          })};
+        } catch(e) { return { total: 0, posts: [] }; }
       }
     });
 
-    var posts = (pageData && pageData[0]) ? pageData[0].result : [];
-    if (!posts || posts.length === 0) break;
-    allPosts = allPosts.concat(posts);
+    var result = (pageData && pageData[0]) ? pageData[0].result : { total: 0, posts: [] };
+    var posts = result.posts || [];
+    if (!posts.length) break;
+
+    // Deduplicate (pinned posts repeat across pages)
+    var newCount = 0;
+    for (var pi = 0; pi < posts.length; pi++) {
+      if (posts[pi].id && !seenIds[posts[pi].id]) {
+        seenIds[posts[pi].id] = true;
+        allPosts.push(posts[pi]);
+        newCount++;
+      }
+    }
+
+    await postBackend('/course-progress', {
+      courseIndex: -1,
+      courseName: 'Community: page ' + page + ' (' + allPosts.length + '/' + result.total + ' posts)',
+      status: 'community'
+    });
+
     page++;
-    if (posts.length < 20) break; // last page
+    if (newCount === 0 || allPosts.length >= (result.total || 9999)) break;
   }
 
-  allPosts = allPosts.slice(0, maxPosts);
-  console.log('[SDC] Collected ' + allPosts.length + ' post summaries');
+  console.log('[SDC] Collected ' + allPosts.length + ' unique posts from ' + (page - 1) + ' pages');
 
-  // Step 2: For each post with comments, navigate and scrape comments from DOM
+  // Step 2: For each post, navigate to it, scrape comments + extract video info
   for (var i = 0; i < allPosts.length; i++) {
     if (stopRequested) break;
     if (pauseRequested && !stopRequested) {
@@ -756,14 +776,17 @@ async function runCommunityDownload(groupUrl, maxPosts) {
     }
 
     var post = allPosts[i];
+    var needsVisit = post.commentCount > 0 || post.videoIds || post.videoLinks;
+
     await postBackend('/course-progress', {
-      courseIndex: i, courseName: 'Community: ' + (post.title || post.name || '').substring(0, 50),
+      courseIndex: i, courseName: 'Community ' + (i+1) + '/' + allPosts.length + ': ' + (post.title || post.name || '').substring(0, 40),
       status: 'processing'
     });
 
-    if (post.commentCount > 0 && post.name) {
+    if (needsVisit && post.name) {
       var postUrl = groupUrl + '/' + post.name;
       await goToPage(tabId, postUrl);
+
       // Scroll down + wait to trigger lazy comment loading
       await chrome.scripting.executeScript({
         target: { tabId: tabId },
@@ -771,32 +794,26 @@ async function runCommunityDownload(groupUrl, maxPosts) {
       });
       await sleep(3000);
 
-      // Scrape comments from the rendered DOM (Skool uses styled-components)
+      // Scrape comments
       var comments = await chrome.scripting.executeScript({
         target: { tabId: tabId }, world: 'MAIN',
         func: function() {
           try {
             var results = [];
-            // Skool styled-components: CommentItemContainer has each comment
             var commentEls = document.querySelectorAll('[class*="CommentItemContainer"]');
             for (var i = 0; i < commentEls.length; i++) {
               var el = commentEls[i];
               var bubble = el.querySelector('[class*="CommentItemBubble"]');
               if (!bubble) continue;
-              // Author: first link with /u/ or first bold/name element
               var authorEl = bubble.querySelector('a[href*="/u/"], [class*="UserName"], [class*="PostedBy"]');
-              // Date: element with PostedDate class
               var dateEl = bubble.querySelector('[class*="PostedDate"]');
-              // Content: the PostBody inside the bubble
               var bodyEl = bubble.querySelector('[class*="PostBody"]');
-              // If no PostBody, get text content excluding author and date
               var content = '';
               var contentHtml = '';
               if (bodyEl) {
                 content = bodyEl.textContent.trim();
                 contentHtml = bodyEl.innerHTML;
               } else {
-                // Fallback: clone bubble, remove author/date, get remaining text
                 var clone = bubble.cloneNode(true);
                 var toRemove = clone.querySelectorAll('a[href*="/u/"], [class*="PostedDate"], [class*="PostActi"]');
                 for (var r = 0; r < toRemove.length; r++) toRemove[r].remove();
@@ -809,43 +826,29 @@ async function runCommunityDownload(groupUrl, maxPosts) {
                 html: contentHtml
               });
             }
-
-            // Fallback: grab CommentsSection HTML if no individual comments found
             if (results.length === 0) {
               var section = document.querySelector('[class*="CommentsSection"]');
-              if (section) {
-                results.push({
-                  author: '', content: '', time: '',
-                  html: section.innerHTML
-                });
-              }
+              if (section) results.push({ author: '', content: '', time: '', html: section.innerHTML });
             }
             return results;
           } catch(e) { return []; }
         }
       });
-
       allPosts[i].comments = (comments && comments[0]) ? comments[0].result : [];
 
-      // If DOM scraping didn't get individual comments, capture raw HTML of comment area
-      if (!allPosts[i].comments || allPosts[i].comments.length === 0) {
-        var rawHtml = await chrome.scripting.executeScript({
-          target: { tabId: tabId },
-          func: function() {
-            // Capture everything below the main post content
-            var main = document.querySelector('main') || document.body;
-            return main.innerHTML;
-          }
-        });
-        allPosts[i].rawHtml = (rawHtml && rawHtml[0]) ? rawHtml[0].result : '';
+      // Extract video info from the post page
+      if (post.videoIds || post.videoLinks) {
+        var videoInfo = await extractPostVideo(tabId, post);
+        if (videoInfo) allPosts[i].videoInfo = videoInfo;
       }
     }
 
     console.log('[SDC] Post ' + (i + 1) + '/' + allPosts.length + ': ' + (post.title || '').substring(0, 40) +
-      ' (' + (allPosts[i].comments ? allPosts[i].comments.length : 0) + ' comments scraped)');
+      ' (' + (allPosts[i].comments ? allPosts[i].comments.length : 0) + ' comments' +
+      (allPosts[i].videoInfo ? ', video: ' + allPosts[i].videoInfo.type : '') + ')');
   }
 
-  // Step 3: Send all posts to backend to generate HTML
+  // Step 3: Send all posts to backend to generate HTML + download videos
   await postBackend('/community-data', {
     posts: allPosts,
     groupUrl: groupUrl,
@@ -859,6 +862,122 @@ async function runCommunityDownload(groupUrl, maxPosts) {
   });
 
   console.log('[SDC] Community download complete: ' + allPosts.length + ' posts');
+}
+
+// Extract video from a community post page (Skool native or external)
+async function extractPostVideo(tabId, post) {
+  try {
+    // Check for external video links (YouTube, Loom, Vimeo)
+    var videoLinks = post.videoLinks || '';
+    var videoLinksData = post.videoLinksData || '';
+    if (videoLinks && typeof videoLinks === 'string' && videoLinks.indexOf('http') !== -1) {
+      var vl = videoLinks.toLowerCase();
+      var type = vl.indexOf('youtube') !== -1 || vl.indexOf('youtu.be') !== -1 ? 'YouTube' :
+                 vl.indexOf('loom') !== -1 ? 'Loom' :
+                 vl.indexOf('vimeo') !== -1 ? 'Vimeo' : 'Video';
+      return { type: type, url: videoLinks, title: post.title || '' };
+    }
+
+    // Parse videoLinksData for external URLs
+    if (videoLinksData) {
+      try {
+        var linksArr = typeof videoLinksData === 'string' ? JSON.parse(videoLinksData) : videoLinksData;
+        if (Array.isArray(linksArr) && linksArr.length > 0) {
+          var link = linksArr[0];
+          var url = link.url || link.href || '';
+          if (url) {
+            var vl2 = url.toLowerCase();
+            var type2 = vl2.indexOf('youtube') !== -1 || vl2.indexOf('youtu.be') !== -1 ? 'YouTube' :
+                        vl2.indexOf('loom') !== -1 ? 'Loom' : 'Video';
+            return { type: type2, url: url, title: post.title || '' };
+          }
+        }
+      } catch(e) {}
+    }
+
+    // Skool native video (videoIds present) — click play and get M3U8
+    if (post.videoIds) {
+      // Find the video thumbnail / play area
+      var posResults = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: function() {
+          // Skool community video: VideoThumbnailWrapper or VideoDuration
+          var thumb = document.querySelector('[class*="VideoThumbnailWrapper"], [class*="VideoDuration"]');
+          if (thumb) {
+            var el = thumb;
+            for (var i = 0; i < 5; i++) {
+              el = el.parentElement;
+              if (!el) break;
+              var r = el.getBoundingClientRect();
+              if (r.width > 200 && r.height > 100)
+                return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+            }
+            var r2 = thumb.getBoundingClientRect();
+            return { x: Math.round(r2.x + r2.width / 2), y: Math.round(r2.y + r2.height / 2) };
+          }
+          return null;
+        }
+      });
+
+      var pos = posResults && posResults[0] ? posResults[0].result : null;
+      if (pos && pos.x) {
+        // Scroll video into view first
+        await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          func: function() { window.scrollTo(0, 0); }
+        });
+        await sleep(500);
+
+        await cdpClick(tabId, pos.x, pos.y);
+        await sleep(4000);
+
+        // Poll for mux-player + M3U8
+        for (var attempt = 0; attempt < 10; attempt++) {
+          await sleep(2000);
+          var checkResults = await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function() {
+              var mux = document.querySelector('mux-player');
+              if (!mux) return null;
+              var urls = [];
+              var entries = performance.getEntries();
+              for (var i = 0; i < entries.length; i++) {
+                if (entries[i].name.indexOf('.m3u8') !== -1) urls.push(entries[i].name);
+              }
+              return {
+                playbackId: mux.getAttribute('playback-id'),
+                customDomain: mux.getAttribute('custom-domain') || 'video.skool.com',
+                m3u8Url: urls.length > 0 ? urls[0] : ''
+              };
+            }
+          });
+          var data = checkResults && checkResults[0] ? checkResults[0].result : null;
+          if (data && data.m3u8Url) {
+            return { type: 'Skool', m3u8Url: data.m3u8Url, playbackId: data.playbackId,
+                     customDomain: data.customDomain, title: post.title || '' };
+          }
+          if (data && data.playbackId) {
+            var m3u8 = 'https://' + data.customDomain + '/' + data.playbackId + '.m3u8';
+            return { type: 'Skool', m3u8Url: m3u8, playbackId: data.playbackId,
+                     customDomain: data.customDomain, title: post.title || '' };
+          }
+        }
+      }
+
+      // Also check for iframe embeds (YouTube in post body)
+      var iframeSrc = await getVideoIframe(tabId);
+      if (iframeSrc) {
+        var vl3 = iframeSrc.toLowerCase();
+        var type3 = vl3.indexOf('youtube') !== -1 ? 'YouTube' :
+                    vl3.indexOf('loom') !== -1 ? 'Loom' :
+                    vl3.indexOf('vimeo') !== -1 ? 'Vimeo' : 'Video';
+        return { type: type3, url: iframeSrc, embedUrl: iframeSrc, title: post.title || '' };
+      }
+    }
+  } catch(err) {
+    console.error('[SDC] extractPostVideo error:', err.message);
+  }
+  return null;
 }
 
 console.log('[SDC] Service worker loaded');
