@@ -764,60 +764,62 @@ async function runCommunityDownload(groupUrl, maxPosts) {
     if (post.commentCount > 0 && post.name) {
       var postUrl = groupUrl + '/' + post.name;
       await goToPage(tabId, postUrl);
-      // Wait extra for comments to load
+      // Scroll down + wait to trigger lazy comment loading
+      await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: function() { window.scrollTo(0, document.body.scrollHeight); }
+      });
       await sleep(3000);
 
-      // Scrape comments from the rendered DOM
+      // Scrape comments from the rendered DOM (Skool uses styled-components)
       var comments = await chrome.scripting.executeScript({
         target: { tabId: tabId }, world: 'MAIN',
         func: function() {
           try {
-            // Comments are rendered as article elements or divs with specific structure
-            // Try multiple selectors for Skool's comment rendering
             var results = [];
-
-            // Method 1: Look for comment containers in the DOM
-            var commentEls = document.querySelectorAll('[data-testid="comment"], [class*="Comment_comment"], [class*="reply"]');
-            if (commentEls.length === 0) {
-              // Method 2: Skool renders comments as nested divs with user avatars
-              // Look for the post detail area and find comment blocks
-              var allDivs = document.querySelectorAll('article, [role="article"]');
-              if (allDivs.length > 0) commentEls = allDivs;
-            }
-
-            // Method 3: Extract from the actual rendered text content
-            // Skool renders comments in a specific pattern - grab all text blocks after the main post
-            var postArea = document.querySelector('[class*="PostDetail"], [class*="post-detail"], main');
-            if (postArea) {
-              // Find all user-generated content blocks with author info
-              var blocks = postArea.querySelectorAll('[class*="CommentItem"], [class*="comment-item"], [class*="Reply"]');
-              for (var i = 0; i < blocks.length; i++) {
-                var block = blocks[i];
-                var authorEl = block.querySelector('[class*="UserName"], [class*="user-name"], a[href*="/u/"]');
-                var contentEl = block.querySelector('[class*="Content"], [class*="content"], [class*="Body"], [class*="body"]');
-                var timeEl = block.querySelector('time, [class*="Time"], [class*="time"], [class*="Date"]');
-                if (contentEl) {
-                  results.push({
-                    author: authorEl ? authorEl.textContent.trim() : '',
-                    content: contentEl.textContent.trim(),
-                    time: timeEl ? timeEl.textContent.trim() : '',
-                    html: contentEl.innerHTML
-                  });
-                }
+            // Skool styled-components: CommentItemContainer has each comment
+            var commentEls = document.querySelectorAll('[class*="CommentItemContainer"]');
+            for (var i = 0; i < commentEls.length; i++) {
+              var el = commentEls[i];
+              var bubble = el.querySelector('[class*="CommentItemBubble"]');
+              if (!bubble) continue;
+              // Author: first link with /u/ or first bold/name element
+              var authorEl = bubble.querySelector('a[href*="/u/"], [class*="UserName"], [class*="PostedBy"]');
+              // Date: element with PostedDate class
+              var dateEl = bubble.querySelector('[class*="PostedDate"]');
+              // Content: the PostBody inside the bubble
+              var bodyEl = bubble.querySelector('[class*="PostBody"]');
+              // If no PostBody, get text content excluding author and date
+              var content = '';
+              var contentHtml = '';
+              if (bodyEl) {
+                content = bodyEl.textContent.trim();
+                contentHtml = bodyEl.innerHTML;
+              } else {
+                // Fallback: clone bubble, remove author/date, get remaining text
+                var clone = bubble.cloneNode(true);
+                var toRemove = clone.querySelectorAll('a[href*="/u/"], [class*="PostedDate"], [class*="PostActi"]');
+                for (var r = 0; r < toRemove.length; r++) toRemove[r].remove();
+                content = clone.textContent.trim();
               }
+              results.push({
+                author: authorEl ? authorEl.textContent.trim() : '',
+                content: content,
+                time: dateEl ? dateEl.textContent.trim().replace('• ', '') : '',
+                html: contentHtml
+              });
             }
 
-            // Method 4: Fallback - grab full HTML of the comments section
+            // Fallback: grab CommentsSection HTML if no individual comments found
             if (results.length === 0) {
-              var commentsSection = document.querySelector('[class*="Comments"], [class*="comments"], [class*="Replies"]');
-              if (commentsSection) {
+              var section = document.querySelector('[class*="CommentsSection"]');
+              if (section) {
                 results.push({
-                  author: '', content: '',
-                  time: '', html: commentsSection.innerHTML
+                  author: '', content: '', time: '',
+                  html: section.innerHTML
                 });
               }
             }
-
             return results;
           } catch(e) { return []; }
         }
