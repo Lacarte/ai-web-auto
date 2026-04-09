@@ -68,8 +68,15 @@ async def download_video(video_info, output_path):
     """Download video using ffmpeg or yt-dlp."""
     output_path = Path(output_path)
     if output_path.exists() and output_path.stat().st_size > 1000:
-        logger.info(f"Video already exists: {output_path}")
-        return str(output_path)
+        # Validate it's actually a video file, not HTML saved with .mp4 extension
+        with open(output_path, 'rb') as f:
+            header = f.read(20)
+        if header.startswith(b'<!DOCTYPE') or header.startswith(b'<html') or header.startswith(b'<HTML'):
+            logger.warning(f"Existing file is HTML, not video - re-downloading: {output_path}")
+            output_path.unlink()
+        else:
+            logger.info(f"Video already exists: {output_path}")
+            return str(output_path)
 
     m3u8 = video_info.get('m3u8Url') or video_info.get('stream') or ''
     url = video_info.get('url') or ''

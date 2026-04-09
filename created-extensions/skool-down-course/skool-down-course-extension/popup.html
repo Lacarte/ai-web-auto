@@ -64,9 +64,26 @@
       background: #2d2d44;
       color: #ff6b6b;
       border: 1px solid #ff6b6b;
-      margin-top: 8px;
     }
     .btn-stop:hover { background: #ff6b6b; color: #fff; }
+    .btn-pause {
+      background: #2d2d44;
+      color: #ffb74d;
+      border: 1px solid #ffb74d;
+    }
+    .btn-pause:hover { background: #ffb74d; color: #1a1a2e; }
+    .btn-resume {
+      background: linear-gradient(135deg, #4caf50, #43a047);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+    }
+    .btn-resume:hover { box-shadow: 0 6px 20px rgba(76,175,80,0.5); transform: translateY(-1px); }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-row .btn { flex: 1; }
     #status {
       padding: 12px 20px;
       font-size: 12px;
@@ -162,6 +179,10 @@
       <input type="checkbox" id="optMark" checked>
       <label for="optMark" style="margin:0">Mark courses complete</label>
     </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="optCommunity" checked>
+      <label for="optCommunity" style="margin:0">Download top 50 community posts</label>
+    </div>
     <div style="margin-top:8px">
       <label>Start from module:</label>
       <select id="startFrom">
@@ -171,9 +192,16 @@
   </div>
 
   <div class="section">
-    <button class="btn btn-primary" id="btnScan">🔍 Scan Courses</button>
-    <button class="btn btn-primary" id="btnStart" style="display:none;margin-top:8px">🚀 Start Download</button>
-    <button class="btn btn-stop" id="btnStop" style="display:none">⏹ Stop</button>
+    <button class="btn btn-primary" id="btnScan">Scan Courses</button>
+    <button class="btn btn-primary" id="btnStart" style="display:none;margin-top:8px">Start Download</button>
+    <div class="btn-row" id="runningControls" style="display:none">
+      <button class="btn btn-pause" id="btnPause">Pause</button>
+      <button class="btn btn-stop" id="btnStop">Stop</button>
+    </div>
+    <div class="btn-row" id="pausedControls" style="display:none">
+      <button class="btn btn-resume" id="btnResume">Resume</button>
+      <button class="btn btn-stop" id="btnStopPaused">Stop</button>
+    </div>
   </div>
 
   <div id="status">

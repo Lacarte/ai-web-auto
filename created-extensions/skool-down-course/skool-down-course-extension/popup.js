@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 
 let scanData = null;
 let running = false;
+let paused = false;
 
 // ============================================================
 // STATE PERSISTENCE via chrome.storage.local
@@ -11,14 +12,16 @@ let running = false;
 async function saveState() {
   await chrome.storage.local.set({
     sdcScanData: scanData,
-    sdcRunning: running
+    sdcRunning: running,
+    sdcPaused: paused
   });
 }
 
 async function loadState() {
-  const data = await chrome.storage.local.get(['sdcScanData', 'sdcRunning']);
+  const data = await chrome.storage.local.get(['sdcScanData', 'sdcRunning', 'sdcPaused']);
   scanData = data.sdcScanData || null;
   running = data.sdcRunning || false;
+  paused = data.sdcPaused || false;
 }
 
 // ============================================================
@@ -84,21 +87,33 @@ function populateStartFrom(modules) {
 function showDownloadingUI() {
   $('btnStart').style.display = 'none';
   $('btnScan').style.display = 'none';
-  $('btnStop').style.display = 'block';
+  $('runningControls').style.display = 'flex';
+  $('pausedControls').style.display = 'none';
+  $('progressBar').style.display = 'block';
+}
+
+function showPausedUI() {
+  $('btnStart').style.display = 'none';
+  $('btnScan').style.display = 'none';
+  $('runningControls').style.display = 'none';
+  $('pausedControls').style.display = 'flex';
   $('progressBar').style.display = 'block';
 }
 
 function showScanResultUI() {
   $('btnStart').style.display = 'block';
+  $('btnScan').style.display = 'block';
   $('btnScan').disabled = false;
-  $('btnStop').style.display = 'none';
+  $('runningControls').style.display = 'none';
+  $('pausedControls').style.display = 'none';
 }
 
 function showIdleUI() {
   $('btnStart').style.display = 'none';
-  $('btnScan').disabled = false;
   $('btnScan').style.display = 'block';
-  $('btnStop').style.display = 'none';
+  $('btnScan').disabled = false;
+  $('runningControls').style.display = 'none';
+  $('pausedControls').style.display = 'none';
   $('progressBar').style.display = 'none';
 }
 
@@ -125,14 +140,19 @@ async function init() {
     showScanResultUI();
   }
 
-  // If a download was running, check backend progress
-  if (running && backendOk) {
+  // If a download was running or paused, restore UI
+  if (running && paused && backendOk) {
+    showPausedUI();
+    if (scanData?.modules) showModuleList(scanData.modules);
+    setStatus('Paused - click Resume to continue.');
+  } else if (running && backendOk) {
     showDownloadingUI();
     if (scanData?.modules) showModuleList(scanData.modules);
     pollProgress();
   } else if (running) {
     // Backend offline but was running - reset
     running = false;
+    paused = false;
     await saveState();
   }
 }
@@ -292,6 +312,7 @@ $('btnStart').addEventListener('click', async () => {
     video: $('optVideo').checked,
     screenshot: $('optScreenshot').checked,
     markComplete: $('optMark').checked,
+    community: $('optCommunity').checked,
     startFrom: startIdx
   };
 
@@ -353,34 +374,64 @@ $('btnStart').addEventListener('click', async () => {
 });
 
 // ============================================================
-// STOP
+// PAUSE / RESUME / STOP
 // ============================================================
 
-$('btnStop').addEventListener('click', async () => {
+$('btnPause').addEventListener('click', async () => {
+  paused = true;
+  await saveState();
+  chrome.runtime.sendMessage({ action: 'pauseDownload' });
+  setStatus('Pausing after current lesson...');
+  showPausedUI();
+});
+
+$('btnResume').addEventListener('click', async () => {
+  paused = false;
+  await saveState();
+  chrome.runtime.sendMessage({ action: 'resumeDownload' });
+  setStatus('Resuming download...');
+  showDownloadingUI();
+  pollProgress();
+});
+
+async function handleStop() {
   running = false;
+  paused = false;
   await saveState();
   chrome.runtime.sendMessage({ action: 'stopDownload' });
   setStatus('Stopping after current lesson...');
-  $('btnStop').style.display = 'none';
-  $('btnScan').style.display = 'block';
-});
+  showIdleUI();
+  if (scanData?.modules?.length) {
+    showScanResultUI();
+  }
+}
+
+$('btnStop').addEventListener('click', handleStop);
+$('btnStopPaused').addEventListener('click', handleStop);
 
 // ============================================================
 // PROGRESS POLLING
 // ============================================================
 
 async function pollProgress() {
-  while (running) {
+  while (running && !paused) {
     try {
       const r = await fetch(`${BACKEND}/progress`);
       const data = await r.json();
       const total = data.total || 0;
 
       if (total > 0 && data.completed >= total) {
+        // Check if community download is still running
+        if (data.currentCourse?.startsWith('Community:') || data.currentCourse?.includes('community')) {
+          setStatus(`${data.completed} lessons done. ${data.currentCourse}`);
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
         running = false;
+        paused = false;
         await saveState();
         setProgress(100);
-        setStatus(`All ${data.completed} lessons downloaded!`);
+        setStatus(`All done! ${data.completed} lessons downloaded.`);
         showIdleUI();
         break;
       }

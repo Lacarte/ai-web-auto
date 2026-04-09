@@ -2,7 +2,16 @@
 title SKOOL-DOWN-COURSE Backend
 cd /d "%~dp0..\..\..\"
 
-call venv\Scripts\activate.bat
+:: Try local backend venv first, fall back to project root venv
+if exist "created-extensions\skool-down-course\skool-down-course-backend\venv\Scripts\activate.bat" (
+    call created-extensions\skool-down-course\skool-down-course-backend\venv\Scripts\activate.bat
+) else if exist "venv\Scripts\activate.bat" (
+    call venv\Scripts\activate.bat
+) else (
+    echo [ERROR] No venv found. Run install.bat first.
+    pause
+    exit /b 1
+)
 
 echo ============================================
 echo   Skool Down Course - Backend Server

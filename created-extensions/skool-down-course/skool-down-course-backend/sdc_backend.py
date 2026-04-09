@@ -110,8 +110,15 @@ async def download_video_m3u8(video_info, course_dir, course_name):
     output_path = course_dir / f"{safe_name}.mp4"
 
     if output_path.exists():
-        logger.info(f"[Video] Already exists: {output_path}")
-        return str(output_path)
+        # Validate it's actually a video file, not HTML saved with .mp4 extension
+        with open(output_path, 'rb') as f:
+            header = f.read(20)
+        if header.startswith(b'<!DOCTYPE') or header.startswith(b'<html') or header.startswith(b'<HTML'):
+            logger.warning(f"[Video] Existing file is HTML, not video - re-downloading: {output_path}")
+            output_path.unlink()
+        else:
+            logger.info(f"[Video] Already exists: {output_path}")
+            return str(output_path)
 
     # Strategy 1: M3U8 via ffmpeg (Skool native, Loom)
     if m3u8_url and (m3u8_url.endswith('.m3u8') or 'm3u8' in m3u8_url):
@@ -191,26 +198,34 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         except (asyncio.TimeoutError, FileNotFoundError):
             pass
 
-    # Strategy 4: Direct download of video URL
+    # Strategy 4: Direct download of video URL (only for actual video content)
     if video_url and video_url.startswith('http'):
-        logger.info(f"[Video] Direct download: {video_url[:80]}...")
-        try:
-            timeout = ClientTimeout(total=300)
-            async with ClientSession(timeout=timeout) as client:
-                async with client.get(video_url, headers={
-                    'Referer': 'https://www.skool.com/',
-                    'Origin': 'https://www.skool.com'
-                }) as resp:
-                    if resp.status == 200:
-                        with open(output_path, 'wb') as f:
-                            async for chunk in resp.content.iter_chunked(65536):
-                                f.write(chunk)
-                        if output_path.exists() and output_path.stat().st_size > 1000:
-                            size_mb = output_path.stat().st_size / (1024 * 1024)
-                            logger.success(f"[Video] Downloaded: {output_path} ({size_mb:.1f} MB)")
-                            return str(output_path)
-        except Exception as e:
-            logger.error(f"[Video] Direct download failed: {e}")
+        # Skip direct download for YouTube/Loom/Vimeo URLs - they return HTML pages, not video
+        skip_direct = any(d in video_url.lower() for d in ['youtube.com', 'youtu.be', 'loom.com', 'vimeo.com', 'wistia.com'])
+        if skip_direct:
+            logger.warning(f"[Video] Skipping direct download for {video_type} URL (requires yt-dlp): {video_url[:80]}")
+        else:
+            logger.info(f"[Video] Direct download: {video_url[:80]}...")
+            try:
+                timeout = ClientTimeout(total=300)
+                async with ClientSession(timeout=timeout) as client:
+                    async with client.get(video_url, headers={
+                        'Referer': 'https://www.skool.com/',
+                        'Origin': 'https://www.skool.com'
+                    }) as resp:
+                        content_type = resp.headers.get('Content-Type', '')
+                        if resp.status == 200 and 'text/html' not in content_type:
+                            with open(output_path, 'wb') as f:
+                                async for chunk in resp.content.iter_chunked(65536):
+                                    f.write(chunk)
+                            if output_path.exists() and output_path.stat().st_size > 1000:
+                                size_mb = output_path.stat().st_size / (1024 * 1024)
+                                logger.success(f"[Video] Downloaded: {output_path} ({size_mb:.1f} MB)")
+                                return str(output_path)
+                        elif 'text/html' in content_type:
+                            logger.warning(f"[Video] Direct download returned HTML, not video - skipping")
+            except Exception as e:
+                logger.error(f"[Video] Direct download failed: {e}")
 
     logger.warning(f"[Video] Could not download video for: {course_name}")
     # Save video URL info for manual download
@@ -580,6 +595,150 @@ async def handle_download_complete(request):
 
 
 # ============================================================
+# COMMUNITY POSTS
+# ============================================================
+
+def generate_community_html(posts, group_url):
+    """Generate a single HTML file with all community posts and comments."""
+    from html import escape
+
+    html_parts = [f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community Posts - {escape(group_url)}</title>
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; padding: 20px; max-width: 900px; margin: 0 auto; }}
+  h1 {{ font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }}
+  .meta {{ color: #888; font-size: 13px; margin-bottom: 30px; }}
+  .post {{ background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+  .post-header {{ display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }}
+  .post-header img {{ width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }}
+  .post-author {{ font-weight: 600; font-size: 14px; }}
+  .post-date {{ font-size: 12px; color: #888; }}
+  .post-title {{ font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }}
+  .post-content {{ white-space: pre-wrap; margin-bottom: 12px; font-size: 14px; }}
+  .post-image {{ max-width: 100%; border-radius: 8px; margin-bottom: 12px; }}
+  .post-stats {{ display: flex; gap: 16px; font-size: 12px; color: #888; padding-top: 8px; border-top: 1px solid #eee; }}
+  .comments {{ margin-top: 16px; padding-top: 12px; border-top: 1px solid #eee; }}
+  .comments-label {{ font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; }}
+  .comment {{ padding: 10px 0; border-bottom: 1px solid #f0f0f0; }}
+  .comment:last-child {{ border-bottom: none; }}
+  .comment-author {{ font-weight: 600; font-size: 13px; }}
+  .comment-time {{ font-size: 11px; color: #aaa; margin-left: 8px; }}
+  .comment-content {{ font-size: 13px; margin-top: 4px; white-space: pre-wrap; }}
+  .comment-raw {{ font-size: 13px; margin-top: 8px; }}
+  .comment-raw img {{ max-width: 100%; border-radius: 6px; }}
+  .pinned {{ border-left: 3px solid #7c5cff; }}
+  .no-comments {{ font-size: 12px; color: #aaa; font-style: italic; }}
+  .post-number {{ font-size: 11px; color: #bbb; float: right; }}
+</style>
+</head>
+<body>
+<h1>Community Posts</h1>
+<p class="meta">Source: {escape(group_url)} &middot; {len(posts)} posts &middot; Downloaded {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+"""]
+
+    for i, post in enumerate(posts):
+        pinned_cls = ' pinned' if post.get('pinned') else ''
+        title = escape(post.get('title', ''))
+        content = escape(post.get('content', ''))
+        author = escape(post.get('authorName', 'Unknown'))
+        date = post.get('createdAt', '')[:10]
+        upvotes = post.get('upvotes', 0)
+        comment_count = post.get('commentCount', 0)
+        image = post.get('imagePreview', '')
+        author_pic = post.get('authorPicture', '')
+
+        html_parts.append(f'<div class="post{pinned_cls}">')
+        html_parts.append(f'<span class="post-number">#{i+1}</span>')
+        html_parts.append('<div class="post-header">')
+        if author_pic:
+            html_parts.append(f'<img src="{escape(author_pic)}" alt="">')
+        html_parts.append(f'<div><div class="post-author">{author}</div><div class="post-date">{date}</div></div>')
+        html_parts.append('</div>')
+
+        if title:
+            html_parts.append(f'<div class="post-title">{title}</div>')
+        if content:
+            html_parts.append(f'<div class="post-content">{content}</div>')
+        if image:
+            html_parts.append(f'<img class="post-image" src="{escape(image)}" loading="lazy">')
+
+        html_parts.append(f'<div class="post-stats"><span>{upvotes} upvotes</span><span>{comment_count} comments</span></div>')
+
+        # Comments
+        comments = post.get('comments', [])
+        raw_html = post.get('rawHtml', '')
+        if comments:
+            html_parts.append(f'<div class="comments"><div class="comments-label">Comments ({len(comments)})</div>')
+            for c in comments:
+                c_author = escape(c.get('author', ''))
+                c_time = escape(c.get('time', ''))
+                c_content = c.get('content', '')
+                c_html = c.get('html', '')
+                html_parts.append('<div class="comment">')
+                html_parts.append(f'<span class="comment-author">{c_author}</span>')
+                if c_time:
+                    html_parts.append(f'<span class="comment-time">{c_time}</span>')
+                if c_html and not c_content:
+                    html_parts.append(f'<div class="comment-raw">{c_html}</div>')
+                elif c_content:
+                    html_parts.append(f'<div class="comment-content">{escape(c_content)}</div>')
+                html_parts.append('</div>')
+            html_parts.append('</div>')
+        elif raw_html:
+            html_parts.append(f'<div class="comments"><div class="comments-label">Comments</div>')
+            html_parts.append(f'<div class="comment-raw">{raw_html}</div>')
+            html_parts.append('</div>')
+        elif comment_count == 0:
+            html_parts.append('<div class="no-comments">No comments</div>')
+
+        html_parts.append('</div>')
+
+    html_parts.append('</body></html>')
+    return '\n'.join(html_parts)
+
+
+async def handle_community_data(request):
+    """Receive community posts and generate HTML file."""
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    posts = data.get('posts', [])
+    group_url = data.get('groupUrl', '')
+
+    if not posts:
+        return web.json_response({'success': False, 'error': 'No posts'})
+
+    out = get_output_dir()
+    community_dir = out / 'community'
+    community_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate HTML
+    html = generate_community_html(posts, group_url)
+    html_path = community_dir / 'community_posts.html'
+    html_path.write_text(html, encoding='utf-8')
+
+    # Also save raw JSON for reference
+    json_path = community_dir / 'community_posts.json'
+    json_path.write_text(json.dumps(posts, indent=2, ensure_ascii=False), encoding='utf-8')
+
+    logger.success(f"[Community] Saved {len(posts)} posts to {community_dir}")
+    logger.info(f"  HTML: {html_path} ({len(html)//1024} KB)")
+
+    return web.json_response({
+        'success': True,
+        'postCount': len(posts),
+        'htmlPath': str(html_path)
+    })
+
+
+# ============================================================
 # CORS MIDDLEWARE
 # ============================================================
 
@@ -616,6 +775,7 @@ def create_app():
     app.router.add_get('/progress', handle_progress)
     app.router.add_post('/stitch-screenshots', handle_stitch_screenshots)
     app.router.add_post('/download-complete', handle_download_complete)
+    app.router.add_post('/community-data', handle_community_data)
 
     return app
 

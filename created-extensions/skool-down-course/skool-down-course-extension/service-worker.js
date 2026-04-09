@@ -13,6 +13,8 @@ chrome.alarms.onAlarm.addListener(function() {
 
 var downloadRunning = false;
 var stopRequested = false;
+var pauseRequested = false;
+var pauseResolver = null;
 
 // Offscreen document keepalive - prevents SW termination during download
 async function ensureOffscreen() {
@@ -51,6 +53,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.action === 'startDownload') {
     downloadRunning = true;
     stopRequested = false;
+    pauseRequested = false;
+    pauseResolver = null;
     console.log('[SDC SW] Received startDownload, modules:', msg.scanData ? msg.scanData.modules.length : 'NONE');
     // Create offscreen doc to keep SW alive, then start download
     ensureOffscreen().then(function() {
@@ -67,9 +71,44 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
   if (msg.action === 'stopDownload') {
     stopRequested = true;
+    pauseRequested = false;
     downloadRunning = false;
+    // If paused, resolve the wait so the loop can exit
+    if (pauseResolver) { pauseResolver(); pauseResolver = null; }
     sendResponse({ success: true });
     return false;
+  }
+
+  if (msg.action === 'pauseDownload') {
+    pauseRequested = true;
+    console.log('[SDC SW] Pause requested');
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (msg.action === 'resumeDownload') {
+    pauseRequested = false;
+    console.log('[SDC SW] Resume requested');
+    if (pauseResolver) { pauseResolver(); pauseResolver = null; }
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (msg.action === 'startCommunityDownload') {
+    downloadRunning = true;
+    stopRequested = false;
+    pauseRequested = false;
+    pauseResolver = null;
+    ensureOffscreen().then(function() {
+      return runCommunityDownload(msg.groupUrl, msg.maxPosts || 50);
+    }).catch(function(err) {
+      console.error('[SDC SW] Community download crashed:', err);
+    }).finally(function() {
+      downloadRunning = false;
+      closeOffscreen();
+    });
+    sendResponse({ success: true });
+    return true;
   }
 
   if (msg.action === 'captureFullPage') {
@@ -273,6 +312,17 @@ async function runDownload(scanData, options) {
         }
 
         globalLesson++;
+
+        // Check for pause between lessons
+        if (pauseRequested && !stopRequested) {
+          console.log('[SDC] Paused after lesson ' + globalLesson);
+          await postBackend('/course-progress', {
+            courseIndex: globalLesson - 1, courseName: 'Paused', status: 'paused'
+          });
+          await new Promise(function(resolve) { pauseResolver = resolve; });
+          console.log('[SDC] Resumed');
+        }
+
         await sleep(2000);
       }
     }
@@ -281,6 +331,13 @@ async function runDownload(scanData, options) {
     await postBackend('/course-progress', {
       courseIndex: -1, courseName: 'ERROR: ' + err.message, status: 'error'
     });
+  }
+
+  // Community posts download (after course lessons)
+  if (options.community && !stopRequested && groupName) {
+    var groupUrl = 'https://www.skool.com/' + groupName;
+    console.log('[SDC] Starting community download: ' + groupUrl);
+    await runCommunityDownload(groupUrl, 50);
   }
 
   downloadRunning = false;
@@ -633,6 +690,173 @@ async function cdpClick(tabId, x, y) {
     console.error('[SDC] cdpClick error:', err.message);
     try { await chrome.debugger.detach({ tabId: tabId }); } catch(e) {}
   }
+}
+
+// ============================================================
+// COMMUNITY POSTS DOWNLOAD
+// ============================================================
+
+async function runCommunityDownload(groupUrl, maxPosts) {
+  maxPosts = maxPosts || 50;
+  var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs || !tabs[0]) return;
+  var tabId = tabs[0].id;
+
+  await postBackend('/course-progress', {
+    courseIndex: -1, courseName: 'Starting community download (' + maxPosts + ' posts)', status: 'community'
+  });
+
+  // Step 1: Collect post summaries from listing pages
+  var allPosts = [];
+  var page = 1;
+  while (allPosts.length < maxPosts) {
+    if (stopRequested) break;
+    var pageUrl = groupUrl + (page > 1 ? '?p=' + page : '');
+    console.log('[SDC] Community page ' + page + ': ' + pageUrl);
+    await goToPage(tabId, pageUrl);
+
+    var pageData = await chrome.scripting.executeScript({
+      target: { tabId: tabId }, world: 'MAIN',
+      func: function() {
+        try {
+          var pp = (window.__NEXT_DATA__ || JSON.parse(document.getElementById('__NEXT_DATA__').textContent)).props.pageProps;
+          var trees = pp.postTrees || [];
+          return trees.map(function(t) {
+            var p = t.post || {};
+            var m = p.metadata || {};
+            var u = p.user || {};
+            return {
+              id: p.id, name: p.name, title: m.title || '',
+              content: m.content || '', upvotes: m.upvotes || 0,
+              commentCount: m.comments || 0, pinned: m.pinned || 0,
+              imagePreview: m.imagePreview || '', createdAt: p.createdAt || '',
+              authorName: (u.firstName || '') + ' ' + (u.lastName || ''),
+              authorPicture: (u.metadata && u.metadata.pictureBubble) || ''
+            };
+          });
+        } catch(e) { return []; }
+      }
+    });
+
+    var posts = (pageData && pageData[0]) ? pageData[0].result : [];
+    if (!posts || posts.length === 0) break;
+    allPosts = allPosts.concat(posts);
+    page++;
+    if (posts.length < 20) break; // last page
+  }
+
+  allPosts = allPosts.slice(0, maxPosts);
+  console.log('[SDC] Collected ' + allPosts.length + ' post summaries');
+
+  // Step 2: For each post with comments, navigate and scrape comments from DOM
+  for (var i = 0; i < allPosts.length; i++) {
+    if (stopRequested) break;
+    if (pauseRequested && !stopRequested) {
+      await new Promise(function(resolve) { pauseResolver = resolve; });
+    }
+
+    var post = allPosts[i];
+    await postBackend('/course-progress', {
+      courseIndex: i, courseName: 'Community: ' + (post.title || post.name || '').substring(0, 50),
+      status: 'processing'
+    });
+
+    if (post.commentCount > 0 && post.name) {
+      var postUrl = groupUrl + '/' + post.name;
+      await goToPage(tabId, postUrl);
+      // Wait extra for comments to load
+      await sleep(3000);
+
+      // Scrape comments from the rendered DOM
+      var comments = await chrome.scripting.executeScript({
+        target: { tabId: tabId }, world: 'MAIN',
+        func: function() {
+          try {
+            // Comments are rendered as article elements or divs with specific structure
+            // Try multiple selectors for Skool's comment rendering
+            var results = [];
+
+            // Method 1: Look for comment containers in the DOM
+            var commentEls = document.querySelectorAll('[data-testid="comment"], [class*="Comment_comment"], [class*="reply"]');
+            if (commentEls.length === 0) {
+              // Method 2: Skool renders comments as nested divs with user avatars
+              // Look for the post detail area and find comment blocks
+              var allDivs = document.querySelectorAll('article, [role="article"]');
+              if (allDivs.length > 0) commentEls = allDivs;
+            }
+
+            // Method 3: Extract from the actual rendered text content
+            // Skool renders comments in a specific pattern - grab all text blocks after the main post
+            var postArea = document.querySelector('[class*="PostDetail"], [class*="post-detail"], main');
+            if (postArea) {
+              // Find all user-generated content blocks with author info
+              var blocks = postArea.querySelectorAll('[class*="CommentItem"], [class*="comment-item"], [class*="Reply"]');
+              for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i];
+                var authorEl = block.querySelector('[class*="UserName"], [class*="user-name"], a[href*="/u/"]');
+                var contentEl = block.querySelector('[class*="Content"], [class*="content"], [class*="Body"], [class*="body"]');
+                var timeEl = block.querySelector('time, [class*="Time"], [class*="time"], [class*="Date"]');
+                if (contentEl) {
+                  results.push({
+                    author: authorEl ? authorEl.textContent.trim() : '',
+                    content: contentEl.textContent.trim(),
+                    time: timeEl ? timeEl.textContent.trim() : '',
+                    html: contentEl.innerHTML
+                  });
+                }
+              }
+            }
+
+            // Method 4: Fallback - grab full HTML of the comments section
+            if (results.length === 0) {
+              var commentsSection = document.querySelector('[class*="Comments"], [class*="comments"], [class*="Replies"]');
+              if (commentsSection) {
+                results.push({
+                  author: '', content: '',
+                  time: '', html: commentsSection.innerHTML
+                });
+              }
+            }
+
+            return results;
+          } catch(e) { return []; }
+        }
+      });
+
+      allPosts[i].comments = (comments && comments[0]) ? comments[0].result : [];
+
+      // If DOM scraping didn't get individual comments, capture raw HTML of comment area
+      if (!allPosts[i].comments || allPosts[i].comments.length === 0) {
+        var rawHtml = await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          func: function() {
+            // Capture everything below the main post content
+            var main = document.querySelector('main') || document.body;
+            return main.innerHTML;
+          }
+        });
+        allPosts[i].rawHtml = (rawHtml && rawHtml[0]) ? rawHtml[0].result : '';
+      }
+    }
+
+    console.log('[SDC] Post ' + (i + 1) + '/' + allPosts.length + ': ' + (post.title || '').substring(0, 40) +
+      ' (' + (allPosts[i].comments ? allPosts[i].comments.length : 0) + ' comments scraped)');
+  }
+
+  // Step 3: Send all posts to backend to generate HTML
+  await postBackend('/community-data', {
+    posts: allPosts,
+    groupUrl: groupUrl,
+    maxPosts: maxPosts
+  });
+
+  await postBackend('/course-progress', {
+    courseIndex: allPosts.length - 1,
+    courseName: 'Community download complete (' + allPosts.length + ' posts)',
+    status: 'community_done'
+  });
+
+  console.log('[SDC] Community download complete: ' + allPosts.length + ' posts');
 }
 
 console.log('[SDC] Service worker loaded');
