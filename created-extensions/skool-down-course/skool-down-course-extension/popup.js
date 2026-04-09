@@ -414,6 +414,8 @@ $('btnStopPaused').addEventListener('click', handleStop);
 // ============================================================
 
 async function pollProgress() {
+  // Wait before first poll so buttons are visible and backend has time to start
+  await new Promise(r => setTimeout(r, 3000));
   while (running && !paused) {
     try {
       const r = await fetch(`${BACKEND}/progress`);
