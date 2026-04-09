@@ -40,6 +40,29 @@ HOST = '0.0.0.0'
 PORT = 9876
 OUTPUT_DIR = Path('./skool-output')
 
+# Find yt-dlp and ffmpeg - check PATH first, then known venv locations
+def _find_tool(name):
+    """Find executable by name, checking PATH and known venv locations."""
+    import shutil
+    found = shutil.which(name)
+    if found:
+        return found
+    # Check project root venv and local backend venv
+    backend_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        backend_dir / 'venv' / 'Scripts' / f'{name}.exe',
+        backend_dir.parent.parent.parent / 'venv' / 'Scripts' / f'{name}.exe',
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return name  # fallback to bare name
+
+YT_DLP = _find_tool('yt-dlp')
+FFMPEG = _find_tool('ffmpeg')
+logger.info(f"yt-dlp: {YT_DLP}")
+logger.info(f"ffmpeg: {FFMPEG}")
+
 # ============================================================
 # SESSION STATE
 # ============================================================
@@ -125,7 +148,7 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         logger.info(f"[Video] Downloading M3U8: {m3u8_url[:80]}...")
         try:
             proc = await asyncio.create_subprocess_exec(
-                'ffmpeg', '-y',
+                FFMPEG, '-y',
                 '-headers', f'Referer: https://www.skool.com/\r\nOrigin: https://www.skool.com',
                 '-i', m3u8_url,
                 '-c', 'copy',
@@ -153,7 +176,7 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         logger.info(f"[Video] Trying yt-dlp for {video_type}: {dl_url[:80]}...")
         try:
             proc = await asyncio.create_subprocess_exec(
-                'yt-dlp',
+                YT_DLP,
                 '--no-warnings',
                 '-o', str(output_path),
                 '--merge-output-format', 'mp4',
@@ -171,7 +194,7 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         except asyncio.TimeoutError:
             logger.error(f"[Video] yt-dlp timeout for {video_url}")
         except FileNotFoundError:
-            logger.warning("[Video] yt-dlp not found in PATH - skipping video download")
+            logger.warning(f"[Video] yt-dlp not found at '{YT_DLP}' - run: pip install yt-dlp")
 
     # Strategy 3: Construct Mux M3U8 from playback ID
     playback_id = video_info.get('playbackId')
@@ -182,7 +205,7 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         logger.info(f"[Video] Trying Mux stream: {mux_url}")
         try:
             proc = await asyncio.create_subprocess_exec(
-                'ffmpeg', '-y',
+                FFMPEG, '-y',
                 '-i', mux_url,
                 '-c', 'copy',
                 '-bsf:a', 'aac_adtstoasc',

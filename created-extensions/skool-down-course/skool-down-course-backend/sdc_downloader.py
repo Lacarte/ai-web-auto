@@ -32,6 +32,22 @@ logger.add("sdc_downloader.log", rotation="5 MB", level="DEBUG",
 
 OUTPUT_DIR = Path('skool-output')
 
+# Find yt-dlp and ffmpeg
+def _find_tool(name):
+    import shutil
+    found = shutil.which(name)
+    if found:
+        return found
+    backend_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    for d in [backend_dir / 'venv', backend_dir.parent.parent.parent / 'venv']:
+        p = d / 'Scripts' / f'{name}.exe'
+        if p.exists():
+            return str(p)
+    return name
+
+YT_DLP = _find_tool('yt-dlp')
+FFMPEG = _find_tool('ffmpeg')
+
 
 def sanitize(name):
     name = re.sub(r'[\U0001F000-\U0001FFFF\u2600-\u27BF\uFE00-\uFE0F\u200D\u20E3\U000E0020-\U000E007F]', '', name)
@@ -88,7 +104,7 @@ async def download_video(video_info, output_path):
         logger.info(f"Downloading M3U8 via ffmpeg: {m3u8[:80]}...")
         try:
             proc = await asyncio.create_subprocess_exec(
-                'ffmpeg', '-y',
+                FFMPEG, '-y',
                 '-headers', 'Referer: https://www.skool.com/\r\nOrigin: https://www.skool.com\r\n',
                 '-i', m3u8, '-c', 'copy', '-bsf:a', 'aac_adtstoasc',
                 str(output_path),
@@ -113,7 +129,7 @@ async def download_video(video_info, output_path):
         logger.info(f"Downloading via yt-dlp: {dl_url[:80]}...")
         try:
             proc = await asyncio.create_subprocess_exec(
-                'yt-dlp', '--no-warnings', '-o', str(output_path),
+                YT_DLP, '--no-warnings', '-o', str(output_path),
                 '--merge-output-format', 'mp4', dl_url,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
