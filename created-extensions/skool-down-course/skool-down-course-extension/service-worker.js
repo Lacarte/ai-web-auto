@@ -836,10 +836,40 @@ async function runCommunityDownload(groupUrl, maxPosts) {
       });
       allPosts[i].comments = (comments && comments[0]) ? comments[0].result : [];
 
-      // Extract video info from the post page
+      // Extract video info from the post page __NEXT_DATA__
       if (post.videoIds || post.videoLinks) {
         var videoInfo = await extractPostVideo(tabId, post);
         if (videoInfo) allPosts[i].videoInfo = videoInfo;
+      }
+
+      // Also extract videos array from postTree (Skool native with signed tokens)
+      if (post.videoIds && !allPosts[i].videoInfo) {
+        var nativeVideo = await chrome.scripting.executeScript({
+          target: { tabId: tabId }, world: 'MAIN',
+          func: function() {
+            try {
+              var pp = (window.__NEXT_DATA__ || JSON.parse(document.getElementById('__NEXT_DATA__').textContent)).props.pageProps;
+              var tree = pp.postTree;
+              if (!tree || !tree.videos || !tree.videos.length) return null;
+              var v = tree.videos[0];
+              return {
+                playbackId: v.playbackId || '',
+                playbackToken: v.playbackToken || '',
+                duration: v.duration || 0,
+                aspectRatio: v.aspectRatio || ''
+              };
+            } catch(e) { return null; }
+          }
+        });
+        var vid = nativeVideo && nativeVideo[0] ? nativeVideo[0].result : null;
+        if (vid && vid.playbackId) {
+          var m3u8 = 'https://stream.mux.com/' + vid.playbackId + '.m3u8?token=' + vid.playbackToken;
+          allPosts[i].videoInfo = {
+            type: 'Skool', m3u8Url: m3u8, playbackId: vid.playbackId,
+            customDomain: 'stream.mux.com', title: post.title || '',
+            duration: vid.duration
+          };
+        }
       }
     }
 
