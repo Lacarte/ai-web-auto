@@ -142,15 +142,34 @@ async function runDownload(scanData, options) {
     courseIndex: -1, courseName: 'runDownload() entered', status: 'debug'
   });
 
-  if (!scanData || !scanData.modules) {
+  if (!scanData) {
     await postBackend('/course-progress', {
-      courseIndex: -1, courseName: 'ERROR: scanData missing or no modules', status: 'error'
+      courseIndex: -1, courseName: 'ERROR: scanData missing', status: 'error'
+    });
+    return;
+  }
+
+  var groupName = scanData.groupName || '';
+
+  // If ONLY community is requested (no html/video/screenshot), skip course download
+  var wantsCourses = options.html || options.video || options.screenshot;
+  if (!wantsCourses && options.community && groupName) {
+    var groupUrl = 'https://www.skool.com/' + groupName;
+    console.log('[SDC] Community-only mode: ' + groupUrl);
+    await runCommunityDownload(groupUrl);
+    downloadRunning = false;
+    await postBackend('/download-complete', {});
+    return;
+  }
+
+  if (!scanData.modules) {
+    await postBackend('/course-progress', {
+      courseIndex: -1, courseName: 'ERROR: no modules found', status: 'error'
     });
     return;
   }
 
   var modules = scanData.modules;
-  var groupName = scanData.groupName || '';
   var groupId = scanData.groupId || '';
   var startFrom = (options.startFrom || 1) - 1;
 
