@@ -278,6 +278,67 @@ function extractCurrentPageMetadata() {
   };
 }
 
+function tiptapJsonToHtml(description) {
+  // Convert Skool's TipTap/ProseMirror JSON description to HTML.
+  // Format: "[v2][{...nodes...}]" or plain text
+  if (!description) return '';
+  let jsonStr = description;
+  if (jsonStr.startsWith('[v2]')) jsonStr = jsonStr.slice(4);
+  let nodes;
+  try { nodes = JSON.parse(jsonStr); } catch { return description; } // fallback to plain text
+  if (!Array.isArray(nodes)) return description;
+
+  function renderMarks(text, marks) {
+    if (!marks || !marks.length) return escHtml(text);
+    let out = escHtml(text);
+    for (const mark of marks) {
+      if (mark.type === 'bold') out = `<strong>${out}</strong>`;
+      else if (mark.type === 'italic') out = `<em>${out}</em>`;
+      else if (mark.type === 'underline') out = `<u>${out}</u>`;
+      else if (mark.type === 'strike') out = `<s>${out}</s>`;
+      else if (mark.type === 'code') out = `<code>${out}</code>`;
+      else if (mark.type === 'link' && mark.attrs?.href) {
+        const href = mark.attrs.href;
+        const target = mark.attrs.target || '_blank';
+        out = `<a href="${escAttr(href)}" target="${target}" rel="noopener noreferrer">${out}</a>`;
+      }
+    }
+    return out;
+  }
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderNode(node) {
+    if (!node) return '';
+    const children = (node.content || []).map(renderNode).join('');
+    switch (node.type) {
+      case 'text': return renderMarks(node.text || '', node.marks);
+      case 'paragraph': return `<p>${children}</p>`;
+      case 'heading': {
+        const lvl = node.attrs?.level || 3;
+        return `<h${lvl}>${children}</h${lvl}>`;
+      }
+      case 'hardBreak': return '<br>';
+      case 'orderedList': {
+        const start = node.attrs?.start || 1;
+        return `<ol start="${start}">${children}</ol>`;
+      }
+      case 'bulletList': return `<ul>${children}</ul>`;
+      case 'listItem': return `<li>${children}</li>`;
+      case 'blockquote': return `<blockquote>${children}</blockquote>`;
+      case 'codeBlock': return `<pre><code>${children}</code></pre>`;
+      case 'horizontalRule': return '<hr>';
+      case 'image': {
+        const src = node.attrs?.src || '';
+        const alt = node.attrs?.alt || '';
+        return `<img src="${escAttr(src)}" alt="${escAttr(alt)}" style="max-width:100%">`;
+      }
+      default: return children;
+    }
+  }
+  return nodes.map(renderNode).join('\n');
+}
+
 async function capturePageHtml() {
   // PROVEN (tested 2026-04-03): Single-file HTML with active resource links.
   // - All CSS inlined into one <style> block
@@ -287,11 +348,18 @@ async function capturePageHtml() {
   // - YouTube/Loom embeds injected as playable iframes
   const clone = document.documentElement.cloneNode(true);
 
-  // Remove overlays / extension junk
-  const removeSelectors = ['#automa-progress', '#automa-options-dialog', '#sdc-overlay', '[data-skool-dl-btn]'];
+  // Remove overlays / extension junk / download manager UI
+  const removeSelectors = [
+    '#automa-progress', '#automa-options-dialog', '#sdc-overlay', '[data-skool-dl-btn]',
+    '[id^="skool-download-manager"]', '#skool-download-manager'
+  ];
   for (const sel of removeSelectors) {
     clone.querySelectorAll(sel).forEach(el => el.remove());
   }
+  // Also remove any element whose id starts with skool-download-manager (parent container)
+  clone.querySelectorAll('div[style]').forEach(el => {
+    if (el.id && el.id.startsWith('skool-download-manager')) el.remove();
+  });
 
   // Inline all CSS
   let allCSS = '';
@@ -307,6 +375,8 @@ async function capturePageHtml() {
     }
   }
   for (const style of document.querySelectorAll('style')) {
+    // Skip extension-injected download manager styles
+    if (style.textContent.includes('skool-download-manager')) continue;
     allCSS += style.textContent + '\n';
   }
 
@@ -352,39 +422,71 @@ async function capturePageHtml() {
     }
   });
 
+  // Helper: find selected module in nested course tree
+  function findSelectedModule(children, id) {
+    for (const c of children) {
+      if (c.course?.id === id) return c.course;
+      if (c.children) { const f = findSelectedModule(c.children, id); if (f) return f; }
+    }
+    return null;
+  }
+
   // Embed video player (YouTube/Loom) as playable iframe
   try {
     const nd = extractNextData();
     const pp = nd?.props?.pageProps;
     const selMod = pp?.selectedModule;
     if (pp?.course?.children && selMod) {
-      for (const child of pp.course.children) {
-        if (child.course?.id !== selMod) continue;
-        const videoLink = child.course?.metadata?.videoLink || '';
+      const mod = findSelectedModule(pp.course.children, selMod);
+      const videoLink = mod?.metadata?.videoLink || '';
+      if (videoLink) {
         const target = clone.querySelector('[class*="VideoPlayerWrapper"]') ||
                        clone.querySelector('[class*="VideoWrapper"]') ||
                        clone.querySelector('[class*="CoverImage"]')?.parentElement;
-        if (!target) break;
-
-        // YouTube embed
-        const ytMatch = videoLink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^?&\/]+)/);
-        if (ytMatch) {
-          target.innerHTML = '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:10px;overflow:hidden;">' +
-            '<iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" ' +
-            'src="https://www.youtube.com/embed/' + ytMatch[1] + '?rel=0&modestbranding=1" ' +
-            'frameborder="0" allowfullscreen></iframe></div>';
+        if (target) {
+          // YouTube embed
+          const ytMatch = videoLink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^?&\/]+)/);
+          if (ytMatch) {
+            target.innerHTML = '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:10px;overflow:hidden;">' +
+              '<iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" ' +
+              'src="https://www.youtube.com/embed/' + ytMatch[1] + '?rel=0&modestbranding=1" ' +
+              'frameborder="0" allowfullscreen></iframe></div>';
+          }
+          // Loom embed
+          if (videoLink.includes('loom.com')) {
+            const loomUrl = videoLink.replace('/share/', '/embed/');
+            target.innerHTML = '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:10px;overflow:hidden;">' +
+              '<iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" ' +
+              'src="' + loomUrl + '" frameborder="0" allowfullscreen></iframe></div>';
+          }
         }
-        // Loom embed
-        if (videoLink.includes('loom.com')) {
-          const loomUrl = videoLink.replace('/share/', '/embed/');
-          target.innerHTML = '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:10px;overflow:hidden;">' +
-            '<iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" ' +
-            'src="' + loomUrl + '" frameborder="0" allowfullscreen></iframe></div>';
-        }
-        break;
       }
     }
   } catch {}
+
+  // Inject lesson description from __NEXT_DATA__ into the empty EditorContentWrapper
+  // Skool renders description client-side via React — the DOM clone captures it empty
+  try {
+    const nd = extractNextData();
+    const pp = nd?.props?.pageProps;
+    const selMod = pp?.selectedModule;
+    if (pp?.course?.children && selMod) {
+      const mod = findSelectedModule(pp.course.children, selMod);
+      const desc = mod?.metadata?.description || mod?.metadata?.desc || '';
+      if (desc) {
+        const descHtml = tiptapJsonToHtml(desc);
+        if (descHtml) {
+          const editorWrapper = clone.querySelector('[class*="EditorContentWrapper"]');
+          if (editorWrapper) {
+            editorWrapper.innerHTML = `<div class="ql-editor" style="padding:0;font-family:Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#202124;">${descHtml}</div>`;
+            console.log('[SDC] Injected description into HTML capture');
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[SDC] Description injection failed:', err);
+  }
 
   // Remove scripts (won't work offline)
   clone.querySelectorAll('script').forEach(s => s.remove());

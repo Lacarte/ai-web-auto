@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -39,6 +40,15 @@ logger.add(os.path.join(LOG_DIR, "sdc_backend.log"), rotation="5 MB", level="DEB
 HOST = '0.0.0.0'
 PORT = 9876
 OUTPUT_DIR = Path('./skool-output')
+
+# Minimum free disk space required to continue downloading. When the output
+# disk drops below this, downloads pause and poll until space is freed.
+# Override with env var SDC_MIN_FREE_GB (e.g. SDC_MIN_FREE_GB=2 for 2 GB).
+try:
+    MIN_FREE_BYTES = int(float(os.environ.get('SDC_MIN_FREE_GB', '1')) * 1024 * 1024 * 1024)
+except ValueError:
+    MIN_FREE_BYTES = 1024 * 1024 * 1024
+DISK_POLL_SECONDS = 5
 
 # Find yt-dlp and ffmpeg - check PATH first, then known venv locations
 def _find_tool(name):
@@ -80,7 +90,58 @@ session_state = {
     'currentCourse': '',
     'downloadLog': [],
     'outputDir': None,
+    'diskPaused': False,
+    'diskFreeBytes': 0,
+    'diskMinBytes': MIN_FREE_BYTES,
+    'diskPath': '',
 }
+
+
+# ============================================================
+# DISK SPACE GUARD
+# ============================================================
+
+def _disk_free_bytes(path):
+    """Return free bytes on the disk containing path. 0 on error."""
+    try:
+        target = Path(path)
+        # shutil.disk_usage needs an existing path; walk up if needed
+        while not target.exists() and target.parent != target:
+            target = target.parent
+        return shutil.disk_usage(str(target)).free
+    except Exception as e:
+        logger.error(f"[Disk] Check failed for {path}: {e}")
+        return 0
+
+
+async def ensure_disk_space(label=''):
+    """Block until free space on the output disk is >= MIN_FREE_BYTES.
+
+    Sets session_state['diskPaused'] so /progress can surface the warning
+    to the popup UI. Logs once on entry and once on recovery.
+    """
+    path = session_state.get('outputDir') or str(OUTPUT_DIR)
+    session_state['diskPath'] = path
+    warned = False
+    while True:
+        free = _disk_free_bytes(path)
+        session_state['diskFreeBytes'] = free
+        if free >= MIN_FREE_BYTES:
+            if session_state['diskPaused']:
+                session_state['diskPaused'] = False
+                logger.success(
+                    f"[Disk] Space recovered: {free / (1024**3):.2f} GB free - resuming"
+                )
+            return
+        if not warned:
+            session_state['diskPaused'] = True
+            logger.warning(
+                f"[Disk] LOW DISK SPACE: only {free / (1024**3):.2f} GB free at '{path}' "
+                f"(need {MIN_FREE_BYTES / (1024**3):.2f} GB). "
+                f"Pausing{' before ' + label if label else ''} - free up space to continue."
+            )
+            warned = True
+        await asyncio.sleep(DISK_POLL_SECONDS)
 
 
 def sanitize_filename(name):
@@ -90,6 +151,49 @@ def sanitize_filename(name):
     name = re.sub(r'[<>:"/\\|?*]', '_', name)
     name = re.sub(r'\s+', ' ', name).strip()
     return name[:100]
+
+
+# ============================================================
+# RETRY + FAILURE LOGGING
+# ============================================================
+
+MAX_DOWNLOAD_ATTEMPTS = 3
+FAILED_LOG_NAME = 'failed-to-download.md'
+_failed_log_lock = asyncio.Lock()
+
+
+def log_failed_download_sync(kind, filename, url, module, course, reason='', extras=None):
+    """Append a failure entry to failed-to-download.md in the output dir."""
+    try:
+        out = get_output_dir()
+        path = out / FAILED_LOG_NAME
+        new_file = not path.exists()
+        with open(path, 'a', encoding='utf-8') as f:
+            if new_file:
+                f.write('# Failed Downloads\n\n')
+                f.write('_Files that could not be downloaded after '
+                        f'{MAX_DOWNLOAD_ATTEMPTS} retry attempts._\n\n')
+            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f'## {ts} &mdash; {kind}: {filename}\n\n')
+            f.write(f'- **Module / Chapter:** {module or "(unknown)"}\n')
+            f.write(f'- **Course / Lesson:** {course or "(unknown)"}\n')
+            f.write(f'- **URL:** {url or "(none)"}\n')
+            if extras:
+                for k, v in extras.items():
+                    if v:
+                        f.write(f'- **{k}:** {v}\n')
+            if reason:
+                f.write(f'- **Reason:** {reason}\n')
+            f.write('\n')
+    except Exception as e:
+        logger.error(f"[Failed-log] Could not write {FAILED_LOG_NAME}: {e}")
+
+
+async def log_failed_download(kind, filename, url, module, course, reason='', extras=None):
+    async with _failed_log_lock:
+        log_failed_download_sync(kind, filename, url, module, course, reason, extras)
+    logger.error(f"[{kind}] FAILED after {MAX_DOWNLOAD_ATTEMPTS} attempts: '{filename}' "
+                 f"(module='{module}', course='{course}') - logged to {FAILED_LOG_NAME}")
 
 
 def get_output_dir():
@@ -124,16 +228,16 @@ def get_course_dir(module_name, course_name, module_index=None, lesson_index=Non
 # VIDEO DOWNLOAD
 # ============================================================
 
-async def download_video_m3u8(video_info, course_dir, course_name):
-    """Download video from M3U8/HLS stream using ffmpeg or direct segments."""
-    m3u8_url = video_info.get('m3u8Url') or video_info.get('stream') or ''
-    video_url = video_info.get('url') or ''
-    video_type = video_info.get('type', '')
+async def download_video_m3u8(video_info, course_dir, course_name, module_name=''):
+    """Download video with up to MAX_DOWNLOAD_ATTEMPTS retries.
+
+    On final failure, append details to failed-to-download.md in the output dir.
+    """
     safe_name = sanitize_filename(course_name)
     output_path = course_dir / f"{safe_name}.mp4"
 
+    # Short-circuit: valid existing file — skip even the retry loop
     if output_path.exists():
-        # Validate it's actually a video file, not HTML saved with .mp4 extension
         with open(output_path, 'rb') as f:
             header = f.read(20)
         if header.startswith(b'<!DOCTYPE') or header.startswith(b'<html') or header.startswith(b'<HTML'):
@@ -142,6 +246,46 @@ async def download_video_m3u8(video_info, course_dir, course_name):
         else:
             logger.info(f"[Video] Already exists: {output_path}")
             return str(output_path)
+
+    last_reason = 'unknown'
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            result = await _download_video_m3u8_once(video_info, output_path, course_name, attempt)
+            if result:
+                return result
+            last_reason = 'no strategy produced a valid video file'
+        except Exception as e:
+            last_reason = f'{type(e).__name__}: {e}'
+            logger.error(f"[Video] Attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} raised: {e}")
+        if attempt < MAX_DOWNLOAD_ATTEMPTS:
+            backoff = 2 * attempt
+            logger.warning(f"[Video] Attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} failed for "
+                           f"'{course_name}' - retrying in {backoff}s...")
+            await asyncio.sleep(backoff)
+
+    # All attempts failed - record in failed-to-download.md
+    url = (video_info.get('url')
+           or video_info.get('m3u8Url')
+           or video_info.get('stream')
+           or video_info.get('embedUrl') or '')
+    await log_failed_download(
+        kind='Video', filename=f"{safe_name}.mp4", url=url,
+        module=module_name, course=course_name,
+        reason=last_reason,
+        extras={'Type': video_info.get('type', ''), 'Playback ID': video_info.get('playbackId', '')},
+    )
+    return None
+
+
+async def _download_video_m3u8_once(video_info, output_path, course_name, attempt):
+    """Single attempt: try each download strategy in sequence."""
+    m3u8_url = video_info.get('m3u8Url') or video_info.get('stream') or ''
+    video_url = video_info.get('url') or ''
+    video_type = video_info.get('type', '')
+    safe_name = output_path.stem
+    course_dir = output_path.parent
+
+    await ensure_disk_space(label=f"video '{course_name}'")
 
     # Strategy 1: M3U8 via ffmpeg (Skool native, Loom)
     if m3u8_url and (m3u8_url.endswith('.m3u8') or 'm3u8' in m3u8_url):
@@ -250,8 +394,8 @@ async def download_video_m3u8(video_info, course_dir, course_name):
             except Exception as e:
                 logger.error(f"[Video] Direct download failed: {e}")
 
-    logger.warning(f"[Video] Could not download video for: {course_name}")
-    # Save video URL info for manual download
+    logger.warning(f"[Video] Attempt {attempt} produced no video for: {course_name}")
+    # Save video URL info (overwritten each attempt) so user can download manually
     info_path = course_dir / f"{safe_name}_video_url.txt"
     with open(info_path, 'w', encoding='utf-8') as f:
         f.write(f"Video URL: {video_url}\n")
@@ -261,25 +405,42 @@ async def download_video_m3u8(video_info, course_dir, course_name):
     return None
 
 
-async def download_resource(url, course_dir, filename):
-    """Download a resource attachment."""
+async def download_resource(url, course_dir, filename, module_name='', course_name=''):
+    """Download a resource attachment with retry + failure logging."""
     if not url:
         return None
     safe_name = sanitize_filename(filename or 'resource')
     output_path = course_dir / safe_name
     if output_path.exists():
         return str(output_path)
-    try:
-        timeout = ClientTimeout(total=120)
-        async with ClientSession(timeout=timeout) as client:
-            async with client.get(url) as resp:
-                if resp.status == 200:
-                    with open(output_path, 'wb') as f:
-                        async for chunk in resp.content.iter_chunked(65536):
-                            f.write(chunk)
-                    return str(output_path)
-    except Exception as e:
-        logger.error(f"[Resource] Download failed for {filename}: {e}")
+    await ensure_disk_space(label=f"resource '{safe_name}'")
+
+    last_reason = 'unknown'
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            timeout = ClientTimeout(total=120)
+            async with ClientSession(timeout=timeout) as client:
+                async with client.get(url) as resp:
+                    if resp.status == 200:
+                        with open(output_path, 'wb') as f:
+                            async for chunk in resp.content.iter_chunked(65536):
+                                f.write(chunk)
+                        return str(output_path)
+                    last_reason = f'HTTP {resp.status}'
+                    logger.error(f"[Resource] HTTP {resp.status} for '{filename}' "
+                                 f"(attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS})")
+        except Exception as e:
+            last_reason = f'{type(e).__name__}: {e}'
+            logger.error(f"[Resource] Attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} failed for "
+                         f"'{filename}': {e}")
+        if attempt < MAX_DOWNLOAD_ATTEMPTS:
+            await asyncio.sleep(2 * attempt)
+
+    # All attempts failed
+    await log_failed_download(
+        kind='Resource', filename=safe_name, url=url,
+        module=module_name, course=course_name, reason=last_reason,
+    )
     return None
 
 
@@ -465,6 +626,8 @@ async def handle_course_data(request):
     logger.info(f"\n  Processing course {course_index + 1}: {course_name}")
     logger.info(f"Module: {module_name}")
 
+    await ensure_disk_space(label=f"lesson '{course_name}'")
+
     course_dir = get_course_dir(module_name, course_name, module_index, lesson_index)
     safe_name = sanitize_filename(course_name)
     log_entry = {
@@ -498,7 +661,7 @@ async def handle_course_data(request):
 
     # 3. Download video
     if video_info:
-        video_path = await download_video_m3u8(video_info, course_dir, course_name)
+        video_path = await download_video_m3u8(video_info, course_dir, course_name, module_name)
         if video_path:
             log_entry['files'].append(video_path)
             log_entry['videoFile'] = video_path
@@ -512,7 +675,7 @@ async def handle_course_data(request):
             dl_url = res.get('downloadUrl')
             fname = res.get('fileName') or res.get('title', 'resource')
             if dl_url:
-                res_path = await download_resource(dl_url, course_dir, fname)
+                res_path = await download_resource(dl_url, course_dir, fname, module_name, course_name)
                 if res_path:
                     log_entry['files'].append(res_path)
                     logger.info(f"Resource: {res_path}")
@@ -534,12 +697,19 @@ async def handle_course_data(request):
 
 async def handle_progress(request):
     """Return current download progress."""
+    # Refresh free-space reading so the popup stays accurate even when idle
+    if session_state.get('outputDir'):
+        session_state['diskFreeBytes'] = _disk_free_bytes(session_state['outputDir'])
     return web.json_response({
         'sessionId': session_state['sessionId'],
         'total': session_state['total'],
         'completed': session_state['completed'],
         'startFrom': session_state['startFrom'],
         'currentCourse': session_state['currentCourse'],
+        'diskPaused': session_state.get('diskPaused', False),
+        'diskFreeBytes': session_state.get('diskFreeBytes', 0),
+        'diskMinBytes': session_state.get('diskMinBytes', MIN_FREE_BYTES),
+        'diskPath': session_state.get('diskPath', ''),
     })
 
 
@@ -766,7 +936,8 @@ async def handle_community_data(request):
         safe_name = sanitize_filename(post.get('title') or post.get('name') or f'post_{i}')
         vid_path = community_dir / f"{safe_name}.mp4"
         logger.info(f"[Community] Downloading video {i+1}: {vi.get('type', '?')} for '{safe_name[:40]}'")
-        result = await download_video_m3u8(vi, community_dir, safe_name)
+        # download_video_m3u8 handles retries, disk-space, and failure logging
+        result = await download_video_m3u8(vi, community_dir, safe_name, module_name='Community')
         if result:
             post['videoFile'] = Path(result).name
             video_count += 1
@@ -846,7 +1017,8 @@ if __name__ == '__main__':
   3. Click Scan in extension popup
   4. Click Start Download
 
-  Output: {str(OUTPUT_DIR)}
+  Output:   {str(OUTPUT_DIR)}
+  Disk min: {MIN_FREE_BYTES / (1024**3):.2f} GB free (SDC_MIN_FREE_GB to change)
 ==============================================
 """)
     app = create_app()

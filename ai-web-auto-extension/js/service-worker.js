@@ -351,16 +351,42 @@ async function getPageHTML(tabId) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function getTargetTabId() {
+  // 1. Validate cached targetTabId — must exist AND not be a chrome-extension:// URL
   if (targetTabId) {
     try {
       const tab = await chrome.tabs.get(targetTabId);
-      if (tab) return targetTabId;
+      if (tab && tab.url && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('chrome://')) {
+        return targetTabId;
+      }
+      // Cached ID points to an invalid tab — clear it
+      targetTabId = null;
     } catch {
       targetTabId = null;
     }
   }
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab?.id || null;
+
+  // 2. Fallback: search all tabs for a regular web page (not chrome://, not chrome-extension://)
+  // Prefer active tabs first, then any http(s) tab
+  const allTabs = await chrome.tabs.query({});
+  const webTabs = allTabs.filter(t => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
+
+  // Prefer the active one in current window
+  const [activeWebTab] = webTabs.filter(t => t.active && t.windowId);
+  if (activeWebTab) {
+    targetTabId = activeWebTab.id;
+    console.log(`[SW] Auto-selected active web tab: ${activeWebTab.url}`);
+    return activeWebTab.id;
+  }
+
+  // Otherwise, any web tab
+  if (webTabs.length > 0) {
+    targetTabId = webTabs[0].id;
+    console.log(`[SW] Auto-selected web tab: ${webTabs[0].url}`);
+    return webTabs[0].id;
+  }
+
+  console.warn('[SW] No valid web tab found');
+  return null;
 }
 
 function waitForTabLoad(tabId, timeoutMs = 25000) {

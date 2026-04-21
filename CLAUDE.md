@@ -92,6 +92,17 @@ Mark complete:    button > svg[viewBox="0 0 40 40"] (done)
 - `the-ai-blueprint` - Loom embeds + PDF resources
 - `learn-ai` - Mixed Skool native + YouTube
 
+## Skills available to Claude for this project
+
+Two skills live in `.claude/skills/` and handle different use cases:
+
+| Skill | File | When to use |
+|---|---|---|
+| **ai-web-auto-driver** | `.claude/skills/ai-web-auto-driver.md` | **Drive** the existing platform for one-off tasks: scrape data, read DOM, post a comment, fill a form. Pick this when the user says "use ai-web-auto to...", "via the extension...", or asks for an ad-hoc automation that doesn't need a new standalone extension. Contains all lessons learned about the tab-targeting bug, React input filling, ProseMirror editors, and the single-`execute_script` pattern. |
+| **web-auto** | `.claude/skills/web-auto.md` | **Build** a new standalone Chrome extension from scratch. Pick this when the user says "build an extension to automate X", "create a new extension for Y", or wants a reusable packaged automation output. |
+
+Both skills load automatically based on the user's phrasing. If unsure which to use, read the TRIGGER section of each file — `ai-web-auto-driver` handles the "use the platform" case, `web-auto` handles the "build something new" case.
+
 ## Building a New Automation Extension
 
 ### Option A: Ask Claude (recommended)

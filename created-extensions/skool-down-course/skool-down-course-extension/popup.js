@@ -53,6 +53,23 @@ function setProgress(pct) {
   $('progressFill').style.width = `${pct}%`;
 }
 
+function fmtGB(bytes) {
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+function updateDiskWarning(data) {
+  const el = $('diskWarning');
+  if (!data || !data.diskPaused) { el.style.display = 'none'; return; }
+  const free = fmtGB(data.diskFreeBytes || 0);
+  const need = fmtGB(data.diskMinBytes || 0);
+  const path = data.diskPath ? ` (${data.diskPath})` : '';
+  el.style.display = 'block';
+  el.innerHTML =
+    '<strong>Disk full &mdash; download paused</strong>' +
+    `Only ${free} free on the output disk${path}. Need at least ${need}. ` +
+    'Free up space and the download will resume automatically.';
+}
+
 function showModuleList(modules) {
   const list = $('courseList');
   list.style.display = 'block';
@@ -422,6 +439,8 @@ async function pollProgress() {
       const data = await r.json();
       const total = data.total || 0;
 
+      updateDiskWarning(data);
+
       if (total > 0 && data.completed >= total) {
         // Check if community download is still running
         if (data.currentCourse?.startsWith('Community:') || data.currentCourse?.includes('community')) {
@@ -441,7 +460,8 @@ async function pollProgress() {
       if (total > 0) {
         const pct = Math.round((data.completed / total) * 100);
         setProgress(pct);
-        setStatus(`${data.completed}/${total} lessons (${pct}%) - ${data.currentCourse || '...'}`);
+        const suffix = data.diskPaused ? ' - PAUSED (disk full)' : '';
+        setStatus(`${data.completed}/${total} lessons (${pct}%) - ${data.currentCourse || '...'}${suffix}`);
       } else {
         setStatus(`Scanning modules... ${data.currentCourse || ''}`);
       }

@@ -12,6 +12,7 @@ import sys
 import os
 import base64
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -31,6 +32,79 @@ logger.add("sdc_downloader.log", rotation="5 MB", level="DEBUG",
            format="{time:YYYY-MM-DD HH:mm:ss} | {level:<7} | {message}")
 
 OUTPUT_DIR = Path('skool-output')
+
+# Pause downloads when free space on the output disk drops below this.
+# Override with env var SDC_MIN_FREE_GB (float, in GB).
+try:
+    MIN_FREE_BYTES = int(float(os.environ.get('SDC_MIN_FREE_GB', '1')) * 1024 * 1024 * 1024)
+except ValueError:
+    MIN_FREE_BYTES = 1024 * 1024 * 1024
+DISK_POLL_SECONDS = 5
+
+
+def _disk_free_bytes(path):
+    try:
+        target = Path(path)
+        while not target.exists() and target.parent != target:
+            target = target.parent
+        return shutil.disk_usage(str(target)).free
+    except Exception as e:
+        logger.error(f"[Disk] Check failed for {path}: {e}")
+        return 0
+
+
+async def ensure_disk_space(path, label=''):
+    """Block until free space at path is >= MIN_FREE_BYTES."""
+    warned = False
+    while True:
+        free = _disk_free_bytes(path)
+        if free >= MIN_FREE_BYTES:
+            if warned:
+                logger.success(f"[Disk] Space recovered: {free / (1024**3):.2f} GB free - resuming")
+            return
+        if not warned:
+            logger.warning(
+                f"[Disk] LOW DISK SPACE: only {free / (1024**3):.2f} GB free at '{path}' "
+                f"(need {MIN_FREE_BYTES / (1024**3):.2f} GB). "
+                f"Pausing{' before ' + label if label else ''} - free up space to continue."
+            )
+            warned = True
+        await asyncio.sleep(DISK_POLL_SECONDS)
+
+
+# Retry + failure logging
+MAX_DOWNLOAD_ATTEMPTS = 3
+FAILED_LOG_NAME = 'failed-to-download.md'
+
+
+def log_failed_download(out_dir, kind, filename, url, module, course, reason='', extras=None):
+    """Append a failure entry to failed-to-download.md in the output dir."""
+    try:
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path = out_dir / FAILED_LOG_NAME
+        new_file = not path.exists()
+        with open(path, 'a', encoding='utf-8') as f:
+            if new_file:
+                f.write('# Failed Downloads\n\n')
+                f.write(f'_Files that could not be downloaded after {MAX_DOWNLOAD_ATTEMPTS} '
+                        f'retry attempts._\n\n')
+            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            f.write(f'## {ts} &mdash; {kind}: {filename}\n\n')
+            f.write(f'- **Module / Chapter:** {module or "(unknown)"}\n')
+            f.write(f'- **Course / Lesson:** {course or "(unknown)"}\n')
+            f.write(f'- **URL:** {url or "(none)"}\n')
+            if extras:
+                for k, v in extras.items():
+                    if v:
+                        f.write(f'- **{k}:** {v}\n')
+            if reason:
+                f.write(f'- **Reason:** {reason}\n')
+            f.write('\n')
+        logger.error(f"[{kind}] FAILED after {MAX_DOWNLOAD_ATTEMPTS} attempts: '{filename}' "
+                     f"(module='{module}', course='{course}') - logged to {FAILED_LOG_NAME}")
+    except Exception as e:
+        logger.error(f"[Failed-log] Could not write {FAILED_LOG_NAME}: {e}")
 
 # Find yt-dlp and ffmpeg
 def _find_tool(name):
@@ -80,8 +154,8 @@ async def save_screenshot(s, path):
     return False
 
 
-async def download_video(video_info, output_path):
-    """Download video using ffmpeg or yt-dlp."""
+async def download_video(video_info, output_path, out_dir=None, module_name='', course_name=''):
+    """Download video using ffmpeg or yt-dlp with retry + failure logging."""
     output_path = Path(output_path)
     if output_path.exists() and output_path.stat().st_size > 1000:
         # Validate it's actually a video file, not HTML saved with .mp4 extension
@@ -94,6 +168,39 @@ async def download_video(video_info, output_path):
             logger.info(f"Video already exists: {output_path}")
             return str(output_path)
 
+    await ensure_disk_space(output_path.parent, label=f"video '{output_path.name}'")
+
+    last_reason = 'unknown'
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            result = await _download_video_once(video_info, output_path, attempt)
+            if result:
+                return result
+            last_reason = 'no strategy produced a valid video file'
+        except Exception as e:
+            last_reason = f'{type(e).__name__}: {e}'
+            logger.error(f"Video attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} raised: {e}")
+        if attempt < MAX_DOWNLOAD_ATTEMPTS:
+            backoff = 2 * attempt
+            logger.warning(f"Attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} failed for "
+                           f"{output_path.name} - retrying in {backoff}s...")
+            await asyncio.sleep(backoff)
+
+    # All attempts exhausted - log to failed-to-download.md
+    log_dir = out_dir if out_dir else output_path.parent
+    src_url = (video_info.get('url') or video_info.get('m3u8Url')
+               or video_info.get('stream') or video_info.get('embedUrl') or '')
+    log_failed_download(
+        log_dir, kind='Video', filename=output_path.name, url=src_url,
+        module=module_name, course=course_name or output_path.stem,
+        reason=last_reason,
+        extras={'Type': video_info.get('type', ''), 'Playback ID': video_info.get('playbackId', '')},
+    )
+    return None
+
+
+async def _download_video_once(video_info, output_path, attempt):
+    """Single attempt: try each strategy in sequence."""
     m3u8 = video_info.get('m3u8Url') or video_info.get('stream') or ''
     url = video_info.get('url') or ''
     vtype = video_info.get('type') or ''
@@ -144,30 +251,46 @@ async def download_video(video_info, output_path):
         except asyncio.TimeoutError:
             logger.error("yt-dlp timeout")
 
-    # Save URL info for manual download
+    # Save URL info (overwritten each attempt) so user can download manually
     info_path = output_path.with_suffix('.video_url.txt')
     info_path.write_text(f"URL: {url}\nStream: {m3u8}\nType: {vtype}\nEmbed: {embed}\n")
     return None
 
 
-async def download_resource(url, output_path):
-    """Download a resource file via aiohttp."""
+async def download_resource(url, output_path, out_dir=None, module_name='', course_name=''):
+    """Download a resource file via aiohttp with retry + failure logging."""
     output_path = Path(output_path)
     if output_path.exists():
         return str(output_path)
-    try:
-        from aiohttp import ClientSession, ClientTimeout
-        async with ClientSession(timeout=ClientTimeout(total=120)) as client:
-            async with client.get(url, headers={
-                'Referer': 'https://www.skool.com/',
-                'Origin': 'https://www.skool.com'
-            }) as resp:
-                if resp.status == 200:
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    output_path.write_bytes(await resp.read())
-                    return str(output_path)
-    except Exception as e:
-        logger.error(f"Resource download failed: {e}")
+    await ensure_disk_space(output_path.parent, label=f"resource '{output_path.name}'")
+
+    from aiohttp import ClientSession, ClientTimeout
+    last_reason = 'unknown'
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=120)) as client:
+                async with client.get(url, headers={
+                    'Referer': 'https://www.skool.com/',
+                    'Origin': 'https://www.skool.com'
+                }) as resp:
+                    if resp.status == 200:
+                        output_path.parent.mkdir(parents=True, exist_ok=True)
+                        output_path.write_bytes(await resp.read())
+                        return str(output_path)
+                    last_reason = f'HTTP {resp.status}'
+                    logger.error(f"Resource HTTP {resp.status} for {output_path.name} "
+                                 f"(attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS})")
+        except Exception as e:
+            last_reason = f'{type(e).__name__}: {e}'
+            logger.error(f"Resource attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} failed: {e}")
+        if attempt < MAX_DOWNLOAD_ATTEMPTS:
+            await asyncio.sleep(2 * attempt)
+
+    log_dir = out_dir if out_dir else output_path.parent
+    log_failed_download(
+        log_dir, kind='Resource', filename=output_path.name, url=url,
+        module=module_name, course=course_name, reason=last_reason,
+    )
     return None
 
 
@@ -512,7 +635,10 @@ async def main():
 
             if video_info:
                 vid_path = lesson_dir / f"{safe_name}.mp4"
-                result = await download_video(video_info, str(vid_path))
+                result = await download_video(video_info, str(vid_path),
+                                              out_dir=out_dir,
+                                              module_name=mod['title'],
+                                              course_name=lesson['name'])
                 if result:
                     total_downloaded += 1
 
@@ -529,7 +655,10 @@ async def main():
                             if file_id and group_id:
                                 dl_url = f"https://assets.skool.com/f/{group_id}/{file_id}"
                                 res_path = lesson_dir / sanitize(fname)
-                                result = await download_resource(dl_url, str(res_path))
+                                result = await download_resource(dl_url, str(res_path),
+                                                                 out_dir=out_dir,
+                                                                 module_name=mod['title'],
+                                                                 course_name=lesson['name'])
                                 if result:
                                     logger.info(f"    Resource: {fname}")
                 except Exception as e:

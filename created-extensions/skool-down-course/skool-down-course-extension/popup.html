@@ -136,6 +136,18 @@
     }
     .dot.connected { background: #4caf50; }
     .dot.error { background: #f44336; }
+    #diskWarning {
+      display: none;
+      margin: 0 20px 10px;
+      padding: 10px 12px;
+      background: #3a2416;
+      color: #ffb74d;
+      border: 1px solid #ff9800;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    #diskWarning strong { color: #ffcc80; display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
@@ -207,6 +219,8 @@
   <div id="status">
     <div class="status-line">Ready. Navigate to a Skool classroom page first.</div>
   </div>
+
+  <div id="diskWarning"></div>
 
   <div class="progress-bar" id="progressBar" style="display:none;margin:0 20px 12px">
     <div class="fill" id="progressFill"></div>
