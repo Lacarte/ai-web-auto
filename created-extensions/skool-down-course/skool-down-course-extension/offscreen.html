@@ -1,5 +1,2 @@
 <!DOCTYPE html>
-<html><body><script>
-// Keepalive: pings service worker every 20s to prevent termination
-setInterval(() => { chrome.runtime.sendMessage({ action: 'keepalive' }); }, 20000);
-</script></body></html>
+<html><body><script src="offscreen.js"></script></body></html>

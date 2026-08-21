@@ -5,6 +5,9 @@ learning-process/output/
 skool-output/
 *.png
 *.jpg
+# ...but extension icons are required by manifest.json - keep them tracked
+!ai-web-auto-extension/icons/*.png
+!created-extensions/**/icon*.png
 .env
 node_modules/
 sdc_backend.log

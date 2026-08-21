@@ -13,6 +13,7 @@ import os
 import base64
 import re
 import shutil
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -124,8 +125,13 @@ FFMPEG = _find_tool('ffmpeg')
 
 
 def sanitize(name):
-    name = re.sub(r'[\U0001F000-\U0001FFFF\u2600-\u27BF\uFE00-\uFE0F\u200D\u20E3\U000E0020-\U000E007F]', '', name)
-    return re.sub(r'[<>:"/\\|?*]', '_', name).strip()[:100]
+    """Fold accents (o-acute -> o) + strip non-ASCII and illegal filename chars."""
+    if not name:
+        return ''
+    name = unicodedata.normalize('NFKD', name)
+    name = name.encode('ascii', 'ignore').decode('ascii')
+    name = re.sub(r'[<>:"/\\|?*]', '_', name)
+    return re.sub(r'\s+', ' ', name).strip().rstrip('. ')[:100]
 
 
 async def run_js(s, script):
@@ -233,23 +239,37 @@ async def _download_video_once(video_info, output_path, attempt):
     if dl_url and vtype in ('YouTube', 'Loom', 'Vimeo', 'Wistia', 'Video'):
         if '/embed/' in dl_url:
             dl_url = dl_url.split('?')[0].replace('/embed/', '/share/')
-        logger.info(f"Downloading via yt-dlp: {dl_url[:80]}...")
+        logger.info(f"Downloading via yt-dlp (attempt {attempt}): {dl_url[:80]}...")
         try:
             proc = await asyncio.create_subprocess_exec(
-                YT_DLP, '--no-warnings', '-o', str(output_path),
-                '--merge-output-format', 'mp4', dl_url,
+                YT_DLP,
+                '--no-warnings',
+                '--continue',                       # resume from .part + .ytdl state
+                '--retries', '10',                  # whole-download retries
+                '--fragment-retries', '20',         # per-fragment retries (HLS)
+                '--retry-sleep', 'fragment:exp=1:10',
+                '--socket-timeout', '30',
+                '--concurrent-fragments', '4',
+                '-o', str(output_path),
+                '--merge-output-format', 'mp4',
+                dl_url,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
-            _, stderr = await asyncio.wait_for(proc.communicate(), timeout=600)
+            _, stderr = await asyncio.wait_for(proc.communicate(), timeout=1800)
             if proc.returncode == 0 and output_path.exists():
                 mb = output_path.stat().st_size / (1024*1024)
                 logger.success(f"Video downloaded: {mb:.1f} MB -> {output_path}")
                 return str(output_path)
-            logger.error(f"yt-dlp failed: {stderr.decode()[:300]}")
+            logger.error(f"yt-dlp failed (attempt {attempt}): {stderr.decode()[-500:]}")
         except FileNotFoundError:
             logger.warning("yt-dlp not in PATH")
         except asyncio.TimeoutError:
-            logger.error("yt-dlp timeout")
+            logger.error(f"yt-dlp timeout after 1800s (attempt {attempt}) - next retry will resume")
+            try:
+                proc.kill()
+                await proc.communicate()
+            except Exception:
+                pass
 
     # Save URL info (overwritten each attempt) so user can download manually
     info_path = output_path.with_suffix('.video_url.txt')
@@ -666,9 +686,14 @@ async def main():
 
             # Save metadata
             meta_path = lesson_dir / f"{safe_name}_meta.json"
+            # videoLenMs comes from Skool's own metadata; persist it under both
+            # names so sdc_resume_downloads.py can verify the downloaded .mp4
+            # against the expected length (sdc_backend.py writes videoDurationMs).
+            duration_ms = lesson.get('videoLenMs') or 0
             meta_path.write_text(json.dumps({
                 'title': lesson['name'], 'videoLink': video_link,
                 'videoId': video_id, 'videoInfo': video_info,
+                'videoDurationMs': duration_ms, 'videoLenMs': duration_ms,
                 'url': lesson_url
             }, indent=2, ensure_ascii=False), encoding='utf-8')
 

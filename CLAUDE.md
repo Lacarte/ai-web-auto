@@ -62,8 +62,18 @@ At the `>` prompt:
 
 ### Usage
 ```
+venv\Scripts\python created-extensions\skool-down-course\skool-down-course-backend\sdc_downloader.py "https://www.skool.com/ai-video-creators/classroom"
+```
+
+Extension-driven instead (popup picks the course, backend serves it on :9876):
+```
 cd created-extensions\skool-down-course\skool-down-course-backend
-download-runner.bat https://www.skool.com/ai-video-creators/classroom
+runner.bat
+```
+
+Verify / resume an interrupted course download:
+```
+python created-extensions\skool-down-course\skool-down-course-backend\sdc_resume_downloads.py "skool-output\<Course>_<date>" --dry-run
 ```
 
 ### How it works
@@ -72,6 +82,8 @@ download-runner.bat https://www.skool.com/ai-video-creators/classroom
 3. For each lesson: captures HTML (inline CSS, active links), screenshot, and video
 4. Videos: Skool native (click play -> mux-player -> M3U8 -> ffmpeg), YouTube/Loom/Vimeo (yt-dlp)
 5. Output organized as `skool-output/{CourseName}/{Module}/{Lesson}/`
+6. `sdc_resume_downloads.py` ffprobes each `.mp4` against the expected duration in
+   `_meta.json` and resumes/repairs short, corrupt, or missing downloads via yt-dlp
 
 ### Proven selectors (verified on live sites)
 ```
@@ -308,6 +320,7 @@ DON'T: ignore DOM diff showing error/loading states
 | `learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
 | `.claude/skills/web-auto.md` | Skill for building new extensions |
 | `created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
+| `created-extensions/skool-down-course/skool-down-course-backend/sdc_resume_downloads.py` | Verify downloaded videos, resume/repair incomplete ones |
 
 ## Troubleshooting
 

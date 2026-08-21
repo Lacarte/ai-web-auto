@@ -9,15 +9,17 @@ skool-down-course/
   skool-down-course-extension/   # Chrome extension (popup UI)
   skool-down-course-backend/     # Python downloader + backend
     sdc_downloader.py            # Main downloader (uses AI Web-Auto)
-    sdc_backend.py               # REST API backend (for extension, optional)
-    download-runner.bat           # Run the downloader
+    sdc_backend.py               # REST API backend (serves the extension)
+    sdc_resume_downloads.py      # Verify + resume/repair a downloaded course
+    install.bat                  # Create venv + install requirements.txt
+    runner.bat                   # Start sdc_backend.py on localhost:9876
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- Python venv with `aiohttp`, `loguru`, `pydantic` installed
-- `ffmpeg` in PATH (for Skool native M3U8 videos)
+- Python 3.10+ venv with `requirements.txt` installed (`install.bat`)
+- `ffmpeg` and `ffprobe` in PATH (Skool native M3U8 videos, download verification)
 - `yt-dlp` in PATH (for YouTube/Loom/Vimeo videos)
 - AI Web-Auto extension loaded in Chrome (`ai-web-auto-extension/`)
 
@@ -25,17 +27,43 @@ skool-down-course/
 
 1. Open Chrome with the AI Web-Auto extension loaded
 2. Log into Skool and navigate to any classroom page
-3. Run:
+3. Run the downloader from the project root:
 
 ```
-download-runner.bat https://www.skool.com/ai-video-creators/classroom
-```
-
-Or directly:
-```
-cd project-root
 venv\Scripts\python created-extensions\skool-down-course\skool-down-course-backend\sdc_downloader.py "https://www.skool.com/ai-video-creators/classroom"
 ```
+
+### Or drive it from the Chrome extension
+
+`runner.bat` starts the REST backend that the SKOOL-DOWN-COURSE extension talks to
+(it takes no arguments - the course is chosen in the popup):
+
+```
+cd created-extensions\skool-down-course\skool-down-course-backend
+install.bat     :: first time only
+runner.bat      :: serves http://localhost:9876
+```
+
+Then load `skool-down-course-extension/` in `chrome://extensions` and use the popup.
+
+### Verify / resume an interrupted download
+
+Long courses can be cut short by a dropped connection or a full disk. This probes every
+`.mp4` with `ffprobe`, compares it against the expected duration in `_meta.json`, and
+resumes or repairs whatever is short, corrupt, or missing:
+
+```
+:: report only - no deletes, no downloads
+python sdc_resume_downloads.py "..\..\..\skool-output\MyCourse_2026-04-21" --dry-run
+
+:: actually clean leftovers and resume
+python sdc_resume_downloads.py "..\..\..\skool-output\MyCourse_2026-04-21"
+```
+
+Options: `--tolerance 0.95` (min actual/expected duration ratio to count as complete),
+`--keep-parts` (never delete leftover `.part`/`.ytdl` files).
+Skool-native (Mux) videos cannot be resumed by yt-dlp - they are reported and left
+untouched, so re-run `sdc_downloader.py` for those.
 
 ### Output structure
 

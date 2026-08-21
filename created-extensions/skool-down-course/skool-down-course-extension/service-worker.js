@@ -664,9 +664,18 @@ async function markComplete(tabId) {
 function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
 function sanitize(name) {
+  // Fold accents (o-acute -> o, e-acute -> e, n-tilde -> n) via NFKD + strip
+  // combining marks, then drop any remaining non-ASCII (emojis, CJK, symbols).
+  // Replace Windows-illegal chars with '_'. Result is plain ASCII, <=100 chars.
   return (name || '')
-    .replace(/[\u{1F000}-\u{1FFFF}|\u{2600}-\u{27BF}|\u{FE00}-\u{FE0F}|\u{200D}|\u{20E3}|\u{E0020}-\u{E007F}]/gu, '')
-    .replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, ' ').trim().substring(0, 100);
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')     // combining diacritical marks
+    .replace(/[^\x00-\x7f]/g, '')         // anything still non-ASCII
+    .replace(/[<>:"/\\|?*]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[. ]+$/, '')                // trim trailing dots/spaces
+    .substring(0, 100);
 }
 
 async function postBackend(path, data) {

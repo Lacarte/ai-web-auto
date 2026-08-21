@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -145,11 +146,24 @@ async def ensure_disk_space(label=''):
 
 
 def sanitize_filename(name):
-    """Make a string safe for use as a file/folder name."""
-    # Strip emojis and special Unicode symbols
+    """Make a string safe for use as a file/folder name.
+
+    Fold accents to ASCII (o-acute -> o, e-acute -> e, n-tilde -> n) and
+    drop any remaining non-ASCII characters (emojis, CJK, symbols).
+    Replace Windows-illegal chars with '_'. Result is plain ASCII, <=100 chars.
+    """
+    if not name:
+        return ''
+    # Decompose accented chars, drop combining marks, drop non-ASCII
+    name = unicodedata.normalize('NFKD', name)
+    name = name.encode('ascii', 'ignore').decode('ascii')
+    # (emoji/CJK already dropped by the ASCII encode above; retained as
+    #  belt-and-suspenders for exotic code points that survived NFKD)
     name = re.sub(r'[\U0001F000-\U0001FFFF\u2600-\u27BF\uFE00-\uFE0F\u200D\u20E3\U000E0020-\U000E007F]', '', name)
     name = re.sub(r'[<>:"/\\|?*]', '_', name)
     name = re.sub(r'\s+', ' ', name).strip()
+    # Trim trailing dots/spaces (also illegal on Windows)
+    name = name.rstrip('. ')
     return name[:100]
 
 

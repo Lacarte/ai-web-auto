@@ -1,0 +1,13 @@
+# Keep sources LF in the repo; Git checks them out per the platform.
+* text=auto eol=lf
+
+# Windows launchers must stay CRLF or cmd.exe mis-parses them.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets - never line-ending-convert or diff these.
+*.png binary
+*.jpg binary
+*.ico binary
+*.mp4 binary
+*.pdf binary
