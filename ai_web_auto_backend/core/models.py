@@ -43,6 +43,15 @@ class ActionType(str, Enum):
     OBSERVE_START = "observe_start"
     OBSERVE_DIFF = "observe_diff"
     OBSERVE_STOP = "observe_stop"
+    MOUSE_MOVE = "mouse_move"
+    DRAG = "drag"
+    NETWORK_START = "network_start"
+    NETWORK_DUMP = "network_dump"
+    NETWORK_STOP = "network_stop"
+    DOWNLOAD_ASSET = "download_asset"
+    MEDIA = "media"
+    SCRAPE = "scrape"
+    KEY = "key"
 
 
 class TargetMethod(str, Enum):

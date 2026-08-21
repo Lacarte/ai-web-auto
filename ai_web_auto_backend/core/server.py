@@ -238,6 +238,81 @@ class WebSocketServer:
             target={"method": method, "value": selector},
         ))
 
+    async def key(self, key: str = "Enter") -> Response:
+        return await self.send_command(Command(action="key", params={"key": key}))
+
+    # ── Hands: mouse move + drag ─────────────────────────────────────────
+
+    async def mouse_move(self, selector: str | None = None, x: int | None = None,
+                         y: int | None = None, steps: int = 12) -> Response:
+        params: dict[str, Any] = {"steps": steps}
+        if selector:
+            params["selector"] = selector
+        if x is not None:
+            params["x"] = x
+        if y is not None:
+            params["y"] = y
+        return await self.send_command(Command(action="mouse_move", params=params))
+
+    async def drag(self, from_sel: str | None = None, to_sel: str | None = None,
+                  x1: int | None = None, y1: int | None = None,
+                  x2: int | None = None, y2: int | None = None, steps: int = 20) -> Response:
+        params: dict[str, Any] = {"steps": steps}
+        if from_sel:
+            params["from"] = from_sel
+        if to_sel:
+            params["to"] = to_sel
+        for k, v in (("x1", x1), ("y1", y1), ("x2", x2), ("y2", y2)):
+            if v is not None:
+                params[k] = v
+        return await self.send_command(Command(action="drag", params=params))
+
+    # ── Eyes: network interception ───────────────────────────────────────
+
+    async def network_start(self) -> Response:
+        return await self.send_command(Command(action="network_start"))
+
+    async def network_dump(self, resource_type: str | None = None,
+                          url_contains: str | None = None, limit: int = 300,
+                          include_headers: bool = False) -> Response:
+        params: dict[str, Any] = {"limit": limit, "include_headers": include_headers}
+        if resource_type:
+            params["resource_type"] = resource_type
+        if url_contains:
+            params["url_contains"] = url_contains
+        return await self.send_command(Command(action="network_dump", params=params))
+
+    async def network_stop(self) -> Response:
+        return await self.send_command(Command(action="network_stop"))
+
+    # ── Hands: asset grabbing ────────────────────────────────────────────
+
+    async def download_asset(self, url: str, filename: str | None = None,
+                            return_data: bool = False) -> Response:
+        return await self.send_command(Command(
+            action="download_asset",
+            params={"url": url, "filename": filename, "return_data": return_data},
+            timeout=120000,
+        ))
+
+    # ── Hands: media control ─────────────────────────────────────────────
+
+    async def media(self, op: str = "state", selector: str = "video, audio",
+                   time: float | None = None) -> Response:
+        params: dict[str, Any] = {"op": op, "selector": selector}
+        if time is not None:
+            params["time"] = time
+        return await self.send_command(Command(action="media", params=params))
+
+    # ── Eyes: structured scrape ──────────────────────────────────────────
+
+    async def scrape(self, selector: str = "body", fields: dict | None = None,
+                    limit: int = 200) -> Response:
+        params: dict[str, Any] = {"selector": selector, "limit": limit}
+        if fields:
+            params["fields"] = fields
+        return await self.send_command(Command(action="scrape", params=params))
+
     # ── DOM Observation ───────────────────────────────────────────────────
 
     async def observe_start(self, selector: str = "body", interval: int = 1000) -> Response:
