@@ -45,6 +45,7 @@ h3 {
 
 .badge.connected { background: #0f5132; color: #75e6a0; }
 .badge.disconnected { background: #5c1a1a; color: #f87171; }
+.badge.checking { background: #4a3a0f; color: #e6c875; }
 
 label {
   display: block;
@@ -92,5 +93,7 @@ button:hover { background: #1a5276; }
 }
 
 .log-entry { color: #8892b0; }
+.log-entry.info { color: #7fb0ff; }
 .log-entry.success { color: #75e6a0; }
 .log-entry.error { color: #f87171; }
+.log-entry.warning, .log-entry.stale { color: #e6c875; }

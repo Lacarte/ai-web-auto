@@ -109,6 +109,17 @@ class WebSocketServer:
     async def _route_message(self, msg: dict[str, Any]):
         msg_type = msg.get("type", "")
 
+        if msg_type == "ping":
+            # Application-level liveness check from the extension. Reply with a
+            # pong so the extension can distinguish a live backend from a
+            # half-open socket (dead backend that never sent a TCP close).
+            if self._ws:
+                await self._ws.send(json.dumps({
+                    "type": "pong",
+                    "timestamp": msg.get("timestamp"),
+                }))
+            return
+
         if msg_type == "response":
             cid = msg.get("correlation_id", "")
             fut = self._pending.pop(cid, None)

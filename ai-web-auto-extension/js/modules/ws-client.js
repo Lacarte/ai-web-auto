@@ -14,8 +14,19 @@ export class WebSocketClient {
     this._pingInterval = null;
     this._commandHandler = null;
     this._connected = false;
+    this._authenticated = false;
     this._intentionalClose = false;
     this._tokenReady = false;
+
+    // ── Heartbeat / liveness ────────────────────────────────────────────
+    // A socket can stay "open" from the browser's point of view even after
+    // the backend process dies (half-open TCP). We ping every PING_INTERVAL
+    // and require a pong back within PONG_TIMEOUT; missing pongs mean the
+    // backend is gone even though onclose never fired → no false positive.
+    this._PING_INTERVAL = 5000;
+    this._PONG_TIMEOUT = 8000;
+    this._lastPongAt = 0;
+    this._pongWatchdog = null;
 
     // Load auth token from storage before connecting
     this._loadToken();
@@ -30,7 +41,25 @@ export class WebSocketClient {
     });
   }
 
-  get connected() { return this._connected; }
+  get connected() {
+    // "Connected" is only true when the socket is open, auth was accepted,
+    // AND we've heard a pong recently. A dead backend (half-open socket)
+    // stops answering pongs, so this flips to false without waiting for
+    // onclose — which is what prevents the false-positive "Connected".
+    if (!this._connected || !this._authenticated) return false;
+    if (!this._ws || this._ws.readyState !== WebSocket.OPEN) return false;
+    if (!this._lastPongAt) return true; // just authenticated, no ping cycle yet
+    return (Date.now() - this._lastPongAt) < (this._PING_INTERVAL + this._PONG_TIMEOUT);
+  }
+
+  /** Register a callback invoked on every meaningful WS lifecycle change. */
+  onStatusChange(cb) { this._statusCb = cb; }
+
+  _emitStatus(state, detail) {
+    if (this._statusCb) {
+      try { this._statusCb(state, detail); } catch { /* ignore */ }
+    }
+  }
 
   _loadToken() {
     return new Promise((resolve) => {
@@ -67,8 +96,12 @@ export class WebSocketClient {
     }
 
     this._ws.onopen = () => {
-      console.log('[WS] Connected, authenticating...');
+      console.log('[WS] Socket open, authenticating...');
       this._reconnectDelay = 1000;
+      // Socket is open but NOT yet usable — auth must succeed first.
+      this._connected = true;
+      this._authenticated = false;
+      this._lastPongAt = 0;
       this._sendRaw({ type: 'auth', token: this._authToken });
     };
 
@@ -78,13 +111,23 @@ export class WebSocketClient {
 
       if (msg.type === 'auth_response') {
         if (msg.status === 'accepted') {
-          this._connected = true;
+          this._authenticated = true;
+          this._lastPongAt = Date.now(); // treat accept as first liveness proof
           this._startPing();
           console.log('[WS] Authenticated');
+          this._emitStatus('connected');
         } else {
           console.error('[WS] Auth denied');
+          this._authenticated = false;
+          this._emitStatus('auth_denied');
           this._ws.close();
         }
+        return;
+      }
+
+      // Application-level pong → backend is alive.
+      if (msg.type === 'pong') {
+        this._lastPongAt = Date.now();
         return;
       }
 
@@ -96,7 +139,9 @@ export class WebSocketClient {
     this._ws.onclose = () => {
       const wasConnected = this._connected;
       this._connected = false;
+      this._authenticated = false;
       this._stopPing();
+      if (wasConnected) this._emitStatus('disconnected');
       if (!this._intentionalClose) {
         if (wasConnected) {
           console.log('[WS] Disconnected, reconnecting...');
@@ -169,8 +214,18 @@ export class WebSocketClient {
     this._pingInterval = setInterval(() => {
       if (this._ws && this._ws.readyState === WebSocket.OPEN) {
         this._sendRaw({ type: 'ping', timestamp: new Date().toISOString() });
+
+        // If the backend has gone silent (no pong within the window), the
+        // socket is half-open. Force-close it so onclose runs the reconnect
+        // path — and connected flips to false — instead of lying.
+        const silentFor = Date.now() - this._lastPongAt;
+        if (this._lastPongAt && silentFor > (this._PING_INTERVAL + this._PONG_TIMEOUT)) {
+          console.warn(`[WS] No pong for ${silentFor}ms — backend appears dead, dropping socket`);
+          this._emitStatus('stale');
+          try { this._ws.close(); } catch { /* ignore */ }
+        }
       }
-    }, 30000);
+    }, this._PING_INTERVAL);
   }
 
   _stopPing() {

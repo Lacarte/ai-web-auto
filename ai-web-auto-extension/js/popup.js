@@ -21,11 +21,20 @@ function refreshStatus() {
     wsStatus.className = `badge ${resp.connected ? 'connected' : 'disconnected'}`;
 
     logContainer.innerHTML = '';
-    (resp.taskLog || []).slice(-30).forEach((entry) => {
+    (resp.taskLog || []).slice(-40).forEach((entry) => {
       const div = document.createElement('div');
-      div.className = `log-entry ${entry.status || ''}`;
+      const status = entry.status || '';
+      // Map internal status to a CSS class the log understands.
+      const cls = status === 'received' ? 'info'
+        : status === 'success' ? 'success'
+        : status === 'failure' ? 'error'
+        : status;
+      div.className = `log-entry ${cls}`;
       const time = new Date(entry.timestamp).toLocaleTimeString();
-      div.textContent = `[${time}] ${entry.action || entry.event || 'info'} — ${entry.status || ''}`;
+      const arrow = status === 'received' ? '◀' : '▶';
+      const label = entry.action || entry.event || 'info';
+      const detail = entry.detail ? `  ${entry.detail}` : '';
+      div.textContent = `[${time}] ${arrow} ${label}${detail} ${status !== 'received' ? '— ' + status : ''}`.trimEnd();
       logContainer.appendChild(div);
     });
     logContainer.scrollTop = logContainer.scrollHeight;
