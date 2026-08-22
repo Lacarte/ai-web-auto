@@ -48,6 +48,7 @@ class ActionType(str, Enum):
     NETWORK_START = "network_start"
     NETWORK_DUMP = "network_dump"
     NETWORK_STOP = "network_stop"
+    WS_FRAMES = "ws_frames"
     DOWNLOAD_ASSET = "download_asset"
     MEDIA = "media"
     SCRAPE = "scrape"

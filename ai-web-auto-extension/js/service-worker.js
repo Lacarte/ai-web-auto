@@ -142,6 +142,27 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
   } else if (method === 'Network.loadingFailed') {
     const r = cap.requests.get(params.requestId);
     if (r) { r.failed = true; r.errorText = params.errorText || ''; }
+
+  // ── WebSocket lifecycle + live frames (trading feeds, chat, etc.) ──────
+  } else if (method === 'Network.webSocketCreated') {
+    cap.sockets = cap.sockets || new Map();
+    cap.sockets.set(params.requestId, { url: params.url, frames: 0 });
+  } else if (method === 'Network.webSocketFrameReceived' ||
+             method === 'Network.webSocketFrameSent') {
+    cap.frames = cap.frames || [];
+    const payload = params.response?.payloadData ?? '';
+    cap.frames.push({
+      dir: method === 'Network.webSocketFrameSent' ? 'out' : 'in',
+      opcode: params.response?.opcode,
+      len: payload.length,
+      // Keep a bounded text preview — trading ticks are short JSON/arrays.
+      data: typeof payload === 'string' ? payload.slice(0, 400) : '',
+      socketId: params.requestId,
+    });
+    const sock = cap.sockets?.get(params.requestId);
+    if (sock) sock.frames++;
+    // Ring buffer: keep the most recent 400 frames.
+    if (cap.frames.length > 400) cap.frames.shift();
   }
 });
 
@@ -1223,8 +1244,36 @@ ws.onCommand(async (command) => {
           maxTotalBufferSize: 10 * 1024 * 1024,
           maxResourceBufferSize: 5 * 1024 * 1024,
         });
-        networkCapture.set(tabId, { enabled: true, requests: new Map(), order: [] });
+        networkCapture.set(tabId, {
+          enabled: true, requests: new Map(), order: [],
+          sockets: new Map(), frames: [],
+        });
         ws.sendResponse(id, 'success', { extracted_data: { capturing: true } });
+        return;
+      }
+
+      // ── WS_FRAMES — dump captured WebSocket frames (live feed ticks) ────
+      case 'ws_frames': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const cap = networkCapture.get(tabId);
+        if (!cap) { ws.sendResponse(id, 'failure', {}, 'Not capturing — call network_start first'); return; }
+
+        const sockets = Array.from((cap.sockets || new Map()).entries()).map(([sid, s]) => ({
+          socketId: sid, url: s.url, frames: s.frames,
+        }));
+        let frames = cap.frames || [];
+        if (params.contains) frames = frames.filter(f => f.data.includes(params.contains));
+        if (params.dir) frames = frames.filter(f => f.dir === params.dir);
+        const limit = params.limit || 60;
+        ws.sendResponse(id, 'success', {
+          extracted_data: {
+            sockets,
+            frame_count: (cap.frames || []).length,
+            frames: frames.slice(-limit),
+          },
+        });
         return;
       }
 
