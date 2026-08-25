@@ -18,6 +18,15 @@ export class WebSocketClient {
     this._intentionalClose = false;
     this._tokenReady = false;
 
+    // ── Auth-denied circuit breaker ─────────────────────────────────────
+    // A wrong token used to cause an endless ~1s deny/reconnect loop because
+    // backoff reset on socket open. Now N consecutive denials trip a breaker:
+    // automatic reconnection stops until the token changes or a manual
+    // reconnect (popup / reconnect()) forces a retry.
+    this._MAX_AUTH_FAILURES = 5;
+    this._authFailures = 0;
+    this._authLockedOut = false;
+
     // ── Heartbeat / liveness ────────────────────────────────────────────
     // A socket can stay "open" from the browser's point of view even after
     // the backend process dies (half-open TCP). We ping every PING_INTERVAL
@@ -36,6 +45,9 @@ export class WebSocketClient {
       if (area === 'local' && changes.ws_auth_token) {
         this._authToken = changes.ws_auth_token.newValue || DEFAULT_TOKEN;
         this._tokenReady = true;
+        // A new token is a deliberate fix — clear the breaker.
+        this._authFailures = 0;
+        this._authLockedOut = false;
         console.log('[WS] Token updated from storage');
       }
     });
@@ -74,10 +86,17 @@ export class WebSocketClient {
   setAuthToken(token) {
     this._authToken = token;
     this._tokenReady = !!token;
+    this._authFailures = 0;
+    this._authLockedOut = false;
     chrome.storage.local.set({ ws_auth_token: token });
   }
 
-  async connect() {
+  async connect(force = false) {
+    if (this._authLockedOut && !force) {
+      console.warn('[WS] Circuit breaker open after repeated auth denials — ' +
+        'update the token or use reconnect() to retry');
+      return;
+    }
     if (this._ws && this._ws.readyState <= 1) return;
     this._intentionalClose = false;
 
@@ -97,7 +116,8 @@ export class WebSocketClient {
 
     this._ws.onopen = () => {
       console.log('[WS] Socket open, authenticating...');
-      this._reconnectDelay = 1000;
+      // Backoff is NOT reset here — a wrong token would otherwise cause an
+      // instant-reconnect loop. It resets on successful authentication.
       // Socket is open but NOT yet usable — auth must succeed first.
       this._connected = true;
       this._authenticated = false;
@@ -112,14 +132,27 @@ export class WebSocketClient {
       if (msg.type === 'auth_response') {
         if (msg.status === 'accepted') {
           this._authenticated = true;
+          this._authFailures = 0;
+          this._authLockedOut = false;
+          this._reconnectDelay = 1000; // backoff resets only on real success
           this._lastPongAt = Date.now(); // treat accept as first liveness proof
           this._startPing();
           console.log('[WS] Authenticated');
           this._emitStatus('connected');
         } else {
-          console.error('[WS] Auth denied');
+          this._authFailures += 1;
+          console.error(`[WS] Auth denied (${this._authFailures}/${this._MAX_AUTH_FAILURES})`);
           this._authenticated = false;
           this._emitStatus('auth_denied');
+          if (this._authFailures >= this._MAX_AUTH_FAILURES) {
+            // Trip the breaker: stop the deny/reconnect churn until a human
+            // fixes the token (storage change resets this) or reconnect() forces.
+            this._authLockedOut = true;
+            this._intentionalClose = true; // keep onclose from scheduling retries
+            console.error('[WS] Circuit breaker OPEN — automatic reconnection stopped. ' +
+              'Fix the token in the popup, then press Reconnect.');
+            this._emitStatus('locked_out', `${this._authFailures} consecutive auth denials`);
+          }
           this._ws.close();
         }
         return;
@@ -162,12 +195,16 @@ export class WebSocketClient {
   }
 
   async reconnect() {
+    // Forced: a manual reconnect (popup button, token change) is an explicit
+    // human intent to retry — bypass the auth circuit breaker.
     this.disconnect();
     this._intentionalClose = false;
+    this._authFailures = 0;
+    this._authLockedOut = false;
     await this._loadToken();
     // Small delay for socket cleanup
     await new Promise((r) => setTimeout(r, 500));
-    this.connect();
+    this.connect(true);
   }
 
   onCommand(handler) {

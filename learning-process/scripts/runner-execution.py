@@ -25,10 +25,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from ai_web_auto_backend.core.server import WebSocketServer
 from ai_web_auto_backend.core.models import Command, ResponseStatus
+from ai_web_auto_backend.logsetup import setup_logging
 from loguru import logger
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -209,8 +210,10 @@ class ExecutionRunner:
             return self.cmd_save_flow(filename)
 
         else:
-            logger.warning(f"  Unknown command: {cmd}")
-            return {"success": True}
+            # A typo in the step list must fail loudly, not silently pass —
+            # a step that does nothing but report success corrupts the flow.
+            logger.error(f"  Unknown command: {cmd} (step skipped as FAILED)")
+            return {"success": False, "error": f"Unknown command: {cmd}"}
 
     # ── Commands ──────────────────────────────────────────────────────────
 
@@ -836,6 +839,7 @@ def parse_execution_list(path: Path, prompt_override: str | None = None) -> list
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main():
+    setup_logging("runner")
     parser = argparse.ArgumentParser(description="Self-correcting execution runner")
     parser.add_argument("--list", default="execution-list.txt", help="Execution list file")
     parser.add_argument("--prompt", default=None, help="Override the image prompt")

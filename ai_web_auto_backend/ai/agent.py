@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from typing import Any, Optional
@@ -68,6 +69,7 @@ class AIAgent:
         self.client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
         self.safety = safety or SafetyCheck()
         self._confirmation_callback: Optional[Any] = None
+        self._max_llm_retries = 3
 
     def set_confirmation_callback(self, callback):
         """Set a callable(action_dict) -> bool for human-in-the-loop confirmation."""
@@ -107,7 +109,6 @@ class AIAgent:
             # Rate limiting
             if not self.safety.check_rate_limit():
                 logger.warning("Rate limit reached, waiting...")
-                import asyncio
                 await asyncio.sleep(6)
 
             # Ask Claude for next action
@@ -202,21 +203,57 @@ class AIAgent:
                 {"type": "text", "text": prompt},
             ]}]
 
-        try:
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=1024,
-                system=PromptBuilder.SYSTEM,
-                messages=messages,
-            )
-            text = response.content[0].text.strip()
-            # Strip markdown fences if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            return json.loads(text)
-        except (json.JSONDecodeError, Exception) as e:
-            logger.error(f"AI decision error: {e}")
-            return None
+        return await self._call_llm(messages)
+
+    async def _call_llm(self, messages: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """Call Claude off the event loop, retrying transient and malformed replies.
+
+        A malformed JSON reply is retried with a corrective follow-up message;
+        API errors retry with exponential backoff unless clearly non-transient.
+        Returns the parsed action dict, or None after exhausting retries.
+        """
+        last_error: Exception | None = None
+        for attempt in range(1, self._max_llm_retries + 1):
+            text = ""
+            try:
+                # The sync SDK client blocks; keep it off the event loop so WS
+                # routing stays live while Claude thinks.
+                response = await asyncio.to_thread(
+                    self.client.messages.create,
+                    model=self.model,
+                    max_tokens=1024,
+                    system=PromptBuilder.SYSTEM,
+                    messages=messages,
+                )
+                text = response.content[0].text.strip()
+                # Strip markdown fences if present
+                if text.startswith("```"):
+                    text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+                return json.loads(text)
+            except json.JSONDecodeError as e:
+                last_error = e
+                logger.warning(f"AI reply {attempt}/{self._max_llm_retries} was not valid JSON: {e}")
+                if attempt < self._max_llm_retries:
+                    messages.append({"role": "assistant", "content": text})
+                    messages.append({"role": "user", "content": (
+                        "Your previous reply was not valid JSON. Reply again with ONLY "
+                        "the JSON object — no prose, no markdown fences."
+                    )})
+            except anthropic.APIStatusError as e:
+                last_error = e
+                status_code = getattr(e, "status_code", None)
+                logger.warning(
+                    f"Anthropic API error {attempt}/{self._max_llm_retries} "
+                    f"(HTTP {status_code}): {e}"
+                )
+                if status_code is not None and status_code < 500 and status_code != 429:
+                    break  # auth/bad-request errors will not improve on retry
+            except Exception as e:  # connection errors, timeouts, unexpected shapes
+                last_error = e
+                logger.warning(f"LLM call {attempt}/{self._max_llm_retries} failed: {e}")
+            await asyncio.sleep(min(2 ** attempt, 8))
+        logger.error(f"AI decision failed after {self._max_llm_retries} attempts: {last_error}")
+        return None
 
     async def _execute_action(self, action_dict: dict[str, Any]) -> Response:
         action = action_dict.get("action", "")

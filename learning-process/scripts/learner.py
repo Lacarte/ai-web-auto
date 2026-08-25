@@ -15,7 +15,6 @@ The final output is a proven recipe JSON that can replay the flow perfectly.
 Usage:
     python learner.py
     python learner.py --url "https://labs.google/fx/tools/flow/project/..."
-    python learner.py --resume   # continue from saved progress
 """
 
 import asyncio
@@ -27,10 +26,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Make the backend package importable regardless of the caller's cwd
+# (script sits two levels below the repo root).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from ai_web_auto_backend.core.server import WebSocketServer
 from ai_web_auto_backend.core.models import ResponseStatus
+from ai_web_auto_backend.logsetup import setup_logging
 from loguru import logger
 
 OUTPUT = Path("output/learner")
@@ -852,6 +854,7 @@ class Learner:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main():
+    setup_logging("learner")
     parser = argparse.ArgumentParser(description="Self-learning browser automation")
     parser.add_argument("--url", default="https://labs.google/fx/tools/flow/project/fdd97a0e-a74c-483e-8869-261e6db306c2")
     parser.add_argument("--prompt", default="A cyberpunk city at sunset with neon lights reflecting on wet streets")

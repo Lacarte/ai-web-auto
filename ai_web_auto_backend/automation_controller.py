@@ -24,6 +24,7 @@ from .core.server import WebSocketServer
 from .core.state import TaskQueue
 from .core.models import TaskResult, Response
 from .ai.agent import AIAgent, SafetyCheck
+from .logsetup import setup_logging
 from .utils.screenshot import ScreenshotProcessor
 from .utils.data_pipeline import DataPipeline
 
@@ -137,6 +138,8 @@ class BrowserAgent:
 
 async def main():
     """Start server and handle commands via stdin."""
+    setup_logging("controller")
+    logger.info("Controller starting — file log at logs/ai-web-auto-controller.log")
     agent = BrowserAgent()
     await agent.connect()
 
@@ -307,9 +310,15 @@ async def main():
             print(f"\n{'OK' if result.success else 'FAIL'} {result.objective}")
             if result.data:
                 print(f"  Data: {result.data}")
-        if result.error:
-            print(f"  Error: {result.error}")
-        print(f"  Steps: {result.steps_taken} | Duration: {result.duration_ms}ms\n")
+            if result.error:
+                print(f"  Error: {result.error}")
+            print(f"  Steps: {result.steps_taken} | Duration: {result.duration_ms}ms\n")
+            continue
+
+        print(f"  Unknown command: {cmd!r}")
+        print("  Commands: navigate <url> | screenshot | discover | type <text> | "
+              "click <selector> | extract | observe [selector] | diff | unobserve | "
+              "task <objective> | quit")
 
     await agent.stop()
 

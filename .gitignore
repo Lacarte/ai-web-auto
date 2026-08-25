@@ -14,3 +14,4 @@ sdc_backend.log
 scratch/
 orchestrator/
 PocketOptionAnalyze/
+logs/

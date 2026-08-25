@@ -8,7 +8,6 @@ import secrets
 from typing import Any, Callable, Optional
 
 import websockets
-from websockets.server import WebSocketServerProtocol
 from loguru import logger
 
 from .models import Command, Response, ResponseType, ResponseStatus
@@ -25,7 +24,7 @@ class WebSocketServer:
         self.auth_token = auth_token or DEFAULT_TOKEN
         self.session = SessionState()
         self.session.auth_token = self.auth_token
-        self._ws: Optional[WebSocketServerProtocol] = None
+        self._ws: Optional[Any] = None  # websockets ServerConnection (impl detail)
         self._server = None
         self._pending: dict[str, asyncio.Future] = {}
         self._event_handlers: dict[str, list[Callable]] = {}
@@ -44,7 +43,7 @@ class WebSocketServer:
             max_size=50 * 1024 * 1024,  # 50MB for screenshots
         )
         logger.info(f"WebSocket server started on ws://{self.host}:{self.port}")
-        logger.info(f"Auth token: {self.auth_token}")
+        logger.info(f"Auth token: {self.auth_token[:4]}…")
 
     async def stop(self):
         self._running = False
@@ -67,13 +66,19 @@ class WebSocketServer:
 
     # ── Connection handler ───────────────────────────────────────────────
 
-    async def _handle_connection(self, ws: WebSocketServerProtocol):
+    async def _handle_connection(self, ws):
         # Auth handshake
         try:
             auth_msg = await asyncio.wait_for(ws.recv(), timeout=10)
             auth = json.loads(auth_msg)
-            logger.debug(f"Auth attempt — received token: '{auth.get('token')}', expected: '{self.auth_token}'")
-            if auth.get("type") != "auth" or auth.get("token") != self.auth_token:
+            # Never log tokens — even at debug level, they end up in files.
+            supplied = auth.get("token") or ""
+            logger.debug(
+                "Auth attempt — token "
+                f"{'matches' if supplied == self.auth_token else 'MISMATCHES'} "
+                f"(len {len(supplied)} vs {len(self.auth_token)})"
+            )
+            if auth.get("type") != "auth" or supplied != self.auth_token:
                 logger.warning(f"Auth denied — token mismatch")
                 await ws.send(json.dumps({"type": "auth_response", "status": "denied"}))
                 await ws.close()
@@ -82,6 +87,27 @@ class WebSocketServer:
         except Exception as e:
             logger.error(f"Auth failed: {e}")
             await ws.close()
+            return
+
+        # Keep a command run bound to the first authenticated browser. A second
+        # Chrome profile may also have the learner installed; replacing `_ws`
+        # mid-run sends later clicks to a different tab. Keep that secondary
+        # socket healthy, but do not promote it while the primary is live.
+        if self._ws is not None and self.session.connected:
+            logger.info(f"Secondary extension connected from {ws.remote_address}; primary retained")
+            try:
+                async for raw in ws:
+                    try:
+                        msg = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+                    if msg.get("type") == "ping":
+                        await ws.send(json.dumps({
+                            "type": "pong",
+                            "timestamp": msg.get("timestamp"),
+                        }))
+            except websockets.ConnectionClosed:
+                pass
             return
 
         self._ws = ws
@@ -98,13 +124,16 @@ class WebSocketServer:
         except websockets.ConnectionClosed:
             logger.warning("Extension disconnected")
         finally:
-            self.session.set_connected(False)
-            self._ws = None
-            # Fail all pending commands
-            for fut in self._pending.values():
-                if not fut.done():
-                    fut.set_exception(ConnectionError("Extension disconnected"))
-            self._pending.clear()
+            # More than one Chrome profile can have the learner installed. An
+            # older socket closing must not erase the newer active connection.
+            if self._ws is ws:
+                self.session.set_connected(False)
+                self._ws = None
+                # Fail all pending commands only when the active socket left.
+                for fut in self._pending.values():
+                    if not fut.done():
+                        fut.set_exception(ConnectionError("Extension disconnected"))
+                self._pending.clear()
 
     async def _route_message(self, msg: dict[str, Any]):
         msg_type = msg.get("type", "")
@@ -152,7 +181,9 @@ class WebSocketServer:
         if not self._ws or not self.session.connected:
             raise ConnectionError("Extension not connected")
 
-        timeout = timeout or (command.timeout / 1000)
+        # `timeout or ...` would treat an explicit 0 as "use default"; only
+        # fall back when the caller passed nothing.
+        timeout = timeout if timeout is not None else (command.timeout / 1000)
         fut: asyncio.Future[Response] = asyncio.get_event_loop().create_future()
         self._pending[command.id] = fut
 

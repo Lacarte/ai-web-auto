@@ -590,7 +590,15 @@ function waitForTabLoad(tabId, timeoutMs = 25000) {
 // COMMAND ROUTER — Handles all commands from Python
 // ═══════════════════════════════════════════════════════════════════════════
 
-ws.onCommand(async (command) => {
+// Commands execute strictly one-at-a-time: every async command shares mutable
+// state (targetTabId, lastWebTabId, cursorPos, attachedTabs), and interleaved
+// commands used to race on it — clicks landing on the wrong tab, cursor
+// overlays from one action mislabeled as another's outcome. The chain swallows
+// rejections because handleCommand reports errors itself; this only keeps a
+// stray throw from poisoning the queue for everyone after it.
+let _commandChain = Promise.resolve();
+
+async function handleCommand(command) {
   const { id, action, target, params = {} } = command;
 
   // ── Log every incoming interaction for the popup activity log ──────────
@@ -779,18 +787,33 @@ ws.onCommand(async (command) => {
         // (unlike new Function() in exec() which CSP blocks on strict sites)
         await cdpAttach(tabId);
         try {
+          // Deadline: a page promise that never resolves used to hang this
+          // command forever and no response was ever sent back to Python.
+          // eval() preserves the script's exact evaluation semantics; the
+          // race only adds the timeout.
+          const timeoutMs = Math.min(Number(params.timeout) || 30000, 60000);
+          const guarded = `new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Script timed out after ${timeoutMs}ms')), ${timeoutMs});
+            Promise.resolve(eval(${JSON.stringify(params.script ?? '')})).then(
+              (v) => { clearTimeout(timer); resolve(v); },
+              (e) => { clearTimeout(timer); reject(e instanceof Error ? e : new Error(String(e))); }
+            );
+          })`;
           const { result: evalResult, exceptionDetails } = await cdpSend(tabId, 'Runtime.evaluate', {
-            expression: params.script,
+            expression: guarded,
             returnByValue: true,
             awaitPromise: true,
           });
           if (exceptionDetails) {
-            ws.sendResponse(id, 'success', { extracted_data: { result: { _error: exceptionDetails.text || exceptionDetails.exception?.description } } });
+            const detail = exceptionDetails.exception?.description
+              || exceptionDetails.text
+              || 'Script threw';
+            ws.sendResponse(id, 'failure', { extracted_data: { result: { _error: detail } } }, detail);
           } else {
             ws.sendResponse(id, 'success', { extracted_data: { result: evalResult?.value } });
           }
         } catch (e) {
-          ws.sendResponse(id, 'success', { extracted_data: { result: { _error: e.message } } });
+          ws.sendResponse(id, 'failure', { extracted_data: { result: { _error: e.message } } }, e.message);
         }
         return;
       }
@@ -842,29 +865,43 @@ ws.onCommand(async (command) => {
 
         const condition = params.condition || 'time';
         const value = params.value || params.selector;
-        const deadline = Date.now() + (params.timeout || 10000);
+        const timeoutMs = Math.min(Number(params.timeout) || 10000, 120000);
+        const deadline = Date.now() + timeoutMs;
+
+        let met = true;   // 'time' and 'network_idle' are best-effort by design
+        let detail = '';
 
         if (condition === 'time') {
-          await sleep(parseInt(value) || 1000);
+          await sleepAlive(parseInt(value) || 1000);
         } else if (condition === 'element_visible') {
+          met = false;
           while (Date.now() < deadline) {
             const pos = await findPos(tabId, value);
-            if (pos?.found) break;
+            if (pos?.found) { met = true; break; }
             await sleep(300);
           }
         } else if (condition === 'element_hidden') {
+          met = false;
           while (Date.now() < deadline) {
             const pos = await findPos(tabId, value);
-            if (!pos?.found) break;
+            if (!pos?.found) { met = true; break; }
             await sleep(300);
           }
         } else if (condition === 'network_idle') {
-          await sleep(2000);
+          await sleepAlive(2000); // heuristic placeholder until CDP Network idle detection
         } else {
-          await sleep(1000);
+          ws.sendResponse(id, 'failure', {}, `Unknown wait condition: ${condition}`);
+          return;
         }
 
-        ws.sendResponse(id, 'success', {});
+        if (met) {
+          ws.sendResponse(id, 'success', {});
+        } else {
+          // Honest failure: a timed-out wait is information the caller needs,
+          // not something to paper over with success.
+          detail = `wait ${condition} '${value}' timed out after ${timeoutMs}ms`;
+          ws.sendResponse(id, 'failure', {}, detail);
+        }
         return;
       }
 
@@ -1457,6 +1494,10 @@ ws.onCommand(async (command) => {
     console.error(`[SW] Command ${action} error:`, err);
     ws.sendResponse(id, 'failure', {}, err.message);
   }
+}
+
+ws.onCommand((command) => {
+  _commandChain = _commandChain.then(() => handleCommand(command)).catch(() => {});
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1465,6 +1506,26 @@ ws.onCommand(async (command) => {
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * MV3-safe sleep for long waits. Chrome terminates an idle service worker
+ * after ~30s; a bare setTimeout that long risks the worker dying mid-command
+ * and the Python side hanging on a response that never comes. Sleeping in
+ * short slices with an extension-API touch between them resets the idle timer.
+ */
+async function sleepAlive(totalMs) {
+  const SLICE_MS = 15000;
+  let remaining = totalMs;
+  while (remaining > 0) {
+    const slice = Math.min(remaining, SLICE_MS);
+    await sleep(slice);
+    remaining -= slice;
+    if (remaining > 0) {
+      // Any extension API call counts as activity; this one is cheap.
+      await chrome.runtime.getPlatformInfo();
+    }
+  }
 }
 
 /**
