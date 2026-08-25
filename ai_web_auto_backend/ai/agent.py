@@ -70,12 +70,15 @@ class AIAgent:
         self.safety = safety or SafetyCheck()
         self._confirmation_callback: Optional[Any] = None
         self._max_llm_retries = 3
+        # Optional callable -> str appended to each decision prompt (e.g. the
+        # job runner injects known-good selectors from the site knowledge base).
+        self.context_provider: Optional[Any] = None
 
     def set_confirmation_callback(self, callback):
         """Set a callable(action_dict) -> bool for human-in-the-loop confirmation."""
         self._confirmation_callback = callback
 
-    async def execute_task(self, task: Task) -> TaskResult:
+    async def execute_task(self, task: Task, observer=None) -> TaskResult:
         start_ms = int(time.time() * 1000)
         screenshots: list[str] = []
 
@@ -149,6 +152,13 @@ class AIAgent:
             status = "success" if resp.status == ResponseStatus.SUCCESS else "failure"
             task.action_history.append({**action_dict, "status": status})
 
+            # Observer hook (job layer journals + learns from this)
+            if observer is not None:
+                try:
+                    await observer.on_action(step, action_dict, resp)
+                except Exception as e:
+                    logger.warning(f"observer.on_action failed: {e}")
+
             # Capture screenshot after each action for AI context
             if action != "screenshot":
                 ss_resp = await self.server.screenshot()
@@ -183,6 +193,16 @@ class AIAgent:
         except Exception:
             pass  # non-critical — fall back to no DOM data
 
+        extra_context = ""
+        if self.context_provider is not None:
+            try:
+                extra_context = (await self.context_provider()) \
+                    if asyncio.iscoroutinefunction(self.context_provider) \
+                    else (self.context_provider() or "")
+            except Exception as e:
+                logger.warning(f"context_provider failed: {e}")
+                extra_context = ""
+
         prompt = PromptBuilder.build_action_prompt(
             url=state.browser.url,
             title=state.browser.title,
@@ -192,6 +212,7 @@ class AIAgent:
             step=step,
             max_steps=task.max_steps,
             dom_changes=dom_changes,
+            extra_context=extra_context,
         )
 
         messages = [{"role": "user", "content": prompt}]
@@ -251,7 +272,8 @@ class AIAgent:
             except Exception as e:  # connection errors, timeouts, unexpected shapes
                 last_error = e
                 logger.warning(f"LLM call {attempt}/{self._max_llm_retries} failed: {e}")
-            await asyncio.sleep(min(2 ** attempt, 8))
+            if attempt < self._max_llm_retries:
+                await asyncio.sleep(min(2 ** attempt, 8))
         logger.error(f"AI decision failed after {self._max_llm_retries} attempts: {last_error}")
         return None
 

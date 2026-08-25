@@ -65,6 +65,21 @@ You get a `>` prompt:
 
 Only `task` needs an API key — set `ANTHROPIC_API_KEY` and the [Anthropic SDK](https://docs.claude.com/en/api/overview) picks it up. Everything else is pure CDP and runs offline.
 
+## Self-play jobs
+
+For runs that should survive crashes, learn across sessions, and produce a report, use the jobs layer instead of one-shot `task`:
+
+```bash
+venv\Scripts\python -m ai_web_auto_backend.jobs start --url "https://example.com" --objective "Find the pricing page and extract plan names"
+venv\Scripts\python -m ai_web_auto_backend.jobs explore --url "https://example.com"   # self-play: map the site, no hard goal
+venv\Scripts\python -m ai_web_auto_backend.jobs resume --latest                       # continue after a crash/budget stop
+venv\Scripts\python -m ai_web_auto_backend.jobs list
+venv\Scripts\python -m ai_web_auto_backend.jobs report <job-id> --open
+venv\Scripts\python -m ai_web_auto_backend.jobs knowledge                             # what selectors the platform has proven
+```
+
+Each job gets `jobs/<id>/` with an append-only `journal.jsonl`, failure screenshots, and a self-contained `report.html`. Verified selectors accumulate in `knowledge/site/<domain>.json` with success/failure counters and are injected into future prompts on the same domain — run N+1 starts warm.
+
 ## DOM observation
 
 Screenshots tell you a page *looks* right. They miss state that never renders. `observe` snapshots a subtree, `diff` reports what actually changed and infers why:

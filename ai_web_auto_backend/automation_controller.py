@@ -156,7 +156,11 @@ async def main():
     print("  diff                 — Show DOM changes since last snapshot")
     print("  unobserve            — Stop DOM observation")
     print("  task <objective>     — Run AI-driven automation task")
-    print("  quit                 — Exit\n")
+    print("  quit                 — Exit")
+    print("\nPersistent self-play jobs (separate CLI):")
+    print("  python -m ai_web_auto_backend.jobs start --url <url> --objective \"...\"")
+    print("  python -m ai_web_auto_backend.jobs explore --url <url>")
+    print("  python -m ai_web_auto_backend.jobs resume --latest | list | report <id>\n")
 
     loop = asyncio.get_event_loop()
     while True:

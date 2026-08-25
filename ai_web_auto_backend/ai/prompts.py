@@ -30,6 +30,7 @@ PREVIOUS ACTIONS ({step}/{max_steps} steps taken):
 DOM CHANGES SINCE LAST ACTION:
 {dom_changes}
 
+{extra_context}
 RULES:
 1. Pick the single best next action with a clear expected outcome.
 2. Reuse a previously successful selector from history before proposing a new one.
@@ -64,6 +65,7 @@ Return JSON only - no markdown fences, no commentary:
         step: int,
         max_steps: int,
         dom_changes: str = "",
+        extra_context: str = "",
     ) -> str:
         elements_str = cls._format_elements(interactive_elements)
         history_str = cls._format_history(action_history)
@@ -76,6 +78,7 @@ Return JSON only - no markdown fences, no commentary:
             step=step,
             max_steps=max_steps,
             dom_changes=dom_changes or "  (no observation active)",
+            extra_context=extra_context,
         )
 
     @staticmethod

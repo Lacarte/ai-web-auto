@@ -317,6 +317,7 @@ DON'T: ignore DOM diff showing error/loading states
 | `ai_web_auto_backend/ai/prompts.py` | Claude action prompt rules for the AI agent |
 | `learning-process/scripts/learner.py` | Self-learning automation loop |
 | `learning-process/scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
+| `ai_web_auto_backend/jobs/` | Self-play job layer: persistent/resumable runs, journal, per-site knowledge store, HTML reports (`python -m ai_web_auto_backend.jobs`) |
 | `learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
 | `.claude/skills/web-auto.md` | Skill for building new extensions |
 | `created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
