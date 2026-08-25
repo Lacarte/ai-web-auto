@@ -16,5 +16,5 @@ orchestrator/
 PocketOptionAnalyze/
 logs/
 
-jobs/
-knowledge/
+/jobs/
+/knowledge/
