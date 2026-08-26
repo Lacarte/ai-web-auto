@@ -26,6 +26,7 @@ from ..core.models import ResponseStatus
 from ..core.state import Task
 from .knowledge import SiteKnowledge, normalize_path
 from .models import JobSpec, JobStatus, classify_error, now_iso
+from .recipe import build_recipe, save_recipe
 from .report import generate as generate_report
 from .store import JobStore
 
@@ -237,6 +238,19 @@ class JobRunner:
         self.store.append(spec.id, "job_finished", status=spec.status.value,
                           success=spec.success, error_code=spec.error_code,
                           screenshot=final_shot)
+
+        # Distil the journal into an ordered, replayable recipe.json. Written for
+        # every job (even failed ones — a partial recipe is still a starting
+        # point), and never allowed to break the run.
+        try:
+            recipe = build_recipe(spec.id, self.store,
+                                  objective=spec.objective, start_url=spec.start_url)
+            save_recipe(recipe, self.store)
+            self.store.append(spec.id, "recipe_saved", steps=len(recipe.steps))
+            logger.info(f"Recipe: jobs/{spec.id}/recipe.json ({len(recipe.steps)} steps)")
+        except Exception as e:
+            logger.warning(f"Recipe distillation failed: {e}")
+
         try:
             report_path = self.report(spec.id)
             logger.info(f"Report: {report_path}")

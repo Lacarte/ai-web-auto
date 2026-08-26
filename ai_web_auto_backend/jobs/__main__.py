@@ -1,4 +1,8 @@
-"""CLI: python -m ai_web_auto_backend.jobs <start|explore|resume|report|list|knowledge>
+"""CLI: python -m ai_web_auto_backend.jobs <start|explore|resume|report|generate|list|knowledge>
+
+`generate` is offline (like list/report/knowledge): it distils a finished job's
+journal into a replayable recipe and packages it as a standalone extension under
+created-extensions/ — no browser connection required.
 
 Exit codes: 0 completed, 2 failed, 3 interrupted, 4 could not run.
 """
@@ -13,8 +17,10 @@ import webbrowser
 from loguru import logger
 
 from ..automation_controller import BrowserAgent
+from ..extensiongen import GenerationError, generate as generate_extension
 from ..logsetup import setup_logging
 from .models import JobStatus
+from .recipe import build_recipe, load_recipe, save_recipe
 from .runner import JobRunner
 
 
@@ -43,6 +49,16 @@ def _build_parser() -> argparse.ArgumentParser:
     rep.add_argument("job_id")
     rep.add_argument("--open", action="store_true", dest="open_browser")
 
+    gen = sub.add_parser(
+        "generate",
+        help="Package a job's proven recipe into a standalone extension")
+    gen.add_argument("--job", required=True, dest="job_id")
+    gen.add_argument("--name", required=True, help="extension name / folder slug")
+    gen.add_argument("--dest", default="created-extensions",
+                     help="output root (default: created-extensions)")
+    gen.add_argument("--force", action="store_true",
+                     help="overwrite an existing extension folder")
+
     sub.add_parser("list", help="List jobs and their status")
     sub.add_parser("knowledge", help="Summarize accumulated per-site knowledge")
     return p
@@ -58,6 +74,45 @@ def _print_jobs(runner: JobRunner) -> None:
         detail = (s.error or s.objective)[:60]
         print(f"{s.id:<22} {s.status.value:<12} {s.steps_done}/{s.max_steps:<4} "
               f"{'yes' if s.success else 'no':<4} {detail}")
+
+
+def _generate(runner: JobRunner, args) -> int:
+    """Offline: distil the job's recipe (or reuse recipe.json) and package it as
+    a standalone extension. No browser connection needed."""
+    store = runner.store
+    if not store.dir(args.job_id).is_dir():
+        print(f"No such job: {args.job_id}  (see: jobs list)")
+        return 4
+
+    recipe_path = store.dir(args.job_id) / "recipe.json"
+    try:
+        if recipe_path.exists():
+            recipe = load_recipe(args.job_id, store)
+        else:
+            # Older jobs (pre-recipe) or one that never finished cleanly: distil
+            # from the journal now and persist it for next time.
+            recipe = build_recipe(args.job_id, store)
+            save_recipe(recipe, store)
+    except Exception as e:
+        print(f"Could not read the recipe for {args.job_id}: {e}")
+        return 4
+
+    if not recipe.steps:
+        print(f"Job {args.job_id} produced no replayable steps — nothing to package.")
+        print("Run a job that clicks/types/navigates, then generate from it.")
+        return 4
+
+    try:
+        path = generate_extension(recipe, name=args.name, dest=args.dest,
+                                  overwrite=args.force)
+    except GenerationError as e:
+        print(str(e))
+        return 4
+
+    print(f"Generated extension: {path}  ({len(recipe.steps)} steps)")
+    print("Load unpacked in chrome://extensions (Developer mode), open the target "
+          "site, and press Run recipe.")
+    return 0
 
 
 async def _connect(args) -> BrowserAgent:
@@ -104,6 +159,8 @@ async def main_async(argv: list[str]) -> int:
         if args.open_browser:
             webbrowser.open(path.resolve().as_uri())
         return 0
+    if args.cmd == "generate":
+        return _generate(probe_runner, args)
 
     setup_logging("jobs")
     try:
