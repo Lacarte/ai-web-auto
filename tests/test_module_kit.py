@@ -192,6 +192,19 @@ class TestRegistry(TmpCase):
                          "absolute XPath", "draft"):
             self.assertIn(expected, text)
 
+    def test_implemented_by_is_a_module_script_or_a_project_path(self):
+        def errors_for(impl):
+            acts = {"a": {"page": "home", "description": "x", "evidence": "y", "uses": ["list"], "implemented_by": impl}}
+            return [e for e in mk.check(self.module(actions=acts, py={"runner.py": "x = 1"}))[0] if "implemented_by" in e]
+        shutil.rmtree(self.root / "app", ignore_errors=True)
+        self.assertEqual(errors_for("runner.main"), [])
+        shutil.rmtree(self.root / "app", ignore_errors=True)
+        self.assertEqual(errors_for("@modules/module_kit.py"), [])         # outside the module, from the project root
+        shutil.rmtree(self.root / "app", ignore_errors=True)
+        self.assertEqual(len(errors_for("@created-extensions/nope/x.js")), 1)
+        shutil.rmtree(self.root / "app", ignore_errors=True)
+        self.assertEqual(len(errors_for("missing.main")), 1)
+
     def test_check_validates_blockers(self):
         pages = {"home": {**HOME["home"], "blockers": [{"when": "ghost_wall", "dismiss": [{"click": "list"}]},
                                                        {"when": "list"}, {"when": "list", "dismiss": [{"tap": "list"}]}]}}

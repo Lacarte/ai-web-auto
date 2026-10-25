@@ -280,7 +280,10 @@ def check(module: Module) -> tuple[list[str], list[str]]:
         if action.get("status") == "draft":
             warnings.append(f"{where}: draft - complete steps/uses/evidence, verify, then remove 'status' before running it")
         impl = action.get("implemented_by", "")
-        if impl and not (module.dir / (impl.split(".")[0] + ".py")).exists():
+        # "file.function" -> a script in the module; a path with "/" -> any file from the project root
+        # (e.g. an extension built from the module's knowledge).
+        target = PROJECT_ROOT / impl if "/" in impl else module.dir / (impl.split(".")[0] + ".py")
+        if impl and not target.exists():
             errors.append(f"{where}: implemented_by '{impl}' - no such file")
 
     # Every @@placeholder@@ in the module's scripts must resolve.
