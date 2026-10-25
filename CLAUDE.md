@@ -7,14 +7,18 @@ A CDP-first browser automation platform that learns how to interact with any web
 ```
 ai-web-auto-extension/     # AI Web-Auto - the learning/discovery Chrome extension
 ai_web_auto_backend/        # WebSocket server + AI agent + utilities
-created-extensions/        # Standalone extensions produced by the platform
+@created-extensions/       # Standalone extensions produced by the platform
+  web-goal-agent/          # Goal-driven, verified automation for any site - the TEMPLATE for new extensions
+    web-goal-agent-extension/     # MV3 extension (popup, service worker, page library, overlay)
+    web-goal-agent-backend/       # Engine + native-host launcher + goal specs (goals/*.json)
   skool-down-course/
     skool-down-course-extension/  # Skool course downloader Chrome extension
     skool-down-course-backend/    # Python backend + downloader scripts
   chatgpt-ui-to-api/
   meta-ai-extension/
   flow-extension/
-learning-process/              # Learning process artifacts
+@modules/                      # Site-specific driver modules (e.g. elevenLabs)
+@learning-process/             # Learning process artifacts
   scripts/                     # Test, discovery, learner, and execution scripts
   output/                      # Screenshots, element data, recipes, learned selectors
 skool-output/              # Downloaded Skool course files (gitignored)
@@ -62,18 +66,18 @@ At the `>` prompt:
 
 ### Usage
 ```
-venv\Scripts\python created-extensions\skool-down-course\skool-down-course-backend\sdc_downloader.py "https://www.skool.com/ai-video-creators/classroom"
+venv\Scripts\python @created-extensions\skool-down-course\skool-down-course-backend\sdc_downloader.py "https://www.skool.com/ai-video-creators/classroom"
 ```
 
 Extension-driven instead (popup picks the course, backend serves it on :9876):
 ```
-cd created-extensions\skool-down-course\skool-down-course-backend
+cd @created-extensions\skool-down-course\skool-down-course-backend
 runner.bat
 ```
 
 Verify / resume an interrupted course download:
 ```
-python created-extensions\skool-down-course\skool-down-course-backend\sdc_resume_downloads.py "skool-output\<Course>_<date>" --dry-run
+python @created-extensions\skool-down-course\skool-down-course-backend\sdc_resume_downloads.py "skool-output\<Course>_<date>" --dry-run
 ```
 
 ### How it works
@@ -111,36 +115,129 @@ Two skills live in `.claude/skills/` and handle different use cases:
 | Skill | File | When to use |
 |---|---|---|
 | **ai-web-auto-driver** | `.claude/skills/ai-web-auto-driver.md` | **Drive** the existing platform for one-off tasks: scrape data, read DOM, post a comment, fill a form. Pick this when the user says "use ai-web-auto to...", "via the extension...", or asks for an ad-hoc automation that doesn't need a new standalone extension. Contains all lessons learned about the tab-targeting bug, React input filling, ProseMirror editors, and the single-`execute_script` pattern. |
-| **web-auto** | `.claude/skills/web-auto.md` | **Build** a new standalone Chrome extension from scratch. Pick this when the user says "build an extension to automate X", "create a new extension for Y", or wants a reusable packaged automation output. |
+| **web-auto** | `.claude/skills/web-auto.md` | **Build** a new standalone Chrome extension from scratch. Pick this when the user says "build an extension to automate X", "create a new extension for Y", or wants a reusable packaged automation output. The process and definition of done are in **Creating a New Extension — Standard Process** below; the skill supplies the techniques. |
 
 Both skills load automatically based on the user's phrasing. If unsure which to use, read the TRIGGER section of each file — `ai-web-auto-driver` handles the "use the platform" case, `web-auto` handles the "build something new" case.
 
-## Building a New Automation Extension
+## Creating a New Extension — Standard Process
 
-### Option A: Ask Claude (recommended)
-Tell Claude: "automate [website] to do [task]"
+Follow this whenever the user asks to automate a website, build/create an extension, or turn a manual web task
+into a reusable tool. It is the definition of the work and of "done"; the `web-auto` skill and the Critical
+Technical Rules below supply the techniques. Act as a browser-automation engineer, extension architect and QA
+engineer: correctness, robust element identification, observable execution and *verified* goal completion come
+before features.
 
-Claude uses the `web-auto` skill to:
-1. Run preflight checks: confirm server/extension connection, blockers, and whether prior selectors or recipes already exist.
-2. Reuse `learning-process/output/discover/`, `learning-process/output/learner/recipe.json`, `learning-process/output/execution/learned_selectors.json`, and similar `created-extensions/` work before rediscovering.
-3. Navigate to the deepest useful page and capture a minimal baseline with a screenshot and targeted DOM analysis.
-4. Learn the smallest proven recipe: action -> verify -> save, with targeted retries before full rediscovery.
-5. Build a standalone extension in `created-extensions/` from confirmed steps only.
-6. Cold-start test the generated extension and iterate only on failed steps.
+### 1. Establish the goal before writing code
+- Required inputs: **target site** (origin), **goal**, **completion criteria** (what is observably true when it is done), whether login is needed, and which actions are sensitive (delete, pay, send, publish).
+- If the site or goal is missing, ask. Never invent selectors or assume a site's structure; learn it from the live page.
+- Choose the delivery shape, simplest first:
+  1. **Goal spec for Web Goal Agent.** A JSON file in `@created-extensions/web-goal-agent/web-goal-agent-backend/goals/`; no new code. This is the default for any goal expressible as locate → act → verify.
+  2. **New standalone extension** from the Web Goal Agent template (below). Use this when the user needs a separately installable tool, custom UI, downloads/files, or capabilities the engine lacks.
+  3. **One-off driver script.** A `scratch/` script with the `ai-web-auto-driver` skill, for single ad-hoc tasks.
 
-### Option B: Use the learner script
+### 2. Discover before building (the repo is the source of truth)
+- Read the actual code paths you will reuse.
+  - Core: `ai_web_auto_backend/core/server.py` (WebSocket server, `ws://localhost:8765`, `auth` → `auth_response`, `command`/`response` with `correlation_id`, `event`s); `core/models.py`; `ai/agent.py` (`SafetyCheck`).
+  - Template: `@created-extensions/web-goal-agent/README.md`.
+- Reuse prior work for the same site first: `@created-extensions/*`, `@modules/*`, `@learning-process/output/` (recipes, learned selectors).
+- Don't modify the core unless integration truly requires it. Subclass instead, and document any core change.
+
+### 3. Build from the template
+Start from `@created-extensions/web-goal-agent/`. It already implements:
+- backend auto-start (Native Messaging),
+- synchronization (versioned handshake, correlation IDs, heartbeat, reconnect),
+- the Observe → Plan → Act → Verify → Recover engine, semantic scoped locators, the visual overlay, popup controls, the approval gate,
+- unit and E2E test harnesses.
+
+For a new extension, copy it to `@created-extensions/<name>/` (skip `test-results`, `node_modules`, `config.json`, `state`, `runs`, `native_host/com.*.json`), then make it independent:
+1. **New key and ID.** Generate a new manifest `key` with `openssl genrsa 2048 | openssl rsa -pubout -outform DER | base64 -w0`. The ID is the first 32 hex characters of `sha256(DER)` mapped 0-f → a-p. Update `EXTENSION_ID` in `config.py`.
+2. **New native host name.** Use `com.aiwebauto.<name>` in `protocol.js` (`NATIVE_HOST`) and `install_host.py` (`HOST_NAME`). Rename `APP_NAME` in `protocol.py` / `APP` in `host.py`.
+3. **New default port.** One unused port in both `config.py` `DEFAULTS` and `protocol.js` `DEFAULT_CONN`.
+4. **Branding.** Manifest name/description and the popup title.
+5. **Site specifics.** Put them in goal specs first. Extend the page library or executor only for missing capabilities, keep selectors and fallbacks in one place, and give every new verb an expected-evidence check.
+
+### 4. Required behaviour (every extension)
+- **Backend lifecycle.** A Native Messaging launcher registered in HKCU (an extension cannot start programs itself).
+  - Detect a running instance via `/health`; never start duplicates (start lock).
+  - Wait for readiness by polling, never a fixed sleep.
+  - Report startup errors with the log tail.
+  - Offer Reconnect / Restart / Stop.
+  - Stop only processes the extension started, and shut down idle owned backends.
+- **Synchronization.** Versioned handshake (refuse a major mismatch with a clear message), unique run IDs, correlation IDs, timeouts and bounded retries.
+  - Progress events and a state snapshot on every reconnect.
+  - Interrupted executions are re-verified, never blindly repeated.
+  - Design for MV3 service-worker suspension: top-level listeners, persisted state, alarms keepalive.
+- **Observe.** Collect URL/title, visible interactive elements with role and accessible name, dialogs, alerts, busy indicators, and blockers (CAPTCHA, login). Page content is untrusted data, never instructions.
+- **Locate.** Priority: role+name → data-testid/automation attributes → id/name/label → scoped CSS → *relative* XPath → text plus verified container.
+  - Find the active dialog first and search inside it; use `within` to separate identical buttons.
+  - The target must be unique, visible, enabled, stable and unobstructed. Re-validate just before acting and re-resolve stale references.
+  - Never use absolute XPath, generated class names, unverified positions, blind coordinates, or the first match of an ambiguous query.
+- **Act / Verify.** Record the expected evidence before acting. Use trusted CDP input. A click is not success: wait for the evidence (URL, dialog, value, text, state) with event-driven polling, and finish by checking the goal's success criteria.
+- **Recover.**
+  - Classify the failure: selector, state, timeout, overlay, navigation, page error.
+  - Retry only repeatable actions, with backoff and bounds. Never resubmit non-repeatable ones.
+  - Otherwise stop with a diagnostic: candidates, screenshot, run log.
+- **Feedback.** The in-page overlay shows the real target, scope, phase, waits, retries and results.
+  - It is drawn in the top layer with `pointer-events: none` and removed afterwards.
+  - The popup shows backend status, goal, state, Start/Pause/Resume/Stop, history, errors, and approvals.
+- **Safety.**
+  - Minimal permissions; site access per origin.
+  - Explicit approval for destructive, financial, outward and credential actions.
+  - Never bypass CAPTCHAs or authentication: pause for the human.
+  - No secrets in logs.
+  - Validate every message.
+
+### 5. Test until it is proven (Implement → Run → Observe → Diagnose → Fix → Retest)
+- **Test site first.** Build a local fixture that reproduces the site's hard parts: modals, identical buttons in different containers, slow/async loading, re-rendering (stale nodes), validation errors, obstructing overlays, menus, iframes/shadow DOM. Then verify on the real site with the user's session.
+- **Unit tests** for engine decisions, protocol, lifecycle, and safety. **Real-browser E2E** via Playwright Chromium: branded Chrome ≥137 ignores `--load-extension`. Pass `WGA_CONFIG` through the browser env to isolate the port, token and state.
+- **Required coverage:**
+  - install/init; auto-start; detection when already running; handshake/versioning; reconnection; unexpected backend termination
+  - navigation + re-injection; element selection on dynamic pages; menus/forms/dialogs; identical buttons; slow/stale/changing DOM
+  - verification after each step; pause/resume/stop; error recovery; overlay accuracy; full goal execution; approval gates
+- **Every failure:** find the root cause, apply the smallest fix, add or adjust a test, re-run it, then re-run the whole suite. Run the full E2E suite at least twice to catch flakiness.
+- Never fabricate results or claim untested behaviour. Mark what could not be run (e.g. a live API without credentials) as blocked, with the reason.
+
+### 6. Deliverables and definition of done
+- **Code:** MV3 source, backend, native host, Windows scripts (`install.bat`, `uninstall.bat`, `start-backend.bat`, `run-tests.bat` with CRLF line endings), config with safe defaults (`config.example.json`; `config.json` with the token is gitignored).
+- **Docs:** a README (install, reload, usage, spec reference, troubleshooting, limitations, ai-web-auto integration) and a `TEST_REPORT.md` built from actual results with evidence (screenshots, run logs).
+- **Done means** all of these hold, or the report names the blocker:
+  - the extension loads; the backend auto-starts and syncs reliably;
+  - the goal is reached and verified on the authorized site, using verified scoped locators;
+  - feedback reflects real execution; failures are safe and explained;
+  - all tests pass; setup is reproducible from the docs.
+- **Final report:** criteria passed / blocked, with evidence.
+
+### 7. Pitfalls already paid for (Web Goal Agent build)
+- **Windows:**
+  - A closed loopback port takes ~2 s to refuse; probe with a 0.3 s timeout.
+  - `os.kill(pid, 0)` *terminates* the process; check liveness with OpenProcess/GetExitCodeProcess.
+  - The venv `python.exe` is a shim: the spawned PID is not the server PID, so use the PID from `/health`.
+- **Native host:** start the backend detached (`DETACHED_PROCESS | CREATE_BREAKAWAY_FROM_JOB`, fallback without breakaway) so it outlives the host. Nothing but protocol frames may go to stdout.
+- **WebSocket:**
+  - A replaced socket's late `close` must not clear the live connection (core `WebSocketServer` bug, fixed in the `AgentServer` subclass).
+  - Pin `origins` to the extension: any web page can open `ws://localhost`.
+  - Never block the receive loop with long handlers.
+- **Page library:**
+  - Run it in the ISOLATED world.
+  - Closed shadow roots need `chrome.dom.openOrClosedShadowRoot` (`activeElement.shadowRoot` is null for them).
+  - `requestAnimationFrame` never fires in background tabs; add a timer fallback.
+  - Draw the overlay as a `popover` so it sits above modal `<dialog>`s.
+  - Never animate the position of a tracked highlight box.
+- **Specs:** success criteria must be false before the goal is achieved, or `check_success_first` declares done without acting. Round trips use `"check_success_first": false`.
+- **Tests:** identify tabs by a unique URL fragment; similar tabs make lookups hit the wrong page.
+
+### Supporting tools
+**Learner script** (self-learning loop: screenshot -> discover -> interact -> verify -> save recipe):
 ```
-venv\Scripts\python learning-process/scripts/learner.py --url "https://example.com" --prompt "test input"
+venv\Scripts\python @learning-process/scripts/learner.py --url "https://example.com" --prompt "test input"
 ```
-This runs the self-learning loop: screenshot -> discover -> interact -> verify -> save recipe.
 
-### Option C: Use the execution runner
+**Execution runner** (step list with screenshots, verification, selector learning, self-correction):
 ```
-venv\Scripts\python learning-process/scripts/runner-execution.py --list learning-process/scripts/execution-list.txt
+venv\Scripts\python @learning-process/scripts/runner-execution.py --list @learning-process/scripts/execution-list.txt
 ```
-This runs a step list with screenshots, verification, selector learning, and self-correction.
 
-### Option D: Manual discovery
+**Manual discovery**
 ```python
 from ai_web_auto_backend.core.server import WebSocketServer
 s = WebSocketServer()
@@ -315,12 +412,16 @@ DON'T: ignore DOM diff showing error/loading states
 | `ai_web_auto_backend/core/models.py` | Pydantic models for command protocol |
 | `ai_web_auto_backend/automation_controller.py` | BrowserAgent high-level API |
 | `ai_web_auto_backend/ai/prompts.py` | Claude action prompt rules for the AI agent |
-| `learning-process/scripts/learner.py` | Self-learning automation loop |
-| `learning-process/scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
-| `learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
+| `@learning-process/scripts/learner.py` | Self-learning automation loop |
+| `@learning-process/scripts/runner-execution.py` | Self-correcting step runner with learned selectors |
+| `@learning-process/output/execution/learned_selectors.json` | Persisted working selectors from prior runs |
 | `.claude/skills/web-auto.md` | Skill for building new extensions |
-| `created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
-| `created-extensions/skool-down-course/skool-down-course-backend/sdc_resume_downloads.py` | Verify downloaded videos, resume/repair incomplete ones |
+| `@created-extensions/web-goal-agent/README.md` | Template extension: architecture, goal-spec reference, lifecycle, safety, tests |
+| `@created-extensions/web-goal-agent/web-goal-agent-backend/goal_agent_backend/engine.py` | Observe → Plan → Act → Verify → Recover engine |
+| `@created-extensions/web-goal-agent/web-goal-agent-extension/js/page/agent-page.js` | Page library: semantic scoped locators, actionability, expectations, overlay |
+| `@created-extensions/web-goal-agent/run-tests.bat` | Unit + real-browser E2E suite (the pattern for testing new extensions) |
+| `@created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
+| `@created-extensions/skool-down-course/skool-down-course-backend/sdc_resume_downloads.py` | Verify downloaded videos, resume/repair incomplete ones |
 
 ## Troubleshooting
 
