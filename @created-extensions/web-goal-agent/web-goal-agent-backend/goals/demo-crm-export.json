@@ -1,0 +1,44 @@
+{
+  "id": "demo-crm-export",
+  "title": "Demo CRM: export customers via the Actions menu",
+  "description": "Menu button -> menu item -> native <dialog> (top layer) -> native select -> verified result text.",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "inputs": {
+    "format": { "description": "Export format (CSV, JSON or Excel)", "default": "JSON" }
+  },
+  "steps": [
+    {
+      "id": "open-menu",
+      "intent": "Open the Actions menu",
+      "action": "click",
+      "target": { "role": "button", "name": "Actions" },
+      "expect": [{ "attribute": { "target": { "role": "button", "name": "Actions" }, "name": "aria-expanded", "equals": "true" } }],
+      "retry": { "safe_to_repeat": true }
+    },
+    {
+      "id": "choose-export",
+      "intent": "Choose Export CSV",
+      "action": "click",
+      "target": { "role": "menuitem", "name": "Export CSV", "within": { "role": "menu", "name": "Actions" } },
+      "expect": [{ "dialog_open": { "name": "Export customers" } }]
+    },
+    {
+      "id": "pick-format",
+      "intent": "Pick the export format",
+      "action": "select",
+      "target": { "role": "combobox", "name": "Format", "within": { "role": "dialog", "name": "Export customers" } },
+      "value": "{{inputs.format}}"
+    },
+    {
+      "id": "export",
+      "intent": "Run the export",
+      "action": "click",
+      "target": { "role": "button", "name": "Export", "within": { "role": "dialog", "name": "Export customers" } },
+      "expect": [{ "text_present": { "text": { "contains": "as {{inputs.format}}" }, "within": { "role": "dialog", "name": "Export customers" } } }]
+    }
+  ],
+  "success": [
+    { "text_present": { "text": { "regex": "Exported \\d+ customers as {{inputs.format}}" } } }
+  ]
+}

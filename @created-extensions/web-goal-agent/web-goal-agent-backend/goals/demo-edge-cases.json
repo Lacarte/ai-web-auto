@@ -1,0 +1,70 @@
+{
+  "id": "demo-edge-cases",
+  "title": "Demo: dialogs, shadow DOM, iframe, lazy list, slow control",
+  "description": "Same-named Save buttons in two dialogs, a closed shadow root, a same-origin iframe, a lazy-loaded feed, and a button that is enabled late. Asks for approval before 'Subscribe' (it could be a paid subscription).",
+  "start_url": "http://127.0.0.1:8777/edge.html",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "steps": [
+    {
+      "id": "ship-street",
+      "intent": "Type the shipping street",
+      "action": "type",
+      "target": { "role": "textbox", "name": "Street", "within": { "role": "dialog", "name": "Shipping address" } },
+      "value": "1 Main St"
+    },
+    {
+      "id": "ship-save",
+      "intent": "Save inside Shipping address (not Billing)",
+      "action": "click",
+      "target": { "role": "button", "name": "Save", "within": { "role": "dialog", "name": "Shipping address" } },
+      "expect": [{ "text_present": { "text": "Shipping address saved: 1 Main St" } }]
+    },
+    {
+      "id": "newsletter-email",
+      "intent": "Type the newsletter email (closed shadow root)",
+      "action": "type",
+      "target": { "label": "Newsletter email" },
+      "value": "ada@example.com"
+    },
+    {
+      "id": "subscribe",
+      "action": "click",
+      "target": { "role": "button", "name": "Subscribe" },
+      "expect": [{ "text_present": { "text": "Subscribed: ada@example.com" } }]
+    },
+    {
+      "id": "coupon",
+      "intent": "Type the coupon (inside the iframe)",
+      "action": "type",
+      "target": { "label": "Coupon code" },
+      "value": "save10"
+    },
+    {
+      "id": "apply",
+      "action": "click",
+      "target": { "role": "button", "name": "Apply" },
+      "expect": [{ "text_present": { "text": "Coupon SAVE10 applied" } }]
+    },
+    {
+      "id": "feed-item",
+      "intent": "Pick item 42 from the lazy-loaded feed",
+      "action": "click",
+      "target": { "text": "Activity item 42", "within": { "role": "list", "name": "Activity" } },
+      "expect": [{ "text_present": { "text": "Selected: Activity item 42" } }],
+      "timeout_s": 20
+    },
+    {
+      "id": "generate",
+      "intent": "Generate the report (button enables late)",
+      "action": "click",
+      "target": { "role": "button", "name": "Generate report" },
+      "expect": [{ "text_present": { "text": "Report ready" } }]
+    }
+  ],
+  "success": [
+    { "text_present": { "text": "Shipping address saved" } },
+    { "text_absent": { "text": "Billing address saved" } },
+    { "text_present": { "text": "Coupon SAVE10 applied" } },
+    { "text_present": { "text": "Report ready" } }
+  ]
+}

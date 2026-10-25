@@ -1,0 +1,67 @@
+{
+  "id": "demo-crm-rename-customer",
+  "title": "Demo CRM: rename a customer",
+  "description": "Opens the customer's Edit dialog, changes the name, saves inside that dialog (not the Quick note panel), and verifies the table.",
+  "start_url": "http://127.0.0.1:8777/crm.html",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "inputs": {
+    "customer": { "description": "Current customer name", "default": "Ada Lovelace" },
+    "new_name": { "description": "New name", "default": "Ada King" }
+  },
+  "interrupts": [
+    {
+      "id": "cookie-wall",
+      "when": [{ "dialog_open": { "name": "Cookie preferences" } }],
+      "do": {
+        "id": "reject-optional-cookies",
+        "action": "click",
+        "target": { "role": "button", "name": "Reject optional", "within": { "role": "dialog", "name": "Cookie preferences" } },
+        "expect": [{ "dialog_closed": { "name": "Cookie preferences" } }]
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "wait-table",
+      "intent": "Wait for the customer table to load",
+      "action": "wait",
+      "expect": [{ "visible": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } }],
+      "timeout_s": 15
+    },
+    {
+      "id": "open-note-panel",
+      "intent": "Open the Quick note panel (it has its own Save button)",
+      "action": "click",
+      "target": { "role": "button", "name": "Add note" },
+      "expect": [{ "dialog_open": { "name": "Quick note" } }],
+      "retry": { "safe_to_repeat": true }
+    },
+    {
+      "id": "open-edit",
+      "intent": "Open the Edit dialog for {{inputs.customer}}",
+      "action": "click",
+      "target": { "role": "button", "name": "Edit", "within": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } },
+      "expect": [{ "dialog_open": { "name": "Edit customer" } }],
+      "retry": { "safe_to_repeat": true }
+    },
+    {
+      "id": "type-name",
+      "intent": "Enter the new name",
+      "action": "type",
+      "target": { "role": "textbox", "name": "Name", "within": { "role": "dialog", "name": "Edit customer" } },
+      "value": "{{inputs.new_name}}"
+    },
+    {
+      "id": "save",
+      "intent": "Save inside the Edit customer dialog",
+      "action": "click",
+      "target": { "role": "button", "name": "Save", "within": { "role": "dialog", "name": "Edit customer" } },
+      "expect": [{ "dialog_closed": { "name": "Edit customer" } }],
+      "timeout_s": 10
+    }
+  ],
+  "success": [
+    { "visible": { "role": "row", "name": { "contains": "{{inputs.new_name}}" } } },
+    { "hidden": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } }
+  ]
+}

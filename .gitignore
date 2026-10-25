@@ -2,13 +2,21 @@ venv/
 __pycache__/
 *.pyc
 learning-process/output/
+@learning-process/output/
 skool-output/
 *.png
 *.jpg
 # ...but extension icons are required by manifest.json - keep them tracked
 !ai-web-auto-extension/icons/*.png
 !created-extensions/**/icon*.png
+!@created-extensions/**/icon*.png
 .env
 node_modules/
 sdc_backend.log
 scratch/
+# Generated extensions: per-install secrets, runtime state, run logs, test evidence
+@created-extensions/*/*-backend/config.json
+@created-extensions/*/*-backend/state/
+@created-extensions/*/*-backend/runs/
+@created-extensions/*/*-backend/native_host/com.*.json
+@created-extensions/*/test-results/

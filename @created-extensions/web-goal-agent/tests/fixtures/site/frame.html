@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Coupon</title>
+<style>body { font: 14px system-ui, sans-serif; margin: 10px; } input { padding: 4px; } button { padding: 4px 10px; }</style>
+</head>
+<body>
+  <form id="f">
+    <label for="code">Coupon code</label>
+    <input id="code" autocomplete="off">
+    <button type="submit">Apply</button>
+  </form>
+  <p id="out" role="status"></p>
+  <script>
+    window.__coupon = { applied: 0 };
+    document.getElementById('f').addEventListener('submit', (e) => {
+      e.preventDefault();
+      window.__coupon.applied++;
+      document.getElementById('out').textContent = `Coupon ${document.getElementById('code').value.trim().toUpperCase()} applied`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "id": "demo-crm-delete-customer",
+  "title": "Demo CRM: delete a customer (asks for approval)",
+  "description": "Deleting is destructive, so the run pauses for your approval before the final Delete click.",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "inputs": {
+    "customer": { "description": "Customer to delete", "default": "Alan Turing" }
+  },
+  "steps": [
+    {
+      "id": "wait-table",
+      "action": "wait",
+      "intent": "Wait for the customer table",
+      "expect": [{ "visible": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } }],
+      "timeout_s": 15
+    },
+    {
+      "id": "open-delete",
+      "intent": "Open the delete confirmation for {{inputs.customer}}",
+      "action": "click",
+      "target": { "role": "button", "name": "Delete", "within": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } },
+      "expect": [{ "dialog_open": { "name": { "contains": "Delete {{inputs.customer}}" }, "role": "alertdialog" } }],
+      "retry": { "safe_to_repeat": true }
+    },
+    {
+      "id": "confirm-delete",
+      "intent": "Confirm the deletion",
+      "action": "click",
+      "target": { "role": "button", "name": "Delete", "within": { "role": "alertdialog", "name": { "contains": "{{inputs.customer}}" } } },
+      "expect": [{ "dialog_closed": { "role": "alertdialog" } }]
+    }
+  ],
+  "success": [
+    { "hidden": { "role": "row", "name": { "contains": "{{inputs.customer}}" } } },
+    { "text_present": { "text": "Customer deleted" } }
+  ]
+}

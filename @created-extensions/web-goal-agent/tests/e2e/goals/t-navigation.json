@@ -1,0 +1,80 @@
+{
+  "id": "t-navigation",
+  "title": "TEST: full-page navigation, re-injection, and extraction",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0",
+  "allowed_origins": [
+    "http://127.0.0.1:8777"
+  ],
+  "steps": [
+    {
+      "id": "to-reports",
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "Reports",
+        "within": {
+          "role": "navigation",
+          "name": "Main"
+        }
+      },
+      "expect": [
+        {
+          "url": {
+            "contains": "/reports.html"
+          }
+        },
+        {
+          "text_present": {
+            "text": "Quarterly revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "read",
+      "action": "extract",
+      "fields": {
+        "revenue": {
+          "id": "revenue"
+        },
+        "active": {
+          "id": "active"
+        }
+      }
+    },
+    {
+      "id": "back",
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "Customers",
+        "within": {
+          "role": "navigation",
+          "name": "Main"
+        }
+      },
+      "expect": [
+        {
+          "url": {
+            "contains": "/crm.html"
+          }
+        },
+        {
+          "visible": {
+            "role": "table",
+            "name": "Customers"
+          }
+        }
+      ],
+      "timeout_s": 15
+    }
+  ],
+  "success": [
+    {
+      "title": {
+        "contains": "Customers"
+      }
+    }
+  ],
+  "check_success_first": false
+}

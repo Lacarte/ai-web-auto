@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Web Goal Agent",
+  "version": "0.1.0",
+  "description": "Goal-driven browser automation on ai-web-auto: observe, plan, act, verify, recover — with visible, verified steps.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjRfoMWEfl8PpFE6+gLWqi9AKTe/T/C8QqqmIbeZYDhdWjmW9JAd4Mtw+oHN+wv9mlsg8cc+EmvBRBkbbjmTcfr0c8y2uS8hB54wyrUmrHW+pul3u45SJwRwEztw1ZdL19l5U9DYLFtqwbTI7CfFNLhLDe+5i1o7o/4WsStqCEl7Sp2rJUnw8ZKEaknC1ARaKz9q4tHakEnOSgpEkE1EmTjWe+4wJw2ZuxyhISNtdRit2ihAAmwOS64xBZCPCXVAZ1kERU3csiWU3TP8l6pYMqazkUk/U90YmiCHQA8wd0JaBWJYyr+z5j7M+F3+C225McX2fNa67fAe3MmSVM27XJwIDAQAB",
+  "minimum_chrome_version": "121",
+  "permissions": ["activeTab", "alarms", "debugger", "nativeMessaging", "scripting", "storage"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": {
+    "service_worker": "js/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "html/popup.html",
+    "default_title": "Web Goal Agent",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

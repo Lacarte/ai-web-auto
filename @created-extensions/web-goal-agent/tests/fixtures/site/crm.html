@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acme CRM — Customers</title>
+<link rel="stylesheet" href="fixture.css">
+</head>
+<body>
+<!--
+  Test fixture for the Web Goal Agent. Deterministic behaviours, toggled by URL params:
+    ?consent=0   skip the cookie wall          ?live=1   re-render the table every 700 ms (stale nodes)
+    ?tour=1      full-page tour backdrop for 2.5 s (obstruction)      ?delay=900  table load delay (ms)
+  Counters for assertions live on window.__fixture (main world).
+-->
+<header class="top">
+  <strong>Acme CRM</strong>
+  <nav aria-label="Main">
+    <a href="#/customers" aria-current="page">Customers</a>
+    <a href="reports.html">Reports</a>
+  </nav>
+  <div class="spacer"></div>
+  <button type="button" id="noteBtn">Add note</button>
+  <div class="menu-wrap">
+    <button type="button" id="actionsBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="actionsMenu">Actions</button>
+    <ul id="actionsMenu" role="menu" aria-label="Actions" hidden>
+      <li role="menuitem" tabindex="-1" data-action="new">New customer</li>
+      <li role="menuitem" tabindex="-1" data-action="export">Export CSV</li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <h1>Customers</h1>
+  <div id="loading" class="spinner" role="progressbar" aria-busy="true" aria-label="Loading customers">Loading…</div>
+  <table id="customers" aria-label="Customers" hidden>
+    <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p id="toast" role="status" aria-live="polite"></p>
+</main>
+
+<!-- Non-modal side panel with its own "Save" button: the identical-button trap. -->
+<section id="notePanel" role="dialog" aria-labelledby="noteTitle" class="panel" hidden>
+  <h2 id="noteTitle">Quick note</h2>
+  <label for="noteText">Note</label>
+  <textarea id="noteText" rows="3"></textarea>
+  <div class="actions"><button type="button" id="noteSave">Save</button><button type="button" id="noteClose">Close</button></div>
+</section>
+
+<div id="editBackdrop" class="backdrop" hidden></div>
+<div id="editDialog" role="dialog" aria-modal="true" aria-labelledby="editTitle" class="modal" hidden>
+  <form id="editForm" novalidate>
+    <h2 id="editTitle">Edit customer</h2>
+    <label for="fName">Name</label>
+    <input id="fName" name="name" autocomplete="off">
+    <label for="fEmail">Email</label>
+    <input id="fEmail" name="email" type="email" autocomplete="off" aria-describedby="emailError">
+    <p id="emailError" class="error-text" role="alert"></p>
+    <label for="fStatus">Status</label>
+    <select id="fStatus" name="status"><option>Active</option><option>Paused</option><option>Churned</option></select>
+    <div class="actions"><button type="submit" id="editSave">Save</button><button type="button" id="editCancel">Cancel</button></div>
+  </form>
+</div>
+
+<div id="delBackdrop" class="backdrop" hidden></div>
+<div id="deleteDialog" role="alertdialog" aria-modal="true" aria-labelledby="delTitle" aria-describedby="delDesc" class="modal" hidden>
+  <h2 id="delTitle">Delete customer?</h2>
+  <p id="delDesc">This cannot be undone.</p>
+  <div class="actions"><button type="button" id="delConfirm" class="danger">Delete</button><button type="button" id="delCancel">Cancel</button></div>
+</div>
+
+<dialog id="exportDialog" aria-labelledby="exportTitle">
+  <h2 id="exportTitle">Export customers</h2>
+  <label for="exportFormat">Format</label>
+  <select id="exportFormat"><option value="csv">CSV</option><option value="json">JSON</option><option value="xlsx">Excel</option></select>
+  <div class="actions"><button type="button" id="exportGo">Export</button><button type="button" id="exportClose">Close</button></div>
+  <p id="exportResult" role="status"></p>
+</dialog>
+
+<div id="consent" role="dialog" aria-modal="true" aria-labelledby="consentTitle" class="consent" hidden>
+  <h2 id="consentTitle">Cookie preferences</h2>
+  <p>We use cookies to improve the CRM.</p>
+  <div class="actions"><button type="button" id="consentAccept">Accept all</button><button type="button" id="consentReject">Reject optional</button></div>
+</div>
+
+<div id="tour" class="tour" hidden><div class="tour-card">Welcome to Acme CRM! Taking a quick tour…</div></div>
+
+<script src="crm.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "id": "t-slow-pause",
+  "title": "TEST: slow control (enabled after 5 s) for pause/resume/stop/interruption",
+  "start_url": "http://127.0.0.1:8777/edge.html?slow=5000",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "steps": [
+    { "id": "generate", "action": "click", "target": { "role": "button", "name": "Generate report" },
+      "expect": [{ "text_present": { "text": "Report ready" } }], "timeout_s": 40 }
+  ],
+  "success": [{ "text_present": { "text": "Report ready" } }]
+}

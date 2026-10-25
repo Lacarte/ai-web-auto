@@ -1,0 +1,15 @@
+{
+  "id": "t-stale-live",
+  "title": "TEST: rename while the table re-renders every 700 ms",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0&live=1",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "steps": [
+    { "id": "open-edit", "action": "click",
+      "target": { "role": "button", "name": "Edit", "within": { "role": "row", "name": { "contains": "Grace Hopper" } } },
+      "expect": [{ "dialog_open": { "name": "Edit customer" } }], "retry": { "safe_to_repeat": true }, "timeout_s": 15 },
+    { "id": "name", "action": "type", "target": { "label": "Name", "within": "active-dialog" }, "value": "Grace Brewster Hopper" },
+    { "id": "save", "action": "click", "target": { "role": "button", "name": "Save", "within": "active-dialog" },
+      "expect": [{ "dialog_closed": { "name": "Edit customer" } }] }
+  ],
+  "success": [{ "visible": { "role": "row", "name": { "contains": "Grace Brewster Hopper" } } }]
+}

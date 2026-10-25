@@ -1,0 +1,11 @@
+{
+  "id": "t-ambiguous-save",
+  "title": "TEST: unscoped Save must be refused as ambiguous",
+  "start_url": "http://127.0.0.1:8777/edge.html",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "steps": [
+    { "id": "save", "action": "click", "target": { "role": "button", "name": "Save" },
+      "expect": [{ "text_present": { "text": "address saved" } }], "timeout_s": 4 }
+  ],
+  "success": [{ "text_present": { "text": "address saved" } }]
+}

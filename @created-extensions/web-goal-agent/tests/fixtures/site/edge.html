@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge cases — Web Goal Agent fixture</title>
+<link rel="stylesheet" href="fixture.css">
+</head>
+<body>
+<!--
+  Edge cases: identical buttons in two non-modal dialogs, closed shadow DOM, same-origin
+  iframe, lazy-loading feed, a button enabled late (?slow=ms, default 1500).
+-->
+<header class="top"><strong>Edge cases</strong><a href="crm.html">CRM</a></header>
+<main>
+  <h1>Edge cases</h1>
+
+  <section class="block" aria-labelledby="slowTitle">
+    <h2 id="slowTitle">Slow control</h2>
+    <button type="button" id="genBtn" disabled>Generate report</button>
+    <p id="genResult" role="status"></p>
+  </section>
+
+  <section class="block" aria-labelledby="nlTitle">
+    <h2 id="nlTitle">Newsletter (closed shadow root)</h2>
+    <newsletter-box></newsletter-box>
+  </section>
+
+  <section class="block" aria-labelledby="couponTitle">
+    <h2 id="couponTitle">Coupon (same-origin iframe)</h2>
+    <iframe src="frame.html" title="Coupon form"></iframe>
+  </section>
+
+  <section class="block" aria-labelledby="feedTitle">
+    <h2 id="feedTitle">Activity (lazy loaded)</h2>
+    <ul id="feed" class="feed" role="list" aria-label="Activity"></ul>
+    <p id="feedSelected" role="status"></p>
+  </section>
+  <div style="height: 400px"></div>
+</main>
+
+<div class="addr" role="dialog" aria-labelledby="shipTitle" style="left: 620px">
+  <h2 id="shipTitle">Shipping address</h2>
+  <label for="shipStreet">Street</label><input id="shipStreet">
+  <div class="actions"><button type="button" id="shipSave">Save</button></div>
+  <p id="shipResult" role="status"></p>
+</div>
+<div class="addr" role="dialog" aria-labelledby="billTitle" style="left: 920px">
+  <h2 id="billTitle">Billing address</h2>
+  <label for="billStreet">Street</label><input id="billStreet">
+  <div class="actions"><button type="button" id="billSave">Save</button></div>
+  <p id="billResult" role="status"></p>
+</div>
+
+<script>
+(() => {
+  const qs = new URLSearchParams(location.search);
+  const $ = (id) => document.getElementById(id);
+  const fx = (window.__fixture = { shipSaves: 0, billSaves: 0, reportClicks: 0, subscribes: 0, feedLoads: 0 });
+
+  setTimeout(() => { $('genBtn').disabled = false; }, Number(qs.get('slow') || 1500));
+  $('genBtn').addEventListener('click', () => {
+    fx.reportClicks++;
+    $('genBtn').setAttribute('aria-busy', 'true');
+    $('genResult').textContent = 'Generating…';
+    setTimeout(() => { $('genBtn').removeAttribute('aria-busy'); $('genResult').textContent = 'Report ready'; }, 1000);
+  });
+
+  $('shipSave').addEventListener('click', () => { fx.shipSaves++; $('shipResult').textContent = `Shipping address saved: ${$('shipStreet').value}`; });
+  $('billSave').addEventListener('click', () => { fx.billSaves++; $('billResult').textContent = `Billing address saved: ${$('billStreet').value}`; });
+
+  customElements.define('newsletter-box', class extends HTMLElement {
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: 'closed' }); // closed: only chrome.dom.openOrClosedShadowRoot reaches it
+      root.innerHTML = `<label for="e">Newsletter email</label> <input id="e" type="email">
+        <button type="button">Subscribe</button><p role="status"></p>`;
+      root.querySelector('button').addEventListener('click', () => {
+        fx.subscribes++;
+        root.querySelector('p').textContent = `Subscribed: ${root.querySelector('input').value}`;
+      });
+    }
+  });
+
+  // Feed loads 10 items at a time when scrolled near the bottom, up to 60.
+  const feed = $('feed');
+  let count = 0;
+  function more() {
+    fx.feedLoads++;
+    for (let i = 0; i < 10 && count < 60; i++) {
+      const li = document.createElement('li');
+      li.textContent = `Activity item ${++count}`;
+      li.addEventListener('click', () => { $('feedSelected').textContent = `Selected: ${li.textContent}`; });
+      feed.append(li);
+    }
+  }
+  more();
+  let loading = false;
+  feed.addEventListener('scroll', () => {
+    if (loading || count >= 60) return;
+    if (feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 40) {
+      loading = true;
+      setTimeout(() => { more(); loading = false; }, 300);
+    }
+  });
+})();
+</script>
+</body>
+</html>

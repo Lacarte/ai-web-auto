@@ -1,0 +1,9 @@
+{
+  "port": 18766,
+  "token": "e2e-only-token-not-a-secret",
+  "goals_dir": ["../../web-goal-agent-backend/goals", "goals"],
+  "runs_dir": "../../test-results/runs",
+  "state_dir": "../../test-results/state",
+  "idle_shutdown_minutes": 30,
+  "timeouts": { "locate_s": 10, "verify_s": 8, "confirmation_s": 120, "reconnect_grace_s": 30 }
+}

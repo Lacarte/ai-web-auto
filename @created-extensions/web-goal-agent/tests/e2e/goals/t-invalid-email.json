@@ -1,0 +1,65 @@
+{
+  "id": "t-invalid-email",
+  "title": "TEST: validation error is detected, Save is not repeated",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0",
+  "allowed_origins": [
+    "http://127.0.0.1:8777"
+  ],
+  "steps": [
+    {
+      "id": "open-edit",
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Edit",
+        "within": {
+          "role": "row",
+          "name": {
+            "contains": "Grace Hopper"
+          }
+        }
+      },
+      "expect": [
+        {
+          "dialog_open": {
+            "name": "Edit customer"
+          }
+        }
+      ],
+      "timeout_s": 15
+    },
+    {
+      "id": "email",
+      "action": "type",
+      "target": {
+        "label": "Email",
+        "within": "active-dialog"
+      },
+      "value": "not-an-email"
+    },
+    {
+      "id": "save",
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Save",
+        "within": "active-dialog"
+      },
+      "expect": [
+        {
+          "dialog_closed": {
+            "name": "Edit customer"
+          }
+        }
+      ],
+      "timeout_s": 4
+    }
+  ],
+  "success": [
+    {
+      "text_present": {
+        "text": "Customer saved"
+      }
+    }
+  ]
+}

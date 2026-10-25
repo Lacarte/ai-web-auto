@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Web Goal Agent</title>
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <img src="../icons/icon48.png" alt="" width="20" height="20">
+      <h1>Web Goal Agent</h1>
+    </div>
+    <div class="link" role="status" aria-live="polite">
+      <span class="dot" id="linkDot" aria-hidden="true"></span>
+      <span id="linkText">Connecting…</span>
+    </div>
+  </header>
+
+  <section class="card link-card" id="linkCard" hidden aria-labelledby="linkCardTitle">
+    <h2 id="linkCardTitle" class="sr-only">Backend connection</h2>
+    <p id="linkDetail" class="detail"></p>
+    <pre id="linkLog" class="log" hidden></pre>
+    <div class="row">
+      <button type="button" id="btnReconnect" class="ghost">Reconnect</button>
+      <button type="button" id="btnStartBackend" class="ghost">Start backend</button>
+      <button type="button" id="btnRestart" class="ghost">Restart backend</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="siteTitle">
+    <h2 id="siteTitle">Target tab</h2>
+    <p class="site"><span id="siteOrigin">—</span> <span id="sitePerm" class="pill"></span></p>
+    <button type="button" id="btnAuthorize" class="ghost" hidden>Authorize this site</button>
+  </section>
+
+  <section class="card" aria-labelledby="goalTitle">
+    <h2 id="goalTitle">Goal</h2>
+    <div class="seg" role="tablist" aria-label="Goal type">
+      <button type="button" role="tab" id="tabSpec" aria-selected="true" aria-controls="paneSpec">Goal spec</button>
+      <button type="button" role="tab" id="tabText" aria-selected="false" aria-controls="paneText">Describe a goal</button>
+    </div>
+    <div id="paneSpec" role="tabpanel" aria-labelledby="tabSpec">
+      <label for="goalSelect">Saved goal</label>
+      <select id="goalSelect"><option value="">Loading goals…</option></select>
+      <p id="goalDesc" class="detail"></p>
+      <div id="goalInputs"></div>
+      <p id="goalErrors" class="warn" hidden></p>
+    </div>
+    <div id="paneText" role="tabpanel" aria-labelledby="tabText" hidden>
+      <label for="goalText">What should happen on this site?</label>
+      <textarea id="goalText" rows="3" maxlength="4000" placeholder="e.g. Rename customer Ada Lovelace to Ada King and verify the table shows it"></textarea>
+      <p id="aiNote" class="detail"></p>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Run controls">
+    <button type="button" id="btnStart" class="primary">Start</button>
+    <button type="button" id="btnPause">Pause</button>
+    <button type="button" id="btnResume">Resume</button>
+    <button type="button" id="btnStop" class="danger">Stop</button>
+  </section>
+
+  <section class="card confirm" id="confirmCard" hidden role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <h2 id="confirmTitle">Approval needed</h2>
+    <p id="confirmText"></p>
+    <p id="confirmReason" class="detail"></p>
+    <div class="row">
+      <button type="button" id="btnApprove" class="primary">Approve</button>
+      <button type="button" id="btnReject" class="danger">Reject</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="runTitle">
+    <h2 id="runTitle">Execution</h2>
+    <div class="status-line">
+      <span id="runState" class="pill state">idle</span>
+      <span id="runStep" class="detail"></span>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="runBar"></i></div>
+    <p id="runMessage" class="message" aria-live="polite"></p>
+    <div id="errorBox" class="error" hidden role="alert">
+      <strong id="errorCode"></strong>
+      <p id="errorMessage"></p>
+      <details id="errorMore" hidden><summary>Details</summary><pre id="errorDetails"></pre></details>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="histTitle">
+    <h2 id="histTitle">Recent actions</h2>
+    <ol id="history" class="history"></ol>
+  </section>
+
+  <details class="card settings">
+    <summary>Settings</summary>
+    <label class="check"><input type="checkbox" id="setAutoStart" checked> Start the backend automatically (native host)</label>
+    <fieldset>
+      <legend>Manual connection (only without the native host)</legend>
+      <label for="setPort">Port</label>
+      <input id="setPort" type="number" min="1" max="65535" placeholder="8766">
+      <label for="setToken">Token</label>
+      <input id="setToken" type="password" autocomplete="off" placeholder="from web-goal-agent-backend/config.json">
+    </fieldset>
+    <div class="row">
+      <button type="button" id="btnSaveSettings" class="ghost">Save</button>
+      <button type="button" id="btnStopBackend" class="ghost">Stop backend</button>
+    </div>
+  </details>
+
+  <script type="module" src="../js/popup.js"></script>
+</body>
+</html>

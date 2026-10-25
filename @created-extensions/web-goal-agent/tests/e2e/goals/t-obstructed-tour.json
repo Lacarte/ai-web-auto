@@ -1,0 +1,12 @@
+{
+  "id": "t-obstructed-tour",
+  "title": "TEST: wait out an obstructing overlay, then click",
+  "start_url": "http://127.0.0.1:8777/crm.html?consent=0&tour=1",
+  "allowed_origins": ["http://127.0.0.1:8777"],
+  "steps": [
+    { "id": "open-edit", "action": "click",
+      "target": { "role": "button", "name": "Edit", "within": { "role": "row", "name": { "contains": "Katherine Johnson" } } },
+      "expect": [{ "dialog_open": { "name": "Edit customer" } }], "timeout_s": 15 }
+  ],
+  "success": [{ "value": { "target": { "label": "Name", "within": "active-dialog" }, "equals": "Katherine Johnson" } }]
+}
