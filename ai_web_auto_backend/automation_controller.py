@@ -23,7 +23,7 @@ from loguru import logger
 from .core.server import WebSocketServer
 from .core.state import TaskQueue
 from .core.models import TaskResult, Response
-from .ai.agent import AIAgent, SafetyCheck
+from .ai.agent import DEFAULT_MODEL, AIAgent, SafetyCheck
 from .utils.screenshot import ScreenshotProcessor
 from .utils.data_pipeline import DataPipeline
 
@@ -34,13 +34,16 @@ class BrowserAgent:
         host: str = "localhost",
         port: int = 8765,
         auth_token: str | None = None,
-        model: str = "claude-sonnet-4-20250514",
+        model: str = DEFAULT_MODEL,
         api_key: str | None = None,
         safety: SafetyCheck | None = None,
+        effort: str = "medium",
+        refusal_fallback: bool = True,
     ):
         self.server = WebSocketServer(host=host, port=port, auth_token=auth_token)
         self.task_queue = TaskQueue()
-        self.ai = AIAgent(server=self.server, model=model, api_key=api_key, safety=safety)
+        self.ai = AIAgent(server=self.server, model=model, api_key=api_key, safety=safety,
+                          effort=effort, refusal_fallback=refusal_fallback)
         self.screenshots = ScreenshotProcessor()
         self.data = DataPipeline()
 
@@ -307,9 +310,12 @@ async def main():
             print(f"\n{'OK' if result.success else 'FAIL'} {result.objective}")
             if result.data:
                 print(f"  Data: {result.data}")
-        if result.error:
-            print(f"  Error: {result.error}")
-        print(f"  Steps: {result.steps_taken} | Duration: {result.duration_ms}ms\n")
+            if result.error:
+                print(f"  Error: {result.error}")
+            print(f"  Steps: {result.steps_taken} | Duration: {result.duration_ms}ms\n")
+            continue
+
+        print(f"  Unknown command: {cmd.split()[0]!r} (commands are listed above)")
 
     await agent.stop()
 

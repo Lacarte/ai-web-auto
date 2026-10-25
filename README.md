@@ -146,7 +146,7 @@ _projects/                      # Write-ups of each finished automation
 - `ffmpeg` / `ffprobe` and `yt-dlp` on `PATH` — only for the Skool downloader's video handling
 - `ANTHROPIC_API_KEY` — only for AI-driven `task` runs
 
-The AI agent's model is a constructor argument on `BrowserAgent`, currently defaulting to `claude-sonnet-4-20250514`. Pass `model=` to use a newer one, e.g. `claude-opus-5`.
+The AI agent's model is a constructor argument on `BrowserAgent`, defaulting to `claude-sonnet-5-5` at `effort="medium"`. Pass `model=` (e.g. `claude-opus-5-5` for the hardest tasks) or `effort=` to change them. Refused steps are retried server-side on Anthropic's recommended fallback model; pass `refusal_fallback=False` to turn that off.
 
 ## Troubleshooting
 
