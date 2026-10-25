@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "actions": {
+    "find_video_under_cursor": {
+      "page": "home",
+      "description": "Find the video under or nearest the cursor on Home, channel pages, the watch sidebar and the main player.",
+      "steps": [
+        "elementsFromPoint(cursor): an inline preview (ytd-video-preview) -> its link; a tile (yt-lockup-view-model / ytm-shorts-lockup-view-model) -> its watch?v= or /shorts/ link; the main player -> ytd-watch-flexy[video-id]",
+        "otherwise the nearest visible tile within a small distance",
+        "ID = the 11 characters after v= or /shorts/"
+      ],
+      "evidence": "The highlighted tile's link carries the ID that is saved.",
+      "uses": ["video_tile", "short_tile", "tile_link", "inline_preview", "watch_page", "main_player"],
+      "implemented_by": "@created-extensions/youtube-quick-save/youtube-quick-save-extension/js/page/content.js"
+    },
+    "list_playlists": {
+      "page": "watch",
+      "description": "List the account's playlists (ID, title, privacy) and whether a given video is in each.",
+      "steps": [
+        "POST /youtubei/v1/playlist/get_add_to_playlist {context, videoIds:[id]} with the session's SAPISID hash headers",
+        "contents[0].addToPlaylistRenderer.playlists[].playlistAddToOptionRenderer {playlistId, title.simpleText, privacy, containsSelectedVideos}"
+      ],
+      "evidence": "HTTP 200 and a playlists array (103 on the test account).",
+      "notes": "containsSelectedVideos lags 5-10 s (up to ~30 s) behind changes: list playlists with it, never decide an add on it alone.",
+      "implemented_by": "@created-extensions/youtube-quick-save/youtube-quick-save-extension/js/page/bridge.js"
+    },
+    "read_playlist": {
+      "page": "playlist",
+      "description": "Read a playlist's real entries (videoId, setVideoId).",
+      "steps": [
+        "POST /youtubei/v1/browse {browseId: 'VL' + playlistId}",
+        "entries: playlistVideoRenderer {videoId, setVideoId} in playlistVideoListRenderer.contents",
+        "next page: the continuationItemRenderer in that same list -> POST /youtubei/v1/browse {continuation}; items in onResponseReceivedActions[].appendContinuationItemsAction.continuationItems"
+      ],
+      "evidence": "Entries match the playlist page; current immediately after a change.",
+      "notes": "100 entries per page; 15-21 s for 1,612 videos (16 pages). Unavailable videos are not returned. A page also has an unrelated section continuation - do not follow it.",
+      "implemented_by": "@created-extensions/youtube-quick-save/youtube-quick-save-extension/js/lib/core.js"
+    },
+    "add_video": {
+      "page": "watch",
+      "description": "Add one video to a playlist.",
+      "preconditions": ["Not already in the playlist (local copy, then the flag) - YouTube allows duplicates"],
+      "steps": ["POST /youtubei/v1/browse/edit_playlist {playlistId, actions:[{addedVideoId, action:'ACTION_ADD_VIDEO'}]}"],
+      "evidence": "status STATUS_SUCCEEDED and playlistEditResults[].playlistEditVideoAddedResultData {videoId, setVideoId}.",
+      "retry": "never automatically: an add that may have happened is checked by reading, not repeated",
+      "sensitive": "changes the user's playlist; each repeat creates a duplicate",
+      "implemented_by": "@created-extensions/youtube-quick-save/youtube-quick-save-extension/js/background.js"
+    },
+    "remove_entry": {
+      "page": "watch",
+      "description": "Remove exactly one entry (duplicate repair only).",
+      "steps": ["POST /youtubei/v1/browse/edit_playlist {playlistId, actions:[{action:'ACTION_REMOVE_VIDEO', setVideoId}]}"],
+      "evidence": "STATUS_SUCCEEDED; that entry gone, other entries untouched (verified live).",
+      "retry": "never automatically",
+      "sensitive": "destructive: only for an entry the extension itself created, when the same video appears twice",
+      "notes": "ACTION_REMOVE_VIDEO_BY_VIDEO_ID removes every copy at once - never use it.",
+      "implemented_by": "@created-extensions/youtube-quick-save/youtube-quick-save-extension/js/background.js"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "pages": {
+    "home": {
+      "url": "https://www.youtube.com/",
+      "purpose": "Home feed: a grid of video tiles and Shorts tiles.",
+      "ready_when": "video tiles are rendered (YouTube is a single-page app: tiles stream in after navigation).",
+      "ready_when_any": ["video_tile", "short_tile"],
+      "features": ["find_video_under_cursor"]
+    },
+    "channel": {
+      "url_pattern": "https://www.youtube.com/@{handle}",
+      "purpose": "A channel page (example @RayCodingCorner): the same tile types as Home.",
+      "ready_when_any": ["video_tile", "short_tile"],
+      "features": ["find_video_under_cursor"]
+    },
+    "watch": {
+      "url": "https://www.youtube.com/watch",
+      "purpose": "Watch page (example watch?v=xxf6D9jynFw): the main player plus video tiles in the right sidebar.",
+      "ready_when_any": ["watch_page", "video_tile"],
+      "features": ["find_video_under_cursor", "list_playlists"]
+    },
+    "playlist": {
+      "url": "https://www.youtube.com/playlist",
+      "purpose": "A playlist page (?list=ID). Shows the real contents immediately after a change - the independent check for saves.",
+      "ready_when_any": ["playlist_entry"]
+    }
+  },
+  "navigation": [
+    "All pages are one single-page app: listen for yt-navigate-finish instead of page loads; tile elements are reused with new data.",
+    "Video identity = the 11-character ID in the tile's link (watch?v=ID or /shorts/ID), never the tile's position."
+  ]
+}

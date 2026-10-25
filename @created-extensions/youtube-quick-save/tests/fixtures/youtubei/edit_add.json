@@ -1,0 +1,103 @@
+{
+ "status": "STATUS_SUCCEEDED",
+ "actions": [
+  {
+   "refreshPlaylistCommand": {
+    "listId": "PLfake0000003"
+   }
+  },
+  {
+   "showSnackbarCommand": {
+    "content": {
+     "snackbarViewModel": {
+      "image": {
+       "sources": [
+        {
+         "url": "https://example.invalid/",
+         "width": 168,
+         "height": 94
+        },
+        {
+         "url": "https://example.invalid/",
+         "width": 196,
+         "height": 110
+        },
+        {
+         "url": "https://example.invalid/",
+         "width": 246,
+         "height": 138
+        },
+        {
+         "url": "https://example.invalid/",
+         "width": 336,
+         "height": 188
+        }
+       ]
+      },
+      "text": {
+       "content": "Text"
+      },
+      "buttons": [
+       {
+        "buttonViewModel": {
+         "title": "Text",
+         "onTap": {
+          "serialCommand": {
+           "commands": [
+            {
+             "innertubeCommand": {
+              "hideSnackbarCommand": {
+               "hack": true
+              }
+             }
+            },
+            {
+             "innertubeCommand": {
+              "commandMetadata": {
+               "webCommandMetadata": {
+                "url": "Text",
+                "webPageType": "WEB_PAGE_TYPE_PLAYLIST",
+                "rootVe": 5754,
+                "apiUrl": "/youtubei/v1/browse"
+               }
+              },
+              "browseEndpoint": {
+               "browseId": "Text"
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      ]
+     }
+    },
+    "animationStyle": "SNACKBAR_ANIMATION_STYLE_DEFAULT",
+    "durationSeconds": 3
+   }
+  },
+  {
+   "runAttestationCommand": {
+    "ids": [
+     {
+      "externalChannelId": "UCfake000000000000000003"
+     },
+     {
+      "playlistId": "PLfake0000003"
+     }
+    ],
+    "engagementType": "ENGAGEMENT_TYPE_PLAYLIST_EDIT"
+   }
+  }
+ ],
+ "playlistEditResults": [
+  {
+   "playlistEditVideoAddedResultData": {
+    "videoId": "vid00000011",
+    "setVideoId": "SET0000000000001"
+   }
+  }
+ ]
+}

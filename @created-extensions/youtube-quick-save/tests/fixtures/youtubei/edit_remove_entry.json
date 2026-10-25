@@ -1,0 +1,58 @@
+{
+ "status": "STATUS_SUCCEEDED",
+ "actions": [
+  {
+   "openPopupAction": {
+    "popup": {
+     "notificationActionRenderer": {
+      "responseText": {
+       "runs": [
+        {
+         "text": "Text"
+        },
+        {
+         "text": "zz quick-save test"
+        }
+       ]
+      },
+      "actionButton": {
+       "buttonRenderer": {
+        "style": "STYLE_LIGHT_TEXT",
+        "size": "SIZE_DEFAULT",
+        "isDisabled": false,
+        "text": {
+         "runs": [
+          {
+           "text": "Text"
+          }
+         ]
+        },
+        "command": {
+         "commandMetadata": {
+          "webCommandMetadata": {
+           "sendPost": true,
+           "apiUrl": "/youtubei/v1/browse/edit_playlist"
+          }
+         },
+         "playlistEditEndpoint": {
+          "playlistId": "PLfake0000003",
+          "actions": [
+           {
+            "addedVideoId": "vid00000011",
+            "action": "ACTION_ADD_VIDEO",
+            "addedVideoPosition": 1
+           }
+          ],
+          "params": "Text"
+         }
+        }
+       }
+      }
+     }
+    },
+    "popupType": "TOAST",
+    "durationHintMs": 5000
+   }
+  }
+ ]
+}

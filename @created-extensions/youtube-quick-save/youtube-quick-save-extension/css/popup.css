@@ -1,0 +1,71 @@
+:root {
+  --bg: #0f0f0f;
+  --panel: #1f1f1f;
+  --line: #303030;
+  --text: #f1f1f1;
+  --muted: #aaaaaa;
+  --accent: #3ea6ff;
+  --ok: #2ba640;
+  --warn: #f2b600;
+  --bad: #ff4e45;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 360px;
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 Roboto, "Segoe UI", Arial, sans-serif;
+}
+
+header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+header img { width: 32px; height: 32px; }
+h1 { margin: 0; font-size: 15px; font-weight: 600; }
+h2 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.sub { margin: 2px 0 0; color: var(--muted); }
+kbd { padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 11px/1.6 monospace; }
+
+section { padding: 10px 0; border-top: 1px solid var(--line); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+label { font-weight: 600; }
+
+select {
+  width: 100%;
+  margin: 6px 0 4px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  padding: 7px 14px;
+}
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #0f0f0f; font-weight: 600; }
+button.link { border: 0; background: none; padding: 0; color: var(--accent); }
+.actions { display: grid; gap: 8px; }
+
+.note { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.note.bad { color: var(--bad); }
+
+ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+li { display: grid; grid-template-columns: 92px 1fr; gap: 6px; font-size: 12px; }
+li .what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+li.empty { display: block; color: var(--muted); }
+.saved, .repaired { color: var(--ok); }
+.already, .closed { color: var(--warn); }
+.failed, .no-playlist, .signed-out, .wrong-account, .gone { color: var(--bad); }
+.no-video { color: var(--muted); }

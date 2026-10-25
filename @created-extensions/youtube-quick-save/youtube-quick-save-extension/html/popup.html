@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>YouTube Quick Save</title>
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon48.png" alt="">
+    <div>
+      <h1>YouTube Quick Save</h1>
+      <p class="sub">Hover a video, press <kbd>Ctrl</kbd> <kbd>Ctrl</kbd></p>
+    </div>
+  </header>
+
+  <section>
+    <div class="row">
+      <label for="playlist">Default playlist</label>
+      <button id="refresh-list" class="link" type="button">Refresh list</button>
+    </div>
+    <select id="playlist"><option value="">Refresh the list first</option></select>
+    <p id="account" class="note"></p>
+    <div class="row">
+      <p id="copy" class="note"></p>
+      <button id="refresh-copy" class="link" type="button" hidden>Re-read</button>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button id="save-tabs" class="primary" type="button">Save all open YouTube tabs</button>
+    <button id="close-tabs" type="button">Close saved tabs</button>
+    <p id="message" class="note" hidden></p>
+    <ul id="results"></ul>
+  </section>
+
+  <section>
+    <h2>Recent</h2>
+    <ul id="activity"><li class="empty">Nothing saved yet</li></ul>
+  </section>
+
+  <script src="../js/popup.js"></script>
+</body>
+</html>

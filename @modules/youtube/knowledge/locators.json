@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "_about": "Elements found on the live pages on 2026-10-25 (@downloads/discovery/pages.json). Identity always comes from a link's href, not from text.",
+  "locators": {
+    "video_tile": {
+      "page": "home",
+      "css": "yt-lockup-view-model",
+      "description": "A video tile on Home, channel pages and the watch sidebar (42 on Home, 32 on the channel page, 40 in the sidebar).",
+      "verified": "2026-10-25"
+    },
+    "short_tile": {
+      "page": "home",
+      "css": "ytm-shorts-lockup-view-model",
+      "description": "A Shorts tile (link /shorts/ID).",
+      "verified": "2026-10-25"
+    },
+    "tile_link": {
+      "within": "video_tile",
+      "css": "a[href*=\"/watch?v=\"], a[href*=\"/shorts/\"]",
+      "description": "Links inside a tile; the largest one wraps the thumbnail (yt-thumbnail-view-model).",
+      "verified": "2026-10-25"
+    },
+    "inline_preview": {
+      "page": "home",
+      "css": "ytd-video-preview",
+      "state": "transient",
+      "description": "After ~2 s of hover the preview player (#inline-preview-player) covers the thumbnail; elementFromPoint returns its <video>. It carries a link to the same video.",
+      "verified": "2026-10-25"
+    },
+    "watch_page": {
+      "page": "watch",
+      "css": "ytd-watch-flexy[video-id]",
+      "description": "Watch page root; attribute video-id is the playing video.",
+      "verified": "2026-10-25"
+    },
+    "main_player": {
+      "page": "watch",
+      "css": "#movie_player",
+      "description": "The main player (990x557 at the default layout).",
+      "verified": "2026-10-25"
+    },
+    "sidebar": {
+      "page": "watch",
+      "css": "#secondary",
+      "description": "Right column with suggested video tiles.",
+      "verified": "2026-10-25"
+    },
+    "save_button": {
+      "page": "watch",
+      "role": "button",
+      "name": "Save to playlist",
+      "css": "ytd-watch-metadata button[aria-label=\"Save to playlist\"]",
+      "description": "Opens the Save dialog; clicking it makes YouTube send playlist/get_add_to_playlist. Not used by the extension (it uses the request directly). Moves into the overflow menu on narrow windows.",
+      "verified": "2026-10-25"
+    },
+    "playlist_entry": {
+      "page": "playlist",
+      "css": "ytd-playlist-video-renderer",
+      "description": "One entry on a playlist page; contains a link with v=ID.",
+      "verified": "2026-10-25"
+    }
+  }
+}

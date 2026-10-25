@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fake YouTube</title>
+  <link rel="stylesheet" href="/app.css">
+  <script>
+    // Like YouTube's ytcfg: the session context the extension's bridge reads.
+    window.ytcfg = { data_: {
+      LOGGED_IN: true, DATASYNC_ID: "__ACCOUNT__", SESSION_INDEX: 0,
+      INNERTUBE_CLIENT_VERSION: "2.20261025.01.00", INNERTUBE_CONTEXT_CLIENT_NAME: 1,
+      INNERTUBE_CONTEXT: { client: { clientName: "WEB", clientVersion: "2.20261025.01.00", hl: "en" } }
+    } };
+  </script>
+</head>
+<body>
+  <ytd-app>
+    <div id="masthead">
+      <a href="/" id="logo">FakeTube</a>
+      <input id="search" placeholder="Search">
+      <a href="/@RayCodingCorner" id="channel-link">Channel</a>
+    </div>
+    <div id="page"></div>
+  </ytd-app>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "youtube",
+  "title": "YouTube",
+  "description": "Find the video under the cursor on YouTube pages and add videos to a playlist without duplicates, using YouTube's own web requests with the signed-in session. Knowledge behind @created-extensions/youtube-quick-save.",
+  "app_url": "https://www.youtube.com/",
+  "origins": [
+    "https://www.youtube.com"
+  ],
+  "requires_login": true,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "probe": "youtube_probe.py",
+    "make_fixtures": "youtube_make_fixtures.py"
+  },
+  "settings": {
+    "test_playlist_title": "zz quick-save test",
+    "playlist_page_size": 100,
+    "flag_lag_seconds": 30
+  },
+  "updated": "2026-10-25"
+}

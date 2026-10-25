@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Quick Save",
+  "version": "1.0.0",
+  "description": "Hover a YouTube video and press Ctrl, Ctrl to save it to your default playlist - never twice, never removed.",
+  "permissions": ["storage", "tabs", "scripting", "alarms"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["js/page/bridge.js"],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["js/lib/core.js", "js/page/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "YouTube Quick Save",
+    "default_popup": "html/popup.html",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}
