@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "actions": {
+    "list_tracks": {
+      "page": "history",
+      "description": "Read every project in the history list: title, duration, project id, and whether it is ready.",
+      "steps": [
+        "For each track_row: project id from track_link (last path segment), title from track_title, duration = first track_text matching m:ss.",
+        "Ready = download_button and more_button present and no track_busy inside the row."
+      ],
+      "evidence": "Rows parsed with a non-empty title and project id; an empty list is only trusted when history_empty_state is shown.",
+      "uses": [
+        "track_row",
+        "track_link",
+        "track_title",
+        "track_text",
+        "download_button",
+        "more_button",
+        "track_busy",
+        "history_empty_state",
+        "main"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "implemented_by": "elevenlabs_downloader.ElevenLabsCleaner.scan_tracks"
+    },
+    "generate_track": {
+      "page": "history",
+      "description": "Generate music from one prompt with the configured model, lyrics off, and wait until the new tracks are ready.",
+      "inputs": {
+        "prompt": "prompt text",
+        "expected_tracks": "new ready tracks per prompt (default 2)",
+        "max_wait": "seconds (default 900, plus 45 s reconciliation)"
+      },
+      "preconditions": [
+        "prompt_editor is ready",
+        "no existing track is still generating"
+      ],
+      "steps": [
+        "Select settings.music_model via music_model_button -> model_option (only if not already selected).",
+        "Turn lyrics_switch off (only if it is on).",
+        "Set the prompt with the Tiptap editor (setContent with promptRegion + empty lyricsRegion); verify prompt_region text.",
+        "Re-check model, lyrics, prompt, Generate enabled and not loading; then click generate_button once.",
+        "Wait for expected_tracks new ready rows (title + duration) and a stable set for 8 s."
+      ],
+      "evidence": "expected_tracks new project ids appear, all ready with title and duration, and generate_button is no longer loading.",
+      "uses": [
+        "music_model_button",
+        "music_model_tooltip",
+        "model_option",
+        "lyrics_switch",
+        "prompt_editor",
+        "prompt_region",
+        "generate_button",
+        "track_row",
+        "track_link",
+        "track_title",
+        "track_text",
+        "download_button_enabled",
+        "more_button_enabled",
+        "track_busy"
+      ],
+      "sensitive": "spends credits",
+      "requires_idle": true,
+      "retry": "never - an uncertain Generate is not repeated; the run stops and reports",
+      "implemented_by": "elevenlabs_generator.MusicPromptRunner.run",
+      "cli": "python elevenlabs_generator.py --prompts-file promps.txt   (or --prompt \"...\"; --check to inspect)"
+    },
+    "download_track": {
+      "page": "history",
+      "description": "Download one project as MP3 into the session folder and verify the file.",
+      "inputs": {
+        "project_id": "from list_tracks",
+        "title": "from list_tracks",
+        "duration": "from list_tracks"
+      },
+      "steps": [
+        "Find the row by project id (never by index) and its download_button; click it (trusted CDP).",
+        "In the open_menu labelled by that button, click mp3_menu_item.",
+        "If a CDP click was acknowledged but nothing opened, call the element's live React handler instead (same element, re-checked).",
+        "Wait for a new .mp3 whose name starts with the title (session folder first, then ~/Downloads); move/rename it into @downloads/<date>-sessionN/."
+      ],
+      "evidence": "Local file >= settings.min_audio_bytes, valid audio header (ID3 / MPEG frame / RIFF-WAVE / OggS), and duration within settings.duration_tolerance_s of the online duration (ffprobe).",
+      "uses": [
+        "track_row",
+        "track_link",
+        "download_button",
+        "open_menu",
+        "mp3_menu_item"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "retry": "the download click may be repeated only after confirming no new file arrived",
+      "implemented_by": "elevenlabs_downloader.ElevenLabsCleaner.trigger_download_click",
+      "cli": "python elevenlabs_downloader.py --keep   (download + verify, never delete)"
+    },
+    "delete_track": {
+      "page": "history",
+      "description": "Delete one project from ElevenLabs - only after its local MP3 is verified.",
+      "inputs": {
+        "project_id": "required",
+        "title": "required",
+        "local_file": "verified MP3 whose name matches the title"
+      },
+      "preconditions": [
+        "local file passes download_track evidence",
+        "file name matches the project title",
+        "run started with --force-delete and without --keep"
+      ],
+      "steps": [
+        "Find the row by project id; re-read its title and abort if it changed.",
+        "Click more_button -> delete_menu_item in the menu labelled by that button.",
+        "In the dialog whose text contains Delete \"<title>\", click delete_confirm_button.",
+        "Wait until the project link is gone, reload history, and wait until the list has loaded again."
+      ],
+      "evidence": "After reloading history the project id is absent and the list loaded (count >= previous - 1, or history_empty_state shown).",
+      "uses": [
+        "track_row",
+        "track_link",
+        "track_title",
+        "more_button",
+        "open_menu",
+        "delete_menu_item",
+        "dialog",
+        "dialog_button",
+        "delete_confirm_button",
+        "delete_dialog_question",
+        "cancel_button",
+        "history_empty_state",
+        "main"
+      ],
+      "sensitive": "destructive",
+      "requires_idle": false,
+      "retry": "never repeat a confirm click; an unfinished delete is cancelled (cancel_button) and the page reloaded",
+      "implemented_by": "elevenlabs_downloader.ElevenLabsCleaner.delete_track_item",
+      "cli": "python elevenlabs_downloader.py --force-delete   (run_cleaner.bat)"
+    }
+  }
+}

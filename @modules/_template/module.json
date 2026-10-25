@@ -1,0 +1,12 @@
+{
+  "name": "<folder name>",
+  "title": "<App name>",
+  "description": "What this module lets the AI do on the app.",
+  "app_url": "https://example.com/app",
+  "origins": ["https://example.com"],
+  "requires_login": true,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {},
+  "settings": {},
+  "updated": "YYYY-MM-DD"
+}

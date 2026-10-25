@@ -20,3 +20,6 @@ scratch/
 @created-extensions/*/*-backend/runs/
 @created-extensions/*/*-backend/native_host/com.*.json
 @created-extensions/*/test-results/
+# Web-app modules: downloaded outputs and raw page snapshots stay local
+@modules/*/@downloads/
+@modules/*/knowledge/discovered/

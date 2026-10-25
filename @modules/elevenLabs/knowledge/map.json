@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pages": {
+    "history": {
+      "url": "https://elevenlabs.io/app/music/history",
+      "purpose": "Music workspace: the prompt editor, model and lyrics controls, the Generate button, and the list of generated projects (tracks).",
+      "ready_when": "track rows are rendered, or the empty-state text is shown. After a navigation the list shows skeleton rows for several seconds while the history API answers - wait for the specific card, not a fixed delay.",
+      "ready_when_any": ["track_row", "history_empty_state"],
+      "busy_when_any": ["track_busy", "generate_loading"],
+      "features": ["list_tracks", "generate_track", "download_track", "delete_track"]
+    },
+    "project": {
+      "url_pattern": "https://elevenlabs.io/app/music/project/{project_id}",
+      "purpose": "One project. Not used directly: its URL is how a track is identified, because list positions shift on every rerender and deletion.",
+      "ready_when": "not automated"
+    }
+  },
+  "navigation": [
+    "Everything runs on the history page; reload it with navigate(https://elevenlabs.io/app/music/history) to get a fresh list.",
+    "Project id = last path segment of the row's /app/music/project/ link."
+  ]
+}

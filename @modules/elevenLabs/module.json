@@ -1,0 +1,22 @@
+{
+  "name": "elevenLabs",
+  "title": "ElevenLabs Music",
+  "description": "Generate music from prompts, download the MP3s, verify them, and clean verified tracks from the ElevenLabs Music history.",
+  "app_url": "https://elevenlabs.io/app/music/history",
+  "origins": ["https://elevenlabs.io"],
+  "requires_login": true,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "generate": "elevenlabs_generator.py",
+    "download_and_clean": "elevenlabs_downloader.py",
+    "probe_tracks": "find_tracks.py"
+  },
+  "settings": {
+    "music_model": "Music v2.5",
+    "expected_tracks_per_prompt": 2,
+    "min_audio_bytes": 10240,
+    "duration_tolerance_s": 2,
+    "downloads_dir": "@downloads"
+  },
+  "updated": "2026-10-25"
+}

@@ -46,6 +46,8 @@ const domSnapshots = new Map(); // tabId → { selector, html, recording, interv
 
 // Track the tab we're automating
 let targetTabId = null;
+// Tab pinned by the current command's params.tab_id (a bound order); overrides every other choice
+let pinnedTabId = null;
 
 // Track debugger attachment per tab to maintain single session
 const attachedTabs = new Set();
@@ -456,6 +458,9 @@ async function getPageHTML(tabId) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function getTargetTabId() {
+  // 0. A bound order names its tab; never pick another one
+  if (pinnedTabId != null) return pinnedTabId;
+
   // 1. Check if user has an ElevenLabs tab open in any window — auto-activate it to foreground
   const allTabs = await chrome.tabs.query({});
   const elevenTabs = allTabs.filter(t => t.url && t.url.includes('elevenlabs.io'));
@@ -522,6 +527,18 @@ function waitForTabLoad(tabId, timeoutMs = 25000) {
 ws.onCommand(async (command) => {
   const { id, action, target, params = {} } = command;
 
+  // A bound order pins the command to one tab. If that tab is gone, refuse rather than act elsewhere.
+  pinnedTabId = Number.isInteger(params.tab_id) ? params.tab_id : null;
+  if (pinnedTabId != null) {
+    try {
+      await chrome.tabs.get(pinnedTabId);
+      targetTabId = pinnedTabId;
+    } catch {
+      ws.sendResponse(id, 'failure', {}, `Bound tab ${pinnedTabId} is closed`);
+      return;
+    }
+  }
+
   // Log command execution to activity log
   router.logTask({
     action,
@@ -537,7 +554,9 @@ ws.onCommand(async (command) => {
         const query = params.query || params.url || '';
         const allTabs = await chrome.tabs.query({});
         let matched = null;
-        if (query) {
+        if (pinnedTabId != null) {
+          matched = allTabs.find(t => t.id === pinnedTabId);
+        } else if (query) {
           matched = allTabs.find(t => t.url && t.url.toLowerCase().includes(query.toLowerCase()));
         }
         if (!matched) {
@@ -572,8 +591,9 @@ ws.onCommand(async (command) => {
       case 'navigate': {
         const url = params.url;
         console.log(`[SW] Navigate to: ${url}`);
-        // Reuse existing tab if we have one, otherwise create new
-        if (targetTabId) {
+        // Reuse existing tab if we have one, otherwise create new. new_tab: never reuse a tab
+        // (opening an app must not replace whatever page the last-targeted tab shows).
+        if (targetTabId && !params.new_tab) {
           try {
             await chrome.tabs.get(targetTabId); // check if tab still exists
             await chrome.tabs.update(targetTabId, { url, active: true });

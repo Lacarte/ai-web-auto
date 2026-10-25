@@ -26,10 +26,18 @@ class WebSocketServer:
         self.session = SessionState()
         self.session.auth_token = self.auth_token
         self._ws: Optional[WebSocketServerProtocol] = None
+        self._connections: list[WebSocketServerProtocol] = []  # live extensions, newest last; _ws is the newest
         self._server = None
         self._pending: dict[str, asyncio.Future] = {}
         self._event_handlers: dict[str, list[Callable]] = {}
         self._running = False
+        # Which browser commands reach: connection_id changes whenever _ws changes (a second browser with
+        # the extension connecting, or the current one going away). bind() pins an order to one of them.
+        self.connection_id = 0
+        self.capabilities: set[str] = set()
+        self.bound_tab_id: int | None = None
+        self.bound_connection_id: int | None = None
+        self._capabilities: dict[int, set[str]] = {}
 
     # ── Lifecycle ────────────────────────────────────────────────────────
 
@@ -84,8 +92,12 @@ class WebSocketServer:
             await ws.close()
             return
 
-        self._ws = ws
-        self.session.set_connected(True)
+        if self._connections:
+            logger.warning(f"Another AI Web-Auto extension connected from {ws.remote_address}; commands now go to it"
+                           + (" - the bound order will stop" if self.bound_connection_id is not None else ""))
+        self._capabilities[id(ws)] = set(auth.get("capabilities") or [])
+        self._connections.append(ws)
+        self._use_newest_connection()
         logger.info(f"Extension authenticated from {ws.remote_address}")
 
         try:
@@ -98,13 +110,36 @@ class WebSocketServer:
         except websockets.ConnectionClosed:
             logger.warning("Extension disconnected")
         finally:
-            self.session.set_connected(False)
-            self._ws = None
-            # Fail all pending commands
-            for fut in self._pending.values():
-                if not fut.done():
-                    fut.set_exception(ConnectionError("Extension disconnected"))
-            self._pending.clear()
+            was_current = self._ws is ws
+            self._connections.remove(ws)
+            self._capabilities.pop(id(ws), None)
+            # A replaced connection closing late must not drop the live one.
+            if was_current:
+                self._use_newest_connection()
+                if not self._connections:
+                    # Fail all pending commands
+                    for fut in self._pending.values():
+                        if not fut.done():
+                            fut.set_exception(ConnectionError("Extension disconnected"))
+                    self._pending.clear()
+
+    def _use_newest_connection(self):
+        self._ws = self._connections[-1] if self._connections else None
+        self.connection_id += 1
+        self.capabilities = self._capabilities.get(id(self._ws), set()) if self._ws else set()
+        self.session.set_connected(self._ws is not None)
+
+    def bind(self, tab_id: int | None) -> None:
+        """Pin every following command to this tab, on the browser connected now.
+
+        If another browser's extension connects (or this one drops) meanwhile, commands are refused
+        instead of reaching a different browser; the extension refuses them if the tab was closed.
+        """
+        self.bound_tab_id = tab_id
+        self.bound_connection_id = self.connection_id
+
+    def unbind(self) -> None:
+        self.bound_tab_id = self.bound_connection_id = None
 
     async def _route_message(self, msg: dict[str, Any]):
         msg_type = msg.get("type", "")
@@ -140,6 +175,16 @@ class WebSocketServer:
     async def send_command(self, command: Command, timeout: float | None = None) -> Response:
         if not self._ws or not self.session.connected:
             raise ConnectionError("Extension not connected")
+        if self.bound_connection_id is not None and self.bound_connection_id != self.connection_id:
+            return Response(
+                correlation_id=command.id,
+                type=ResponseType.ERROR,
+                status=ResponseStatus.FAILURE,
+                error="The browser connection changed during this order (another AI Web-Auto extension connected "
+                      "or this one reconnected); not sending - run the order again",
+            )
+        if self.bound_tab_id is not None:
+            command.params.setdefault("tab_id", self.bound_tab_id)
 
         timeout = timeout or (command.timeout / 1000)
         fut: asyncio.Future[Response] = asyncio.get_event_loop().create_future()

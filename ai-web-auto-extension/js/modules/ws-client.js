@@ -71,7 +71,8 @@ export class WebSocketClient {
     this._ws.onopen = () => {
       console.log('[WS] Connected, authenticating...');
       this._reconnectDelay = 1000;
-      this._sendRaw({ type: 'auth', token: this._authToken });
+      // capabilities: tab_id = commands can be pinned to one tab (see the command router)
+      this._sendRaw({ type: 'auth', token: this._authToken, capabilities: ['tab_id'] });
     };
 
     this._ws.onmessage = (event) => {

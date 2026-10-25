@@ -17,7 +17,10 @@ ai_web_auto_backend/        # WebSocket server + AI agent + utilities
   chatgpt-ui-to-api/
   meta-ai-extension/
   flow-extension/
-@modules/                      # Site-specific driver modules (e.g. elevenLabs)
+@modules/                      # Web-app modules: one per app, its learned knowledge + executors (see Web-App Modules)
+  module_kit.py                # Shared toolkit: check, preflight, discover, related, verify, new
+  _template/                   # Copied by `module_kit.py new`
+  elevenLabs/                  # ElevenLabs Music: generate, download + verify, clean history
 @learning-process/             # Learning process artifacts
   scripts/                     # Test, discovery, learner, and execution scripts
   output/                      # Screenshots, element data, recipes, learned selectors
@@ -251,6 +254,72 @@ await s.type_cdp("hello", xpath="/html/.../input")      # type via CDP
 await s.click_cdp(x, y)                                 # click via CDP
 ```
 
+## Web-App Modules — Standard Process
+
+A **module** (`@modules/<app>/`) commands one web app through the platform (backend on `:8765` + AI Web-Auto
+extension) without an extension of its own. It keeps everything learned about the app — pages, locators,
+actions, decision rules, lessons — so later orders run fast and the same way every time. **One module per web
+app.** Full reference: `@modules/README.md`; toolkit: `@modules/module_kit.py`.
+
+Use a module when the user wants to command an app repeatedly from Claude or scripts ("use ElevenLabs to…",
+"add a module for X"). Build an extension (above) when someone installs a packaged tool; use the
+`ai-web-auto-driver` skill for a true one-off.
+
+### Layout and rules
+- `module.json`: name (= folder), `app_url`, `origins`, settings, entry points.
+- `knowledge/map.json`: pages with `url`/`url_pattern`, `ready_when_any`, `busy_when_any`, `sections` with their open-steps, and `blockers` (`{"when": <locator>, "dismiss": [steps]}` for cookie walls, tours, promos — register the least-consequential way out).
+- `knowledge/locators.json`: every element used, registered once (css / relative xpath / `text`, `role`, `name`, `within`, `state: transient`).
+- `knowledge/actions.json`: steps, evidence, `sensitive`, `retry`, `requires_idle`, `section`, `implemented_by`.
+- `knowledge/rules.md` is the brain (decision rules and safety gates); `knowledge/lessons.md` records what worked and what didn't.
+- Executors never hard-code selectors or UI text: page scripts use `@@key@@` / `@@key.text@@`, rendered by `KNOWLEDGE.js(...)`. When the app's UI changes, fix `locators.json`, not code.
+- Every executor calls `module_kit.preflight(module, server, action)` first and stops if it is not ok.
+
+### Every order goes through preflight
+connection → action known and not a draft → app tab open and in front (reopened in a **new** tab if closed;
+the order is then **bound** to that tab on that browser) → right page
+(navigate) → signed in (a redirect off `origins` or a password form stops for the human) → ready signal (reload
+once, else stop with a snapshot) → registered blockers dismissed → section opened with its registered steps
+(clicks wait until the target is uncovered) → idle, when the action `requires_idle` (bounded wait). Signals
+count only visible elements. Never act past a failed check. Never retry a sensitive step that may have taken effect.
+
+**Binding (why commands can't land in the wrong place).** `server.bind(tab_id)` makes the core server add
+`tab_id` to every command, and the extension runs it in that tab only — refused if the tab was closed, never
+redirected to the active tab. If another browser's extension connects (or this one reconnects) during the
+order, the server refuses further commands instead of sending them to a different browser. Core changes
+behind this: `WebSocketServer` keeps a stack of live connections (newest gets commands; a replaced socket
+closing late no longer drops the live one), `connection_id`, `capabilities` from the auth message, and
+`bind()`/`unbind()`. Extension: `params.tab_id` pin, `navigate` `new_tab`, `capabilities: ['tab_id']`. Reload
+AI Web-Auto in `chrome://extensions` after updating; preflight warns while an older copy is connected.
+**Test live with an isolated copy of the extension on its own port** — the everyday Chrome's extension also
+connects to `:8765` and would receive test commands.
+
+### Unknown action: learn, never improvise
+Preflight scrapes the page (`discover`), collects what the **other modules** know (similar actions, lessons
+matching the action's words or the page's UI hints, matching locators), runs those candidate selectors on the
+live page (`works_here`), and registers a **draft** with the snapshot and candidates. To finish the draft:
+1. Write steps and evidence; register locators, preferring `works_here` candidates.
+2. Implement with placeholders.
+3. Run `verify --write` on the live page.
+4. Remove `status: "draft"`.
+5. Add tests and record lessons.
+
+### Commands
+```
+venv\Scripts\python @modules\module_kit.py new <app> --url https://app.example.com/home   # scaffold from _template
+venv\Scripts\python @modules\module_kit.py preflight <app> [--action NAME] [--no-learn]   # check/repair readiness
+venv\Scripts\python @modules\module_kit.py discover <app>                                 # snapshot the open page's controls
+venv\Scripts\python @modules\module_kit.py related <app> --action NAME                    # knowledge from other modules
+venv\Scripts\python @modules\module_kit.py verify <app> [--write]                         # count every locator on the open page
+venv\Scripts\python @modules\module_kit.py check <app>                                    # validate the knowledge offline
+```
+`preflight`, `discover` and `verify` start the backend on `:8765` themselves — stop `runner.bat` first.
+
+### Definition of done for a module change
+- `module_kit.py check <app>`: 0 errors.
+- `verify --write` on the live page: every non-transient locator the action uses is found.
+- Fake-server tests pass (pattern: `tests/test_module_kit.py`, `tests/test_elevenlabs_*.py`), and so does `venv\Scripts\python -m unittest discover -s tests`.
+- `rules.md` and `lessons.md` are updated; no behaviour exists in code that the knowledge doesn't describe.
+
 ## Recommended Claude Workflow
 
 1. Reuse before rediscovery
@@ -420,6 +489,10 @@ DON'T: ignore DOM diff showing error/loading states
 | `@created-extensions/web-goal-agent/web-goal-agent-backend/goal_agent_backend/engine.py` | Observe → Plan → Act → Verify → Recover engine |
 | `@created-extensions/web-goal-agent/web-goal-agent-extension/js/page/agent-page.js` | Page library: semantic scoped locators, actionability, expectations, overlay |
 | `@created-extensions/web-goal-agent/run-tests.bat` | Unit + real-browser E2E suite (the pattern for testing new extensions) |
+| `@modules/README.md` | Module system: layout, preflight, cross-module learning, growth loop |
+| `@modules/module_kit.py` | Module toolkit: registry loading, `@@key@@` rendering, check, preflight, discover, related, verify, scaffold |
+| `tests/test_module_kit.py` | Fake-server tests for preflight repairs, binding, draft learning, cross-module transfer |
+| `tests/test_server_binding.py` | Core server: bound orders never reach another browser or tab; connection stack |
 | `@created-extensions/skool-down-course/skool-down-course-backend/sdc_downloader.py` | Skool course downloader (proven, reliable) |
 | `@created-extensions/skool-down-course/skool-down-course-backend/sdc_resume_downloads.py` | Verify downloaded videos, resume/repair incomplete ones |
 

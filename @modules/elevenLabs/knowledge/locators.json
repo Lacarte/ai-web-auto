@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "_about": "Every element the ElevenLabs scripts use. Scripts reference them as @@key@@ (css) or @@key.text@@. Fix a broken selector here, then run: python @modules/module_kit.py verify elevenLabs --write",
+  "locators": {
+    "main": {
+      "page": "history",
+      "css": "main",
+      "description": "Page main region; scope for the empty-state text.",
+      "verified": "2026-10-23"
+    },
+    "history_empty_state": {
+      "page": "history",
+      "within": "main",
+      "text": "Submit a prompt to start your first project.",
+      "description": "Shown when the history list is truly empty (distinguishes 'empty' from 'still loading').",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "track_row": {
+      "page": "history",
+      "css": "main ul.eleven-list li.eleven-list-item",
+      "description": "One generated project in the history list. Class-based: re-verify after ElevenLabs UI updates.",
+      "verified": "2026-10-23"
+    },
+    "track_link": {
+      "within": "track_row",
+      "css": "a[href*=\"/app/music/project/\"]",
+      "description": "Project link. Its last path segment is the project id - the stable identity of a track.",
+      "verified": "2026-10-23"
+    },
+    "track_title": {
+      "within": "track_row",
+      "css": "p.text-foreground.font-medium",
+      "description": "Track title text.",
+      "verified": "2026-10-23"
+    },
+    "track_text": {
+      "within": "track_row",
+      "css": "span, p",
+      "description": "Row text nodes; the duration is the one matching m:ss.",
+      "verified": "2026-10-23"
+    },
+    "download_button": {
+      "within": "track_row",
+      "role": "button",
+      "name": "Download",
+      "css": "button[aria-label=\"Download\"]",
+      "description": "Opens the format menu (Radix). Its id is the menu's aria-labelledby.",
+      "verified": "2026-10-23"
+    },
+    "download_button_enabled": {
+      "within": "track_row",
+      "css": "button[aria-label=\"Download\"]:not(:disabled)",
+      "description": "Download button that is enabled (track finished).",
+      "verified": "2026-10-23"
+    },
+    "more_button": {
+      "within": "track_row",
+      "role": "button",
+      "name": "More",
+      "css": "button[aria-label=\"More\"]",
+      "description": "Opens the project menu with 'Delete project'. Its id is the menu's aria-labelledby.",
+      "verified": "2026-10-23"
+    },
+    "more_button_enabled": {
+      "within": "track_row",
+      "css": "button[aria-label=\"More\"]:not(:disabled)",
+      "verified": "2026-10-23"
+    },
+    "track_busy": {
+      "within": "track_row",
+      "css": "[aria-busy=\"true\"], [data-loading=\"true\"]",
+      "description": "Present while the track is still generating; a busy track is not ready.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "track_badge": {
+      "within": "track_row",
+      "css": ".awa-track-badge",
+      "description": "Our own highlight badge (added by highlight_track_card), not part of ElevenLabs.",
+      "state": "transient"
+    },
+    "open_menu": {
+      "page": "history",
+      "role": "menu",
+      "css": "[role=\"menu\"][data-state=\"open\"]",
+      "description": "An open Radix menu. Match it to its trigger with aria-labelledby == trigger button id.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "menu_item": {
+      "within": "open_menu",
+      "role": "menuitem",
+      "css": "[role=\"menuitem\"]",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "mp3_menu_item": {
+      "within": "open_menu",
+      "role": "menuitem",
+      "name": "MP3",
+      "css": "[role=\"menuitem\"]",
+      "text": "MP3",
+      "description": "Download menu entry for MP3 (exact text, not disabled).",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "delete_menu_item": {
+      "within": "open_menu",
+      "role": "menuitem",
+      "name": "Delete project",
+      "css": "[role=\"menuitem\"]",
+      "text": "Delete project",
+      "description": "Project menu entry that opens the delete confirmation.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "dialog": {
+      "page": "history",
+      "css": "[role=\"alertdialog\"], [role=\"dialog\"]",
+      "description": "Any open dialog.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "dialog_button": {
+      "within": "dialog",
+      "css": "button",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "delete_confirm_button": {
+      "within": "dialog",
+      "role": "button",
+      "name": "Delete",
+      "css": "button.text-error",
+      "text": "Delete",
+      "description": "Red 'Delete' (class text-error) in the dialog whose text contains Delete \"<title>\". The class tells it apart from other Delete-labelled buttons.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "delete_dialog_question": {
+      "within": "dialog",
+      "text": "Are you sure you'd like to delete this project?",
+      "description": "Body text of the delete confirmation; used to find its Cancel button.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "cancel_button": {
+      "within": "dialog",
+      "role": "button",
+      "name": "Cancel",
+      "css": "button",
+      "text": "Cancel",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "music_model_button": {
+      "page": "history",
+      "role": "button",
+      "name": "Music model",
+      "css": "button[aria-label=\"Music model\"]",
+      "description": "Opens the model picker; its text is the current model.",
+      "verified": "2026-10-23"
+    },
+    "music_model_tooltip": {
+      "within": "music_model_button",
+      "css": "[data-agent-tooltip=\"Music model\"]",
+      "description": "Confirms the button is the model picker (not another 'Music model' label).",
+      "verified": "2026-10-23"
+    },
+    "model_option": {
+      "page": "history",
+      "role": "option",
+      "css": "[role=\"option\"]",
+      "description": "Entries of the open model picker; the wanted one starts with settings.music_model.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    },
+    "lyrics_switch": {
+      "page": "history",
+      "role": "switch",
+      "name": "Include lyrics",
+      "css": "button[role=\"switch\"][aria-label*=\"Include lyrics\"]",
+      "description": "aria-checked 'true'/'false'; goal state is 'false' (instrumental).",
+      "verified": "2026-10-23"
+    },
+    "prompt_editor": {
+      "page": "history",
+      "css": "[data-agent-id=\"music-v2-manuscript\"]",
+      "description": "Tiptap editor; element.editor exposes getJSON() and commands.setContent with promptRegion + lyricsRegion.",
+      "verified": "2026-10-23"
+    },
+    "prompt_region": {
+      "within": "prompt_editor",
+      "css": "[data-music-region=\"prompt\"]",
+      "description": "Prompt text region inside the editor (read to verify the prompt).",
+      "verified": "2026-10-23"
+    },
+    "generate_button": {
+      "page": "history",
+      "role": "button",
+      "name": "Generate",
+      "css": "button[aria-label=\"Generate\"]",
+      "description": "Submits the prompt. data-loading='true' while generating. Spends credits.",
+      "verified": "2026-10-23"
+    },
+    "generate_loading": {
+      "page": "history",
+      "css": "button[aria-label=\"Generate\"][data-loading=\"true\"]",
+      "description": "Generate is still working on a submission - the app is busy.",
+      "state": "transient",
+      "verified": "2026-10-23"
+    }
+  }
+}

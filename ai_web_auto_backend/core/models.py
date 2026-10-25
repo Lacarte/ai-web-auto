@@ -130,6 +130,7 @@ class ResponseData(BaseModel):
     dom_snapshot: Optional[DOMSnapshot] = None
     extracted_data: dict[str, Any] = Field(default_factory=dict)
     tabs: list[dict[str, Any]] = Field(default_factory=list)
+    tabId: Optional[int] = None  # the tab a navigate / activate_tab acted on
     cookies: list[dict[str, Any]] = Field(default_factory=list)
     localStorage: dict[str, str] = Field(default_factory=dict)
     sessionStorage: dict[str, str] = Field(default_factory=dict)
