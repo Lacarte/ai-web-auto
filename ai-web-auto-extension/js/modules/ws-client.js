@@ -16,6 +16,8 @@ export class WebSocketClient {
     this._connected = false;
     this._intentionalClose = false;
     this._tokenReady = false;
+    this._onAuthSuccess = null;
+    this._onAuthFail = null;
 
     // Load auth token from storage before connecting
     this._loadToken();
@@ -81,8 +83,10 @@ export class WebSocketClient {
           this._connected = true;
           this._startPing();
           console.log('[WS] Authenticated');
+          if (this._onAuthSuccess) this._onAuthSuccess(msg);
         } else {
           console.error('[WS] Auth denied');
+          if (this._onAuthFail) this._onAuthFail(msg);
           this._ws.close();
         }
         return;
@@ -127,6 +131,14 @@ export class WebSocketClient {
 
   onCommand(handler) {
     this._commandHandler = handler;
+  }
+
+  onAuthSuccess(callback) {
+    this._onAuthSuccess = callback;
+  }
+
+  onAuthFail(callback) {
+    this._onAuthFail = callback;
   }
 
   sendResponse(correlationId, status, data, error = null) {

@@ -4,36 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../css/popup.css">
-  <title>AI Automation</title>
+  <title>AI Web-Auto</title>
 </head>
 <body>
   <div class="container">
-    <h1>AI Web-Auto</h1>
+    <!-- Header with Machined Control-Room Brand -->
+    <div class="header-bar">
+      <div class="brand">
+        <div class="brand-icon">AW</div>
+        <div>
+          <div class="brand-title">AI Web-Auto</div>
+          <div class="brand-sub">CDP Automation Node</div>
+        </div>
+      </div>
+      <span id="ws-badge" class="badge disconnected">Disconnected</span>
+    </div>
 
-    <div class="status-section">
+    <!-- Status Panel -->
+    <div class="panel">
       <div class="status-row">
-        <span class="label">WebSocket</span>
-        <span id="ws-status" class="badge disconnected">Disconnected</span>
+        <div class="status-left">
+          <div id="status-indicator" class="status-indicator"></div>
+          <span class="status-label">Engine Socket</span>
+        </div>
+        <span id="ws-status" style="font-family: var(--mono); font-size: 11px; color: var(--muted);">ws://localhost:8765</span>
       </div>
     </div>
 
+    <!-- Auth Token Configuration -->
     <div class="config-section">
-      <label for="auth-token">Auth Token</label>
+      <label for="auth-token">Security Auth Token</label>
       <div class="input-row">
-        <input id="auth-token" type="text" value="local-dev-token">
-        <button id="save-token">Save</button>
+        <input id="auth-token" type="text" value="local-dev-token" spellcheck="false" autocomplete="off">
+        <button id="save-token" class="primary">Save</button>
       </div>
     </div>
 
+    <!-- Controls -->
     <div class="controls">
-      <button id="btn-reconnect">Reconnect</button>
-      <button id="btn-screenshot">Screenshot</button>
-      <button id="btn-extract">Extract DOM</button>
+      <button id="btn-reconnect">
+        <span>🔄</span> Reconnect
+      </button>
+      <button id="btn-screenshot">
+        <span>📸</span> Shot
+      </button>
+      <button id="btn-extract">
+        <span>🔍</span> DOM
+      </button>
     </div>
 
+    <!-- Log Console -->
     <div class="log-section">
-      <h3>Activity Log</h3>
-      <div id="log-container"></div>
+      <div class="log-header">
+        <h3>Activity Stream</h3>
+        <span id="log-count" class="log-count">0 events</span>
+      </div>
+      <div id="log-container">
+        <div class="log-entry" style="opacity: 0.5;">Waiting for server handshake...</div>
+      </div>
     </div>
   </div>
 

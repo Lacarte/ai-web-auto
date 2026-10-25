@@ -113,6 +113,18 @@ class BrowserAgent:
     async def wait_for(self, condition: str, value: str = "", timeout_ms: int = 10000) -> Response:
         return await self.server.wait_for(condition, value, timeout_ms)
 
+    async def select_option(self, selector: str, value: str, by_text: bool = False) -> Response:
+        """Select an option in a <select> dropdown, or set checkbox/radio."""
+        return await self.server.select_option(selector, value, by_text)
+
+    async def upload_file(self, selector: str, file_path_or_paths: str | list[str]) -> Response:
+        """Upload file(s) directly to <input type="file"> via CDP."""
+        return await self.server.upload_file(selector, file_path_or_paths)
+
+    async def send_key(self, key: str, ctrl: bool = False, alt: bool = False, shift: bool = False, meta: bool = False) -> Response:
+        """Send a single key or key combination via CDP."""
+        return await self.server.send_key(key, ctrl=ctrl, alt=alt, shift=shift, meta=meta)
+
     # ── DOM Observation ──────────────────────────────────────────────────
 
     async def observe_start(self, selector: str = "body") -> Response:
@@ -152,6 +164,9 @@ async def main():
     print("  type <text>          — Type into focused input (CDP)")
     print("  click <selector>     — Click element by CSS/XPath")
     print("  extract              — Extract page text")
+    print("  select <sel> <val>   — Select option or toggle checkbox")
+    print("  upload <sel> <path>  — Upload file(s) via CDP")
+    print("  key <name> [ctrl]    — Send key or key combination (CDP)")
     print("  observe [selector]   — Start DOM observation (default: body)")
     print("  diff                 — Show DOM changes since last snapshot")
     print("  unobserve            — Stop DOM observation")
@@ -266,6 +281,38 @@ async def main():
             r = await agent.extract("text")
             text = r.data.extracted_data.get("text", "")
             print(f"  Page text ({len(text)} chars): {text[:200]}")
+            continue
+
+        if cmd.lower().startswith("select "):
+            parts = cmd[7:].strip().split(maxsplit=1)
+            if len(parts) == 2:
+                sel, val = parts[0], parts[1]
+                r = await agent.select_option(sel, val)
+                print(f"  Select: {r.status} {r.data.dict() if hasattr(r.data, 'dict') else ''}")
+            else:
+                print("  Usage: select <selector> <value>")
+            continue
+
+        if cmd.lower().startswith("upload "):
+            parts = cmd[7:].strip().split(maxsplit=1)
+            if len(parts) == 2:
+                sel, fpath = parts[0], parts[1]
+                import os
+                full_fpath = os.path.abspath(fpath)
+                r = await agent.upload_file(sel, full_fpath)
+                print(f"  Upload: {r.status} {r.error or ''}")
+            else:
+                print("  Usage: upload <selector> <filepath>")
+            continue
+
+        if cmd.lower().startswith("key "):
+            parts = cmd[4:].strip().split()
+            key_name = parts[0]
+            ctrl = "ctrl" in [p.lower() for p in parts[1:]]
+            alt = "alt" in [p.lower() for p in parts[1:]]
+            shift = "shift" in [p.lower() for p in parts[1:]]
+            r = await agent.send_key(key_name, ctrl=ctrl, alt=alt, shift=shift)
+            print(f"  Key '{key_name}': {r.status}")
             continue
 
         if cmd.lower().startswith("observe"):

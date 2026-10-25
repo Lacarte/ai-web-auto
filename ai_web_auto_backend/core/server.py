@@ -227,6 +227,30 @@ class WebSocketServer:
             target={"method": method, "value": selector},
         ))
 
+    async def select_option(self, selector: str, value: str, by_text: bool = False, method: str = "css") -> Response:
+        """Select an option in a <select> dropdown, or set checkbox/radio."""
+        return await self.send_command(Command(
+            action="select",
+            target={"method": method, "value": selector},
+            params={"selector": selector, "value": value, "by_text": by_text},
+        ))
+
+    async def upload_file(self, selector: str, file_path_or_paths: str | list[str], method: str = "css") -> Response:
+        """Upload file(s) directly to <input type="file"> via CDP."""
+        files = [file_path_or_paths] if isinstance(file_path_or_paths, str) else file_path_or_paths
+        return await self.send_command(Command(
+            action="upload",
+            target={"method": method, "value": selector},
+            params={"selector": selector, "files": files},
+        ))
+
+    async def send_key(self, key: str, ctrl: bool = False, alt: bool = False, shift: bool = False, meta: bool = False) -> Response:
+        """Send a single key or key combination via CDP."""
+        return await self.send_command(Command(
+            action="key",
+            params={"key": key, "ctrl": ctrl, "alt": alt, "shift": shift, "meta": meta},
+        ))
+
     # ── DOM Observation ───────────────────────────────────────────────────
 
     async def observe_start(self, selector: str = "body", interval: int = 1000) -> Response:

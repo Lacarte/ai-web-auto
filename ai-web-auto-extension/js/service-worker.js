@@ -24,6 +24,23 @@ const WS_URL = 'ws://localhost:8765';
 const ws = new WebSocketClient(WS_URL);
 const router = new MessageRouter(ws);
 
+// Log authentication handshake directly into Activity Log
+ws.onAuthSuccess((data) => {
+  router.logTask({
+    action: 'handshake',
+    status: 'connected (token verified)',
+    details: data?.message || 'WebSocket session established',
+  });
+});
+
+ws.onAuthFail((err) => {
+  router.logTask({
+    action: 'handshake',
+    status: 'failed',
+    details: err?.error || 'Auth rejected by backend',
+  });
+});
+
 // ── DOM Observer state (per-tab snapshots for structured diffing) ──────────
 const domSnapshots = new Map(); // tabId → { selector, html, recording, intervalId }
 
@@ -132,13 +149,80 @@ async function cdpClick(tabId, x, y) {
 /**
  * CDP type via Input.insertText — the ONLY method that works with React
  * contentEditable. NOT new Function, NOT execCommand, NOT el.value =.
- * Types char by char for React state tracking.
+ * Supports fast batch insertion or character-by-character typing.
  */
-async function cdpType(tabId, text) {
-  for (const char of text) {
-    await cdpSend(tabId, 'Input.insertText', { text: char });
-    await sleep(5);
+async function cdpType(tabId, text, options = {}) {
+  const { fast = false, delayMs = 5 } = options;
+  if (fast || text.length > 50) {
+    // For larger texts or fast mode, insert text in chunks of 50 chars to remain fast yet trigger change events
+    const chunkSize = 50;
+    for (let i = 0; i < text.length; i += chunkSize) {
+      const chunk = text.slice(i, i + chunkSize);
+      await cdpSend(tabId, 'Input.insertText', { text: chunk });
+      await sleep(delayMs);
+    }
+  } else {
+    for (const char of text) {
+      await cdpSend(tabId, 'Input.insertText', { text: char });
+      if (delayMs > 0) await sleep(delayMs);
+    }
   }
+}
+
+/**
+ * CDP Key map helper for standard virtual key codes and modifiers.
+ */
+const KEY_DEFINITIONS = {
+  Enter: { key: 'Enter', code: 'Enter', keyCode: 13 },
+  Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
+  Tab: { key: 'Tab', code: 'Tab', keyCode: 9 },
+  Backspace: { key: 'Backspace', code: 'Backspace', keyCode: 8 },
+  Delete: { key: 'Delete', code: 'Delete', keyCode: 46 },
+  ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+  ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+  ArrowLeft: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+  ArrowRight: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+  Space: { key: ' ', code: 'Space', keyCode: 32 },
+  PageUp: { key: 'PageUp', code: 'PageUp', keyCode: 33 },
+  PageDown: { key: 'PageDown', code: 'PageDown', keyCode: 34 },
+  Home: { key: 'Home', code: 'Home', keyCode: 36 },
+  End: { key: 'End', code: 'End', keyCode: 35 }
+};
+
+/**
+ * CDP Key combination / shortcut dispatcher.
+ * Modifiers bitmask: Alt=1, Ctrl=2, Meta/Command=4, Shift=8
+ */
+async function cdpDispatchKeyCombo(tabId, keyName, modifiers = {}) {
+  let modVal = 0;
+  if (modifiers.alt) modVal |= 1;
+  if (modifiers.ctrl || modifiers.control) modVal |= 2;
+  if (modifiers.meta || modifiers.cmd || modifiers.command) modVal |= 4;
+  if (modifiers.shift) modVal |= 8;
+
+  const def = KEY_DEFINITIONS[keyName] || {
+    key: keyName,
+    code: keyName.length === 1 ? `Key${keyName.toUpperCase()}` : keyName,
+    keyCode: keyName.length === 1 ? keyName.toUpperCase().charCodeAt(0) : 0
+  };
+
+  await cdpSend(tabId, 'Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: def.key,
+    code: def.code,
+    windowsVirtualKeyCode: def.keyCode,
+    modifiers: modVal,
+  });
+
+  await sleep(25);
+
+  await cdpSend(tabId, 'Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: def.key,
+    code: def.code,
+    windowsVirtualKeyCode: def.keyCode,
+    modifiers: modVal,
+  });
 }
 
 /**
@@ -269,14 +353,35 @@ async function findPos(tabId, selectorOrXpath) {
 
     el.scrollIntoView({ behavior: 'instant', block: 'center' });
     const rect = el.getBoundingClientRect();
+    const cx = Math.round(rect.x + rect.width / 2);
+    const cy = Math.round(rect.y + rect.height / 2);
+
+    // Hit test to see if element is covered or interactable
+    let isCovered = false;
+    let topElementTag = null;
+    try {
+      const topEl = document.elementFromPoint(cx, cy);
+      if (topEl && topEl !== el && !el.contains(topEl) && !topEl.contains(el)) {
+        isCovered = true;
+        topElementTag = topEl.tagName?.toLowerCase();
+      }
+    } catch {}
+
+    const style = window.getComputedStyle(el);
+    const visible = rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+    const interactable = visible && !el.disabled && style.pointerEvents !== 'none';
+
     return {
       found: true,
-      x: Math.round(rect.x + rect.width / 2),
-      y: Math.round(rect.y + rect.height / 2),
+      x: cx,
+      y: cy,
       width: Math.round(rect.width),
       height: Math.round(rect.height),
       tag: el.tagName?.toLowerCase(),
       text: (el.textContent || '').trim().slice(0, 80),
+      interactable,
+      isCovered,
+      topElementTag,
     };
   }, [selectorOrXpath]);
 }
@@ -351,37 +456,40 @@ async function getPageHTML(tabId) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function getTargetTabId() {
-  // 1. Validate cached targetTabId — must exist AND not be a chrome-extension:// URL
-  if (targetTabId) {
+  // 1. Check if user has an ElevenLabs tab open in any window — auto-activate it to foreground
+  const allTabs = await chrome.tabs.query({});
+  const elevenTabs = allTabs.filter(t => t.url && t.url.includes('elevenlabs.io'));
+  if (elevenTabs.length > 0) {
+    const chosen = elevenTabs.find(t => t.active) || elevenTabs[0];
+    targetTabId = chosen.id;
     try {
-      const tab = await chrome.tabs.get(targetTabId);
-      if (tab && tab.url && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('chrome://')) {
-        return targetTabId;
+      await chrome.tabs.update(chosen.id, { active: true });
+      if (chosen.windowId) {
+        await chrome.windows.update(chosen.windowId, { focused: true });
       }
-      // Cached ID points to an invalid tab — clear it
-      targetTabId = null;
-    } catch {
-      targetTabId = null;
-    }
+      console.log(`[SW] Self-activated ElevenLabs tab: ${chosen.url} (id=${chosen.id})`);
+    } catch {}
+    return chosen.id;
   }
 
-  // 2. Fallback: search all tabs for a regular web page (not chrome://, not chrome-extension://)
-  // Prefer active tabs first, then any http(s) tab
-  const allTabs = await chrome.tabs.query({});
-  const webTabs = allTabs.filter(t => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
+  // 2. Check if user is actively on a tab in the current focused window
+  const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (activeTab && activeTab.url && !activeTab.url.startsWith('chrome://') && !activeTab.url.startsWith('chrome-extension://')) {
+    targetTabId = activeTab.id;
+    return targetTabId;
+  }
 
-  // Prefer the active one in current window
-  const [activeWebTab] = webTabs.filter(t => t.active && t.windowId);
+  // 3. Fallback to any active web tab
+  const activeWebTab = allTabs.find(t => t.active && t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
   if (activeWebTab) {
     targetTabId = activeWebTab.id;
-    console.log(`[SW] Auto-selected active web tab: ${activeWebTab.url}`);
     return activeWebTab.id;
   }
 
-  // Otherwise, any web tab
+  // 4. Fallback to any web tab
+  const webTabs = allTabs.filter(t => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
   if (webTabs.length > 0) {
     targetTabId = webTabs[0].id;
-    console.log(`[SW] Auto-selected web tab: ${webTabs[0].url}`);
     return webTabs[0].id;
   }
 
@@ -414,8 +522,51 @@ function waitForTabLoad(tabId, timeoutMs = 25000) {
 ws.onCommand(async (command) => {
   const { id, action, target, params = {} } = command;
 
+  // Log command execution to activity log
+  router.logTask({
+    action,
+    status: 'running',
+    details: target?.value || params.selector || params.url || '',
+  });
+
   try {
     switch (action) {
+
+      // ── ACTIVATE_TAB — find and bring matching tab to foreground ──────
+      case 'activate_tab': {
+        const query = params.query || params.url || '';
+        const allTabs = await chrome.tabs.query({});
+        let matched = null;
+        if (query) {
+          matched = allTabs.find(t => t.url && t.url.toLowerCase().includes(query.toLowerCase()));
+        }
+        if (!matched) {
+          // Fallback to active tab in current window
+          matched = allTabs.find(t => t.active && !t.url?.startsWith('chrome'));
+        }
+
+        if (matched) {
+          targetTabId = matched.id;
+          await chrome.tabs.update(matched.id, { active: true });
+          if (matched.windowId) {
+            await chrome.windows.update(matched.windowId, { focused: true });
+          }
+          ws.sendResponse(id, 'success', { tabId: matched.id, url: matched.url, title: matched.title });
+        } else {
+          ws.sendResponse(id, 'failure', {}, `No matching tab found for query: ${query}`);
+        }
+        return;
+      }
+
+      // ── LIST_TABS — return list of all open web tabs ───────────────────
+      case 'list_tabs': {
+        const allTabs = await chrome.tabs.query({});
+        const webTabs = allTabs
+          .filter(t => t.url && !t.url.startsWith('chrome-extension://') && !t.url.startsWith('chrome://'))
+          .map(t => ({ id: t.id, url: t.url, title: t.title, active: t.active }));
+        ws.sendResponse(id, 'success', { tabs: webTabs });
+        return;
+      }
 
       // ── NAVIGATE ────────────────────────────────────────────────────────
       case 'navigate': {
@@ -510,7 +661,10 @@ ws.onCommand(async (command) => {
           await cdpClear(tabId);
         }
 
-        await cdpType(tabId, text);
+        await cdpType(tabId, text, {
+          fast: params.fast === true,
+          delayMs: params.delay_per_char ?? 5,
+        });
         await sleep(params.delay_after || 100);
 
         ws.sendResponse(id, 'success', { typed: text.length });
@@ -551,7 +705,10 @@ ws.onCommand(async (command) => {
           if (clear) await cdpClear(tabId);
         }
 
-        await cdpType(tabId, text);
+        await cdpType(tabId, text, {
+          fast: params.fast === true,
+          delayMs: params.delay_per_char ?? 5,
+        });
         ws.sendResponse(id, 'success', { typed: text.length });
         return;
       }
@@ -697,17 +854,31 @@ ws.onCommand(async (command) => {
         return;
       }
 
-      // ── KEY — send a single key via CDP ───────────────────────────────
+      // ── KEY — send a single key or key combo via CDP ─────────────────
       case 'key': {
         const tabId = await getTargetTabId();
         if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
 
         await cdpAttach(tabId);
         const key = params.key || 'Enter';
-        if (key === 'Escape') await cdpEscape(tabId);
-        else if (key === 'Enter') await cdpEnter(tabId);
-        else if (key === 'Tab') await cdpTab(tabId);
-        else {
+        const modifiers = {
+          ctrl: params.ctrl || params.control || false,
+          alt: params.alt || false,
+          shift: params.shift || false,
+          meta: params.meta || params.cmd || false,
+        };
+
+        if (modifiers.ctrl || modifiers.alt || modifiers.shift || modifiers.meta) {
+          await cdpDispatchKeyCombo(tabId, key, modifiers);
+        } else if (key === 'Escape') {
+          await cdpEscape(tabId);
+        } else if (key === 'Enter') {
+          await cdpEnter(tabId);
+        } else if (key === 'Tab') {
+          await cdpTab(tabId);
+        } else if (KEY_DEFINITIONS[key]) {
+          await cdpDispatchKeyCombo(tabId, key, {});
+        } else {
           await cdpSend(tabId, 'Input.dispatchKeyEvent', {
             type: 'keyDown', key, code: `Key${key.toUpperCase()}`,
           });
@@ -716,7 +887,7 @@ ws.onCommand(async (command) => {
           });
         }
 
-        ws.sendResponse(id, 'success', { key });
+        ws.sendResponse(id, 'success', { key, modifiers });
         return;
       }
 
@@ -725,6 +896,163 @@ ws.onCommand(async (command) => {
         const tabId = await getTargetTabId();
         if (tabId) await cdpDetach(tabId);
         ws.sendResponse(id, 'success', {});
+        return;
+      }
+
+      // ── SELECT / DROPDOWN & INPUT CONTROL ─────────────────────────────
+      case 'select': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const selector = params.selector || params.xpath || target?.value;
+        const value = params.value ?? '';
+        const byText = params.by_text || false;
+
+        const selectResult = await exec(tabId, (sel, val, useText) => {
+          let el = null;
+          if (sel.startsWith('/')) {
+            el = document.evaluate(sel, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+          } else {
+            el = document.querySelector(sel);
+          }
+          if (!el) return { success: false, error: `Element not found: ${sel}` };
+
+          el.scrollIntoView({ behavior: 'instant', block: 'center' });
+
+          // Native <select> handling
+          if (el.tagName === 'SELECT') {
+            let matchedOption = null;
+            for (let i = 0; i < el.options.length; i++) {
+              const opt = el.options[i];
+              if (useText) {
+                if (opt.text.trim().toLowerCase() === String(val).trim().toLowerCase()) {
+                  matchedOption = opt;
+                  break;
+                }
+              } else {
+                if (opt.value === String(val)) {
+                  matchedOption = opt;
+                  break;
+                }
+              }
+            }
+
+            if (!matchedOption && useText) {
+              // Partial match fallback
+              for (let i = 0; i < el.options.length; i++) {
+                if (el.options[i].text.trim().toLowerCase().includes(String(val).trim().toLowerCase())) {
+                  matchedOption = el.options[i];
+                  break;
+                }
+              }
+            }
+
+            if (!matchedOption) {
+              return { success: false, error: `Option not found: ${val}` };
+            }
+
+            // Update value using standard prototype descriptor to notify React/Vue
+            const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
+            if (nativeSetter) {
+              nativeSetter.call(el, matchedOption.value);
+            } else {
+              el.value = matchedOption.value;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return { success: true, selectedValue: matchedOption.value, selectedText: matchedOption.text };
+          }
+
+          // Checkbox / Radio handling
+          if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) {
+            const targetChecked = typeof val === 'boolean' ? val : (val === 'true' || val === '1');
+            if (el.checked !== targetChecked) {
+              const nativeCheckedSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked')?.set;
+              if (nativeCheckedSetter) {
+                nativeCheckedSetter.call(el, targetChecked);
+              } else {
+                el.checked = targetChecked;
+              }
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            return { success: true, checked: el.checked };
+          }
+
+          return { success: false, error: `Element is neither <select> nor checkbox/radio: ${el.tagName}` };
+        }, [selector, value, byText]);
+
+        if (!selectResult?.success) {
+          ws.sendResponse(id, 'failure', {}, selectResult?.error || 'Select operation failed');
+        } else {
+          ws.sendResponse(id, 'success', selectResult);
+        }
+        return;
+      }
+
+      // ── UPLOAD — Attach files to <input type="file"> via CDP ───────────
+      case 'upload': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const selector = params.selector || params.xpath || target?.value;
+        const files = Array.isArray(params.files) ? params.files : (params.file ? [params.file] : []);
+
+        if (!files.length) {
+          ws.sendResponse(id, 'failure', {}, 'No files specified for upload');
+          return;
+        }
+
+        await cdpAttach(tabId);
+        try {
+          // Enable DOM domain in CDP
+          await cdpSend(tabId, 'DOM.enable');
+
+          // Query selector node or evaluate XPath
+          let nodeId = null;
+          if (selector && selector.startsWith('/')) {
+            const { result } = await cdpSend(tabId, 'Runtime.evaluate', {
+              expression: `document.evaluate('${selector.replace(/'/g, "\\'")}', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue`,
+            });
+            if (result?.objectId) {
+              const domNode = await cdpSend(tabId, 'DOM.requestNode', { objectId: result.objectId });
+              nodeId = domNode.nodeId;
+            }
+          } else {
+            const doc = await cdpSend(tabId, 'DOM.getDocument', { depth: 0 });
+            const queryRes = await cdpSend(tabId, 'DOM.querySelector', {
+              nodeId: doc.root.nodeId,
+              selector: selector || 'input[type="file"]',
+            });
+            nodeId = queryRes.nodeId;
+          }
+
+          if (!nodeId) {
+            ws.sendResponse(id, 'failure', {}, `File input element not found: ${selector}`);
+            return;
+          }
+
+          // Use CDP DOM.setFileInputFiles to attach file directly from host filesystem
+          await cdpSend(tabId, 'DOM.setFileInputFiles', {
+            files,
+            nodeId,
+          });
+
+          // Dispatch change event in MAIN world
+          await exec(tabId, (sel) => {
+            const el = sel.startsWith('/') ?
+              document.evaluate(sel, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue :
+              document.querySelector(sel || 'input[type="file"]');
+            if (el) {
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }, [selector]);
+
+          ws.sendResponse(id, 'success', { uploaded: files.length, files });
+        } catch (uploadErr) {
+          ws.sendResponse(id, 'failure', {}, `Upload error: ${uploadErr.message}`);
+        }
         return;
       }
 
@@ -996,6 +1324,41 @@ ws.onCommand(async (command) => {
         domSnapshots.delete(tabId);
 
         ws.sendResponse(id, 'success', {});
+        return;
+      }
+
+      // ── SET_DOWNLOAD_PATH — set native CDP download behavior ─────────
+      case 'set_download_path': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+
+        const downloadPath = params.download_path || params.path;
+        if (!downloadPath) {
+          ws.sendResponse(id, 'failure', {}, 'No download_path provided');
+          return;
+        }
+
+        await cdpAttach(tabId);
+        try {
+          // Set Page download behavior to save directly to host folder
+          await cdpSend(tabId, 'Page.setDownloadBehavior', {
+            behavior: 'allow',
+            downloadPath: downloadPath,
+          });
+
+          // Also set Browser download behavior for broader compatibility
+          try {
+            await cdpSend(tabId, 'Browser.setDownloadBehavior', {
+              behavior: 'allow',
+              downloadPath: downloadPath,
+              eventsEnabled: true,
+            });
+          } catch { /* Browser domain might not be supported on standard tabs */ }
+
+          ws.sendResponse(id, 'success', { downloadPath });
+        } catch (e) {
+          ws.sendResponse(id, 'failure', {}, `Failed to set download path: ${e.message}`);
+        }
         return;
       }
 

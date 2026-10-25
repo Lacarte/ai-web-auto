@@ -35,8 +35,13 @@ class ActionType(str, Enum):
     DRAG_DROP = "drag_drop"
     SELECT = "select"
     UPLOAD = "upload"
+    KEY = "key"
+    ACTIVATE_TAB = "activate_tab"
+    LIST_TABS = "list_tabs"
     TYPE_CDP = "type_cdp"
     CLICK_CDP = "click_cdp"
+    SET_DOWNLOAD_PATH = "set_download_path"
+    DETACH = "detach"
     DISCOVER = "discover"
     FIND = "find"
     HOVER_CDP = "hover"
@@ -124,6 +129,7 @@ class ResponseData(BaseModel):
     screenshot: Optional[str] = None
     dom_snapshot: Optional[DOMSnapshot] = None
     extracted_data: dict[str, Any] = Field(default_factory=dict)
+    tabs: list[dict[str, Any]] = Field(default_factory=list)
     cookies: list[dict[str, Any]] = Field(default_factory=list)
     localStorage: dict[str, str] = Field(default_factory=dict)
     sessionStorage: dict[str, str] = Field(default_factory=dict)
