@@ -2,7 +2,8 @@
  * YouTube Quick Save - page script (isolated world).
  *
  * Follows the cursor and highlights the video under or nearest it (tiles, Shorts, the hover preview, the
- * main player); Ctrl, Ctrl asks the background to save it and shows the result. Also relays the
+ * main player); Ctrl, Ctrl (or a click on the highlight's badge) asks the background to save it and
+ * shows the result. Also relays the
  * background's YouTube requests to the page-context bridge (bridge.js).
  */
 (() => {
@@ -70,20 +71,44 @@
     'background:transparent;overflow:visible;pointer-events:none;color-scheme:normal;';
   const shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>
-    .box { position: fixed; box-sizing: border-box; display: none; border: 3px solid var(--c); border-radius: 12px;
-           box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 0 16px var(--c); }
-    .badge { position: fixed; display: none; max-width: 340px; padding: 4px 10px; border-radius: 999px;
-             font: 600 12px/1.35 Roboto, Arial, sans-serif; color: #0f0f0f; background: var(--c);
-             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+    /* Hairline frame + corner brackets; colour changes fade, position never animates. */
+    .box { position: fixed; box-sizing: border-box; display: none; border-radius: 12px;
+           border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+           box-shadow: 0 0 22px -8px var(--c); transition: border-color .2s, box-shadow .2s; }
+    .box::before { content: ''; position: absolute; inset: -1px; border: 1.5px solid var(--c); border-radius: inherit;
+           --m: linear-gradient(#000 0 0) no-repeat;
+           mask: var(--m) 0 0 / 16px 16px, var(--m) 100% 0 / 16px 16px,
+                 var(--m) 0 100% / 16px 16px, var(--m) 100% 100% / 16px 16px; transition: border-color .2s; }
+    .box[data-tone="busy"]::before { animation: yqs-pulse 1.1s ease-in-out infinite; }
+    @keyframes yqs-pulse { 50% { opacity: .35; } }
+    .badge { position: fixed; display: none; max-width: 320px; margin: 0; padding: 3px 9px 3px 20px; border-radius: 6px;
+             font: 500 11px/1.4 Roboto, Arial, sans-serif; letter-spacing: .03em; color: rgba(255,255,255,.9);
+             background: rgba(10,10,12,.62); backdrop-filter: blur(8px); appearance: none; text-align: left;
+             border: 1px solid color-mix(in srgb, var(--c) 28%, transparent); pointer-events: none;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, border-color .15s; }
+    .badge::before { content: ''; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
+             border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+    /* Ready: the badge is a button - click it instead of Ctrl, Ctrl. */
+    .badge.ready { pointer-events: auto; cursor: pointer; }
+    .badge.ready:hover { background: rgba(10,10,12,.82); border-color: color-mix(in srgb, var(--c) 70%, transparent); }
+    .key { display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: 3px;
+           font: 600 10px/1.5 ui-monospace, Consolas, monospace; letter-spacing: .04em; color: var(--c);
+           border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); transition: background .15s, color .15s; }
+    .key[hidden] { display: none; }
+    .badge.ready:hover .key { background: var(--c); color: #0a0a0c; }
     .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); display: none; max-width: 70vw;
              padding: 10px 16px; border-radius: 10px; border-left: 4px solid var(--c);
              font: 500 14px/1.4 Roboto, Arial, sans-serif; color: #fff; background: rgba(28,28,28,.96);
              box-shadow: 0 4px 16px rgba(0,0,0,.5); }
     [data-tone="info"] { --c: #3ea6ff; } [data-tone="busy"] { --c: #aaaaaa; } [data-tone="ok"] { --c: #2ba640; }
     [data-tone="warn"] { --c: #f2b600; } [data-tone="bad"] { --c: #ff4e45; }
-  </style><div class="box" data-tone="info"></div><div class="badge" data-tone="info"></div><div class="toast" data-tone="info"></div>`;
+  </style><div class="box" data-tone="info"></div><button type="button" class="badge" data-tone="info" tabindex="-1"
+    title="Click to save (or press Ctrl twice)"><span class="key">Ctrl Ctrl</span><span class="label"></span></button>
+    <div class="toast" data-tone="info"></div>`;
   const box = shadow.querySelector('.box');
   const badge = shadow.querySelector('.badge');
+  const badgeKey = badge.querySelector('.key');
+  const badgeLabel = badge.querySelector('.label');
   const toastEl = shadow.querySelector('.toast');
 
   function showHost() {
@@ -182,15 +207,22 @@
   let my = -1;
   let frame = 0;
   let target = null;
+  let overBadge = false;
   const flashes = new Map();  // videoId -> {text, tone, state, until}
 
   function schedule() {
     if (!frame) frame = requestAnimationFrame(update);
   }
 
+  // On the badge the target stays put, even where the badge overhangs something else (clamped to the edge).
+  function resolveCurrent() {
+    const t = mx < 0 ? null : resolveAt(mx, my);
+    return overBadge && target && (!t || t.id !== target.id) ? target : t;
+  }
+
   function update() {
     frame = 0;
-    target = mx < 0 ? null : resolveAt(mx, my);
+    target = resolveCurrent();
     draw();
   }
 
@@ -206,12 +238,15 @@
     const flash = flashes.get(target.id);
     const live = flash && (flash.until === 0 || flash.until > Date.now()) ? flash : null;
     const tone = live ? live.tone : 'info';
-    const text = live ? live.text : playlistTitle ? `Ctrl Ctrl → ${playlistTitle}` : 'Pick a default playlist in the extension';
+    const ready = !live && !!playlistTitle;
+    const text = live ? live.text : ready ? `→ ${playlistTitle}` : 'Pick a default playlist in the extension';
     Object.assign(box.style, { display: 'block', left: `${r.left}px`, top: `${r.top}px`,
       width: `${r.right - r.left}px`, height: `${r.bottom - r.top}px` });
     box.dataset.tone = tone;
     badge.dataset.tone = tone;
-    badge.textContent = text;
+    badge.classList.toggle('ready', ready);
+    badgeKey.hidden = !ready;
+    badgeLabel.textContent = text;
     Object.assign(badge.style, { display: 'block', left: `${Math.max(4, r.left + 8)}px`,
       top: `${Math.min(innerHeight - 28, Math.max(4, r.top + 8))}px` });
     host.dataset.state = live ? live.state : 'target';
@@ -225,7 +260,16 @@
     if (ms) setTimeout(() => { if (flashes.get(videoId) && flashes.get(videoId).until <= Date.now()) { flashes.delete(videoId); draw(); } }, ms + 20);
   }
 
-  on(window, 'mousemove', e => { mx = e.clientX; my = e.clientY; schedule(); }, { capture: true, passive: true });
+  on(window, 'mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    overBadge = e.composedPath().includes(badge);
+    schedule();
+  }, { capture: true, passive: true });
+
+  // The badge button: its presses never reach YouTube and never take focus from the page.
+  const swallow = e => { e.stopPropagation(); e.preventDefault(); };
+  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'dblclick']) on(badge, type, swallow);
+  on(badge, 'click', e => { swallow(e); if (badge.classList.contains('ready')) trigger(); });
   on(document, 'mouseout', e => { if (!e.relatedTarget) { mx = -1; schedule(); } }, true);
   on(window, 'scroll', schedule, { capture: true, passive: true });
   on(window, 'resize', schedule, { passive: true });
@@ -255,7 +299,7 @@
   };
 
   async function trigger() {
-    if (mx >= 0) target = resolveAt(mx, my);
+    if (mx >= 0) target = resolveCurrent();
     const t = target;
     if (!t) { toast('Point at a video, then press Ctrl, Ctrl', 'warn'); return; }
     if (inFlight.has(t.id)) return;

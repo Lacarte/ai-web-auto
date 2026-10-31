@@ -5,7 +5,8 @@ never removing anything.
 
 - **Highlight**: on youtube.com the video under (or nearest) the cursor gets a blue frame — tiles on Home and
   channel pages, Shorts, the watch-page sidebar, the hover preview, and the main player.
-- **Ctrl, Ctrl** (tap Ctrl twice) saves it. The frame and a message show the result:
+- **Ctrl, Ctrl** (tap Ctrl twice) saves it — or click the small **Ctrl Ctrl → playlist** button on the
+  frame. The frame and a message show the result:
   green *Saved*, yellow *Already in …*, red *Not saved: reason*.
 - **Popup**: choose the default playlist (read from your YouTube account), **Save all open YouTube tabs**,
   **Close saved tabs**, and recent activity.
@@ -28,6 +29,8 @@ YouTube tabs.
 
 - Hover a video and tap **Ctrl** twice (the second tap within 0.4 s). Nothing happens while you type in the
   search box or a comment, while holding Shift/Alt, or for shortcuts like Ctrl+C.
+- Or click the button in the frame's top-left corner. The click only saves: it doesn't open the video, and
+  the frame stays on that video while the cursor is over the button.
 - **Save all open YouTube tabs**: saves the video of every open watch / Shorts tab (each video once) and lists
   the result per tab.
 - **Close saved tabs**: after a confirmation, closes the YouTube tabs whose video is confirmed in the default

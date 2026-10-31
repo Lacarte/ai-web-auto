@@ -225,6 +225,25 @@ async function main() {
     return { addRequests: 0 };
   });
 
+  await test('clicking the badge saves the highlighted video once, without opening it', async () => {
+    const url = home.url();
+    await hoverTile(home, 'homeShort01');
+    await overlayIs(home, { videoId: 'homeShort01', state: 'target' }, 'target');
+    const b = await home.evaluate(() => {
+      const r = document.getElementById('yqs-overlay').shadowRoot.querySelector('.badge.ready').getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    await home.mouse.move(b.x, b.y, { steps: 4 });   // the cursor leaves the thumbnail's centre for the badge
+    await overlayIs(home, { videoId: 'homeShort01', state: 'target' }, 'target kept on the badge');
+    await home.mouse.click(b.x, b.y);
+    const o = await overlayIs(home, { videoId: 'homeShort01', state: 'saved' }, 'saved by click');
+    assert((await copies('homeShort01')).length === 1, 'not exactly one copy');
+    assert(home.url() === url, `the click went through to the page: ${home.url()}`);
+    assert(await home.evaluate(() => document.activeElement === document.body), 'the badge took focus');
+    await shot(home, '03b-saved-by-click');
+    return { toast: o.toast };
+  });
+
   await test('watch page: the main player and the sidebar tiles', async () => {
     await home.click('[data-testid="tile-homeVideo05"] h3 a');   // single-page navigation, like YouTube
     await home.waitForSelector('ytd-watch-flexy[video-id="homeVideo05"]');
