@@ -1,0 +1,15 @@
+{
+  "appctl": 1,
+  "id": "ai-web-auto",
+  "name": "AI Web Auto",
+  "description": "WebSocket/CDP automation server the browser extension connects to. It reads commands on stdin, so AppCtl keeps stdin open. The daily 'build deals' scheduled task is separate and stays in Task Scheduler.",
+  "kind": "console",
+  "start": {
+    "command": ["{app}\\venv\\Scripts\\python.exe", "-m", "ai_web_auto_backend.automation_controller"],
+    "stdin": "hold"
+  },
+  "match": [{ "cmdline": "ai_web_auto_backend.automation_controller" }],
+  "ports": [8765],
+  "stop": { "method": "ctrl_c", "timeout": 5 },
+  "autostart": false
+}
