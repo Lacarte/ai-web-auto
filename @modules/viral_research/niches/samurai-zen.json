@@ -1,0 +1,22 @@
+{
+  "niche": "Samurai zen music",
+  "en": {
+    "queries": ["samurai zen music", "samurai meditation music", "japanese zen music", "samurai ambient music",
+                "ronin meditation music", "samurai lofi", "shakuhachi meditation music", "samurai sleep music",
+                "black samurai music", "yasuke music"],
+    "hashtags": ["samuraizen"],
+    "seed_channels": ["@AetherJourneyMusic"],
+    "seed_videos": ["-wKfvIoR6Vc"],
+    "must_match": "samurai|ronin|bushido|shogun|katana|yasuke|ninja|japan|japanese|edo\\b|kyoto|shakuhachi|koto|shamisen|taiko|sakura|geisha|\\bzen\\b|dojo",
+    "topic_match": "music|ambient|meditat|relax|sleep|study|focus|flute|shakuhachi|koto|lo-?fi|beats|instrumental|soundtrack|\\bost\\b|healing|calm|chill|rain|piano|drums|taiko|chant|\\bmix\\b|playlist|hours?\\b|♪|🎵|🎶",
+    "categories": ["Music"]
+  },
+  "es": {
+    "queries": ["música samurái", "música zen japonesa", "música japonesa relajante", "música samurái para meditar",
+                "flauta japonesa relajante", "música japonesa para dormir", "música samurái épica", "samurái lofi"],
+    "hashtags": [],
+    "must_match": "samur[aá]i|ronin|bushido|shogun|katana|yasuke|ninja|jap[oó]n|japones|edo\\b|kioto|shakuhachi|koto|sakura|geisha|\\bzen\\b",
+    "topic_match": "m[uú]sica|ambiente|meditar|meditaci[oó]n|relaj|dormir|estudiar|concentra|flauta|lo-?fi|instrumental|sanaci[oó]n|calma|lluvia|piano|tambor|\\bmix\\b|horas?\\b|♪|🎵|🎶",
+    "categories": ["Music"]
+  }
+}

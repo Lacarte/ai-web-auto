@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "actions": {
+    "search_products": {
+      "page": "home",
+      "description": "Search Amazon US for a query in a price range, cheapest first; read every result card on up to max_pages pages (price, stock, delivery, rating, renewed, used & new from-price).",
+      "inputs": {
+        "query": "search words",
+        "min/max": "price range in USD (rh=p_36 in cents)",
+        "max_pages": "default settings.max_pages"
+      },
+      "steps": [
+        "search_via=form (default, as the user asked): bring the bound tab to the front; type_cdp the query into search_box (click, clear, insertText); check the box holds exactly the query; check search_submit is visible and uncovered (elementFromPoint); CDP-click search_submit.",
+        "Wait for a results page whose k= is the query, with result_card or no_results.",
+        "Apply sort + price range to that results URL (s=price-asc-rank, rh=p_36:<min*100>-<max*100>) and load it.",
+        "More pages: CDP-click next_page (uncovered), evidence = page=N in the URL; if the click doesn't move the page, open the link's href.",
+        "search_via=url: navigate straight to https://www.amazon.com/s?k=<query>&s=price-asc-rank&rh=p_36:...&page=<n> (works in a background tab).",
+        "Stop on captcha_form or a robot-check page.",
+        "Read result_card -> data-asin, card_title, card_price, card_list_price, card_delivery, card_secondary_offer, card_rating, card_reviews, card_prime (Prime badge).",
+        "Follow next_page until it is absent, a page adds nothing new, or max_pages."
+      ],
+      "evidence": "Each card has an ASIN and a title; a price is either read or the card is marked no_offer / out_of_stock. The page URL keeps the query and range.",
+      "uses": [
+        "search_box",
+        "search_submit",
+        "result_card",
+        "card_title",
+        "card_price",
+        "card_list_price",
+        "card_delivery",
+        "card_secondary_offer",
+        "card_rating",
+        "card_reviews",
+        "card_link",
+        "results_info",
+        "next_page",
+        "no_results",
+        "captcha_form",
+        "deliver_to",
+        "card_prime"
+      ],
+      "sensitive": false,
+      "implemented_by": "amazon_search.search_products",
+      "cli": "python amazon_search.py search \"rtx 3060 12gb\" --min 200 --max 400"
+    },
+    "check_product": {
+      "page": "home",
+      "description": "Open a product page and read what can actually be bought: the selected option's real price (variation menu), availability (buy button + availability line), new / used offer, Prime, delivery, seller. Read-only.",
+      "inputs": {
+        "asin": "product id from a search card"
+      },
+      "steps": [
+        "Navigate the bound tab to https://www.amazon.com/dp/<asin> (after a human pause); wait for product_title; stop on a robot check.",
+        "Glance down the page (wheel; on product pages the debugger is refused, so it falls back to scrollBy). Reads go through chrome.scripting (extension capability script_fallback).",
+        "Read selected_variant (variant_label, variant_price, variant_availability, variant_prime), core_price, product_availability, add_to_cart / buy_now / add_to_cart_used / see_all_offers / out_of_stock presence, buybox_prime, delivery_block, merchant_info, product_asin.",
+        "Real price = variant_price of the option whose data-asin is the page ASIN, else core_price. Available = a buy button is present AND the availability line does not say unavailable / out of stock.",
+        "NEVER click add_to_cart or buy_now: their presence is the evidence."
+      ],
+      "evidence": "product_asin equals the requested ASIN (a mismatch is noted); the result names availability, price, condition, Prime.",
+      "uses": [
+        "product_title",
+        "product_asin",
+        "product_availability",
+        "add_to_cart",
+        "buy_now",
+        "add_to_cart_used",
+        "see_all_offers",
+        "out_of_stock",
+        "buybox",
+        "core_price",
+        "selected_variant",
+        "variant_label",
+        "variant_price",
+        "variant_availability",
+        "variant_prime",
+        "buybox_prime",
+        "delivery_block",
+        "merchant_info",
+        "captcha_form"
+      ],
+      "sensitive": false,
+      "implemented_by": "amazon_search.AmazonSession.product",
+      "cli": "python amazon_search.py product B0BK36KLDD B0CTK1SFVD"
+    }
+  }
+}

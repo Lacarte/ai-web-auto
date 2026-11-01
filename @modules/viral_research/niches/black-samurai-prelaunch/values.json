@@ -1,0 +1,15 @@
+{
+  "limitations_list": [
+    "Competitor channels enter only through YouTube search (logged out, one location); channels that never surface are missing, so the beginner picture is optimistic.",
+    "Channel listings round views above 1,000 to 2-3 significant figures and give approximate upload dates.",
+    "Retention, CTR, returning viewers, RPM and revenue of other channels are private (UNAVAILABLE).",
+    "Direction labels come from title keywords; mixed titles are assigned by a fixed rule.",
+    "The velocity window is 1.56 days and includes a weekend.",
+    "Audio similarity is an engineering signal, not a legal originality test; no manual listening was possible in this research.",
+    "The quote provenance check did not search every generic line; several attributions are LOW confidence.",
+    "Vendor terms were read on 2026-10-27 and can change; Kling's live price page and per-clip credit costs could not be read.",
+    "Dominican tax treatment and channel-name trademark status need professionals.",
+    "Blind listening and viewer tests are designed but not yet run; they need real participants."
+  ],
+  "limitations": "- Competitor channels enter only through YouTube search; channels that never surface are missing, so the beginner picture is optimistic.\n- Channel listings round views above 1,000 and give approximate dates; direction labels come from title keywords.\n- Competitors' retention, CTR, returning viewers, RPM and revenue are private (UNAVAILABLE).\n- Audio similarity is an engineering signal; manual listening was not possible here.\n- Vendor terms were read on 2026-10-27; Kling's live prices and per-clip credits could not be read.\n- Dominican tax treatment and trademark status need professionals.\n- The blind music and viewer tests are designed (and the preview clips rendered) but not yet run."
+}

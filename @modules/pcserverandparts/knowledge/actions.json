@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "actions": {
+    "read_listing": {
+      "page": "home",
+      "description": "Open a category / search URL (or search words -> search.php?search_query=) and read every listing: title, price ('Was' is a reference), stock, buyable (Add to cart) vs build-your-own base price (Configure), condition. Read-only.",
+      "inputs": {
+        "query": "a pcserverandparts.com URL, or search words"
+      },
+      "steps": [
+        "Human pause, then navigate the bound tab to the URL; wait for listing (or the page's 'Not Found').",
+        "Search words (not a URL): type them into site_search like a person (click, clear, varied speed), check the box holds them and search_submit is uncovered, trusted click; results = search.php?search_query=. If typing can't reach the page, open the search URL and record it.",
+        "Read down with wheel flicks to the page end.",
+        "Read every listing; follow next_page if present (max_pages).",
+        "NEVER click Add to cart or Configure."
+      ],
+      "evidence": "Each listing has an entity id and a price or is marked without one.",
+      "uses": [
+        "listing",
+        "listing_title",
+        "listing_link",
+        "add_to_cart",
+        "next_page",
+        "site_search",
+        "search_submit"
+      ],
+      "sensitive": false,
+      "implemented_by": "pcsp_search.search_products",
+      "cli": "python pcsp_search.py read \"https://pcserverandparts.com/refurbished-graphics-cards/?_bc_fsnf=1&Graphics+Card+Memory=16GB\""
+    }
+  }
+}

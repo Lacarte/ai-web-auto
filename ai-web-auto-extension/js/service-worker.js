@@ -20,8 +20,9 @@ import { WebSocketClient } from './modules/ws-client.js';
 import { MessageRouter } from './modules/message-router.js';
 import { diffSnapshots, computeStats, summarizeForAI } from './modules/dom-observer.js';
 
-const WS_URL = 'ws://localhost:8765';
-const ws = new WebSocketClient(WS_URL);
+// 8765 first; 8766 when another program holds 8765 (start the backend with --port 8766 / WebSocketServer(port=8766))
+const WS_URLS = ['ws://localhost:8765', 'ws://localhost:8766'];
+const ws = new WebSocketClient(WS_URLS);
 const router = new MessageRouter(ws);
 
 // Log authentication handshake directly into Activity Log
@@ -306,6 +307,18 @@ async function exec(tabId, func, args = []) {
 }
 
 /**
+ * Evaluate a script string in the MAIN world without the debugger (indirect eval; the page's CSP applies).
+ * Fallback for execute_script where Chrome refuses chrome.debugger.attach, e.g. a page that holds another
+ * extension's frame ("Cannot access a chrome-extension:// URL of different extension").
+ */
+async function evalInMain(tabId, code) {
+  return exec(tabId, async (src) => {
+    try { return { ok: true, value: await (0, eval)(src) }; }
+    catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+  }, [code]);
+}
+
+/**
  * Find element position by selector or XPath.
  * Returns { found: true, x, y, width, height } or { found: false }.
  *
@@ -577,6 +590,18 @@ ws.onCommand(async (command) => {
         return;
       }
 
+      // ── CLOSE_TAB — close the tab this order is bound to (never any other) ─
+      case 'close_tab': {
+        if (pinnedTabId == null) {
+          ws.sendResponse(id, 'failure', {}, 'close_tab only closes the bound tab (bind the order to a tab first)');
+          return;
+        }
+        await chrome.tabs.remove(pinnedTabId);
+        if (targetTabId === pinnedTabId) targetTabId = null;
+        ws.sendResponse(id, 'success', { tabId: pinnedTabId });
+        return;
+      }
+
       // ── LIST_TABS — return list of all open web tabs ───────────────────
       case 'list_tabs': {
         const allTabs = await chrome.tabs.query({});
@@ -590,20 +615,23 @@ ws.onCommand(async (command) => {
       // ── NAVIGATE ────────────────────────────────────────────────────────
       case 'navigate': {
         const url = params.url;
-        console.log(`[SW] Navigate to: ${url}`);
+        // activate: false loads the page without bringing the tab to the front (background readers such as
+        // a price watcher must not switch the tab the user is looking at). Reading works in background tabs.
+        const active = params.activate !== false;
+        console.log(`[SW] Navigate to: ${url}${active ? '' : ' (background)'}`);
         // Reuse existing tab if we have one, otherwise create new. new_tab: never reuse a tab
         // (opening an app must not replace whatever page the last-targeted tab shows).
         if (targetTabId && !params.new_tab) {
           try {
             await chrome.tabs.get(targetTabId); // check if tab still exists
-            await chrome.tabs.update(targetTabId, { url, active: true });
+            await chrome.tabs.update(targetTabId, { url, active });
           } catch {
             // Tab was closed, create new one
-            const newTab = await chrome.tabs.create({ url, active: true });
+            const newTab = await chrome.tabs.create({ url, active });
             targetTabId = newTab.id;
           }
         } else {
-          const newTab = await chrome.tabs.create({ url, active: true });
+          const newTab = await chrome.tabs.create({ url, active });
           targetTabId = newTab.id;
         }
         await waitForTabLoad(targetTabId, 25000);
@@ -768,7 +796,15 @@ ws.onCommand(async (command) => {
 
         // Use CDP Runtime.evaluate which bypasses CSP entirely
         // (unlike new Function() in exec() which CSP blocks on strict sites)
-        await cdpAttach(tabId);
+        try {
+          await cdpAttach(tabId);
+        } catch (attachErr) {
+          // Debugger refused (another extension's frame in the page): read through chrome.scripting instead.
+          const r = await evalInMain(tabId, params.script).catch(e => ({ ok: false, error: e.message }));
+          const result = r?.ok ? r.value : { _error: `debugger: ${attachErr.message}; scripting: ${r?.error}` };
+          ws.sendResponse(id, 'success', { extracted_data: { result, via: 'scripting' } });
+          return;
+        }
         try {
           const { result: evalResult, exceptionDetails } = await cdpSend(tabId, 'Runtime.evaluate', {
             expression: params.script,
@@ -781,7 +817,10 @@ ws.onCommand(async (command) => {
             ws.sendResponse(id, 'success', { extracted_data: { result: evalResult?.value } });
           }
         } catch (e) {
-          ws.sendResponse(id, 'success', { extracted_data: { result: { _error: e.message } } });
+          // Detached under us (the page now holds another extension's frame): one try through chrome.scripting.
+          const r = await evalInMain(tabId, params.script).catch(e2 => ({ ok: false, error: e2.message }));
+          const result = r?.ok ? r.value : { _error: `${e.message}; scripting: ${r?.error}` };
+          ws.sendResponse(id, 'success', { extracted_data: { result, ...(r?.ok ? { via: 'scripting' } : {}) } });
         }
         return;
       }
@@ -871,6 +910,24 @@ ws.onCommand(async (command) => {
 
         await sleep(400);
         ws.sendResponse(id, 'success', {});
+        return;
+      }
+
+      // ── WHEEL — trusted mouse-wheel scrolling (CDP), like a person's wheel notches ─
+      // params: x, y (pointer position), delta_y per notch (+ down / - up), notches, notch_delay_ms
+      case 'wheel': {
+        const tabId = await getTargetTabId();
+        if (!tabId) { ws.sendResponse(id, 'failure', {}, 'No target tab'); return; }
+        await cdpAttach(tabId);
+        const x = Math.round(params.x ?? 400), y = Math.round(params.y ?? 400);
+        const notches = Math.max(1, Math.min(20, params.notches ?? 1));
+        await cdpSend(tabId, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+        for (let i = 0; i < notches; i++) {
+          await cdpSend(tabId, 'Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: params.delta_y ?? 100 });
+          await sleep(params.notch_delay_ms ?? 60);
+        }
+        const scrollY = (await cdpSend(tabId, 'Runtime.evaluate', { expression: 'scrollY', returnByValue: true }))?.result?.value;
+        ws.sendResponse(id, 'success', { extracted_data: { scrollY } });
         return;
       }
 

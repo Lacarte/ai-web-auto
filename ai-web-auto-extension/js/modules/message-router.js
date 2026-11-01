@@ -25,6 +25,7 @@ export class MessageRouter {
   getStatus() {
     return {
       connected: this.ws.connected,
+      url: this.ws.url,
       taskLog: this._taskLog.slice(-50),
     };
   }

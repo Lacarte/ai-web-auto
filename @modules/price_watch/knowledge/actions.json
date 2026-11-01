@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "actions": {
+    "watch_products": {
+      "description": "Every interval: run each product's searches on each store (ebay.search_products, amazon.search_products in the watcher's own background tab per store), match offers against the product rules, alert on NEW / PRICE DROP / BACK IN STOCK / NOW MATCHES, and write the cross-store comparison (compare.json, dashboard.html).",
+      "inputs": {"watch": "watches/<name>.json"},
+      "steps": [
+        "Open one tab per store (once) and run that store module's preflight for search_products; reuse the tab afterwards with background loads.",
+        "For each product and store: search each query cheapest-first in [min, max]; normalize offers; diff against state.json.",
+        "Alert (sound + toast) on events after the baseline cycle; write alerts.jsonl, state.json, compare.json, dashboard.html.",
+        "Sleep interval_minutes (>= 5). On exit close the watcher's own tabs."
+      ],
+      "evidence": "state.json cycles increments; every product has a comparison entry; each alert names store, total, url and is logged in alerts.jsonl.",
+      "sensitive": false,
+      "implemented_by": "price_watch.cycle",
+      "cli": "python price_watch.py watches/llm-parts.json [--once]"
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "about": "Concept codebook for the AI-music niche, written from the 2026-10-25 run's pack (verified + wider outliers). A concept is the topic shape outliers share, not their words. Matched on title + description; counted by `viral_research.py concepts --niche ai-music`. Precision checked by reading every match; loose rules tightened once (2026-10-25).",
+  "concepts": [
+    {
+      "name": "genre-swap cover of a famous song",
+      "note": "a known song re-made in an unexpected genre (Heavy Metal, flamenco rumba, soul, R&B, doo-wop, ska...)",
+      "match": "(cover|versi[oó]n|version|reinterpret|reimagin)[^|]{0,60}(metal|rock|flamenc|rumba|soul|r&b|rnb|blues\b|doo.?wop|ska\\b|jazz|salsa|bachata|cumbia|reggae|country|gospel|sinf[oó]nic|orquesta)|(metal|rock|flamenc|rumba|soul|r&b|rnb|blues\b|doo.?wop|ska\\b|jazz|salsa|bachata|cumbia|reggae|country|gospel)[^|]{0,60}(cover|versi[oó]n|version)",
+      "seeds": [
+        "metal cover ia",
+        "ai cover soul version",
+        "rumba flamenca ia"
+      ]
+    },
+    {
+      "name": "era swap (retro decade)",
+      "note": "a song or sound placed in another decade: 1950s soul, 80s heavy metal, 40s-50s vintage, euro disco",
+      "match": "\\b(19[4-9]0'?s|[4-9]0'?s|a[ñn]os [4-9]0|retro|vintage|old school|doo.?wop|euro ?disco|motown)\\b",
+      "seeds": [
+        "1950s soul cover ai",
+        "canciones en version 80s ia"
+      ]
+    },
+    {
+      "name": "in the style of an artist",
+      "note": "a new song sold through a famous artist's style or a crossover pair (al estilo de, inspired, x, type track, artist + IA)",
+      "match": "al estilo de|estilo de|inspired|type (track|beat)|\b(ozuna|romeo santos|wisin|bad bunny|karol ?g|sean paul|dua lipa|drake|weeknd|daddy yankee|luis miguel)\b[^|]{0,30}\b(ia|ai)\b|\b(ia|ai)\b[^|]{0,10}\b(ozuna|romeo santos|bad bunny|luis miguel)\b",
+      "seeds": [
+        "canción con ia de bad bunny",
+        "al estilo de ia",
+        "type beat ai song"
+      ]
+    },
+    {
+      "name": "legend what-if / dream duet",
+      "note": "music that never existed: a dead or separated legend singing another's song, two legends together, a 'demo' that never was",
+      "match": "what if|qu[eé] pasar[ií]a|\\bdemo\\b|dream duet|whitney|celine|lionel richie|michael jackson|beatles|elvis|freddie|juan gabriel|selena|camilo sesto|rocío d[uú]rcal",
+      "seeds": [
+        "michael jackson ai cover",
+        "what if ai song"
+      ]
+    },
+    {
+      "name": "epic / fantasy world music",
+      "note": "an original song inside a world: Viking, Nordic, Celtic, Egyptian, tribal, swamp outlaw, enchanted forest, cinematic",
+      "match": "viking|nordic|n[oó]rdic|valhalla|norse|celt|egip|egypt|tribal|na'?vi|n[aá]huatl|enchanted|fairy|fantas|mystic|m[ií]stic|cinematic|cinem[aá]tic|epic|[ée]pic|outlaw|swamp|blackwater|dark ?souls|samurai|pirate|pirata",
+      "seeds": [
+        "viking rap ai",
+        "epic fantasy music ai",
+        "musica celta ia"
+      ]
+    },
+    {
+      "name": "grief and lost-love ballad",
+      "note": "an emotional story song about loss, absence or love that cools (often 'live performance' or piano ballad)",
+      "match": "lost you|lose you|missing you|miss you|te vas|te fuiste|adi[oó]s|extra[ñn]o|perd[ií]|amor que se|llorar|heartbreak|broken heart|💔|ballad|balada|never stopped|nunca dej",
+      "seeds": [
+        "sad ai song",
+        "balada triste ia"
+      ]
+    },
+    {
+      "name": "long mix / playlist",
+      "note": "a 20 min to 3 h mix of AI songs in one style (bachata mix, euro disco mix, best songs inspired by Cuba)",
+      "match": "\\bmix\\b|playlist|\\b\\d+ ?(hours?|horas|hrs)\\b|compilation|recopilaci[oó]n|mejores canciones|best (ai )?songs",
+      "seeds": [
+        "ai music mix",
+        "mix bachata ia"
+      ]
+    },
+    {
+      "name": "how I made it / tutorial",
+      "note": "the making of an AI song or video: tutorial, step by step, 'I made X in Suno', free tools",
+      "match": "how to|how i|i made|made a|i tried|i tested|tutorial|step by step|full guide|c[oó]mo (hacer|crear|hago)|paso a paso|hice|compuse|gu[ií]a|gratis",
+      "seeds": [
+        "how to make ai music",
+        "como hacer musica con ia"
+      ]
+    },
+    {
+      "name": "AI-music debate, news and reactions",
+      "note": "the story around AI music: monetisation truth, musicians panicking, terrible AI music, real singer vs AI, fooled by AI",
+      "match": "monetiz|panick|truth|verdad|nadie te dice|terrible|reddit|crackdown|blocks|bloque|debate|falling for|reaction|reacci[oó]n|super[oó] a la ia|vs\\.? ?(la )?(ia|ai)|ai vs|ia vs|fake|losers",
+      "seeds": [
+        "ai music monetization",
+        "ai music reaction"
+      ]
+    },
+    {
+      "name": "personal name / dedication song",
+      "note": "a song made for one person: their name, birthday, anniversary, a family member",
+      "match": "name song|con tu nombre|para (mi|tu) (mam[aá]|pap[aá]|novi[ao]|esposa|esposo|hij[ao]|suegr)|for (my|your) (mom|dad|wife|husband|girlfriend|boyfriend)|birthday|cumplea[ñn]os|suegr",
+      "seeds": [
+        "ai song with your name",
+        "cancion con tu nombre ia"
+      ]
+    },
+    {
+      "name": "language swap of a famous song",
+      "note": "a famous song sung in another language (English hit in Spanish, Enya in Spanish, a song in Nahuatl or Na'vi)",
+      "match": "versi[oó]n (en )?espa[ñn]ol|en espa[ñn]ol|in spanish|spanish version|in english|english version|n[aá]huatl|na'?vi|traducid|translated",
+      "seeds": [
+        "cover en español ia",
+        "english version ai cover"
+      ]
+    },
+    {
+      "name": "faith and worship",
+      "note": "hymns, worship and Christian songs made with AI",
+      "match": "jes[uú]s|jesoa|worship|alabanza|adoraci[oó]n|himno|hymn|salmo|psalm|cristian|christian|gospel|iglesia|church|ffpm",
+      "seeds": [
+        "cancion con ia cristiana",
+        "ai worship song"
+      ]
+    },
+    {
+      "name": "humour and challenge",
+      "note": "funny or challenge songs: arguing with the AI, a song about the mother-in-law, impossible challenges, memes",
+      "match": "humor|funny|gracios|chiste|meme|😂|🤣|(song|canci[oó]n)[^|]{0,30}challenge|challenge[^|]{0,30}(song|canci[oó]n)|laughing|discut|cartoon song",
+      "seeds": [
+        "funny ai song",
+        "cancion graciosa ia"
+      ]
+    },
+    {
+      "name": "surreal / visual-poem AI music video",
+      "note": "the visuals carry it: a recognisable surreal or painterly AI art style, often a recurring character",
+      "match": "visual poem|poema visual|surreal|surrealis|ethereal|art music video",
+      "seeds": [
+        "ai visual poem",
+        "surreal ai music video"
+      ]
+    }
+  ]
+}

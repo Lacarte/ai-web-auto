@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Watch</title>
+<style>
+@font-face { font-family: "Inter"; font-weight: 400; font-display: swap; src: url(/fonts/inter-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 500; font-display: swap; src: url(/fonts/inter-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 600; font-display: swap; src: url(/fonts/inter-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 700; font-display: swap; src: url(/fonts/inter-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Space Grotesk"; font-weight: 500; font-display: swap; src: url(/fonts/space-grotesk-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Space Grotesk"; font-weight: 600; font-display: swap; src: url(/fonts/space-grotesk-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap; src: url(/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 500; font-display: swap; src: url(/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2"); }
+
+:root {
+  color-scheme: dark;
+  --bg: #090a0c; --bg-2: #0d0f12; --panel: #13151a; --raise: #1e222a; --line: #262b35; --line-soft: #1a1e26;
+  --text: #f4f5f7; --muted: #7e8796; --faint: #525a68;
+  --accent: #6a8cff; --accent-grad: linear-gradient(135deg, #6a8cff, #9b7bff); --accent-dim: rgba(106,140,255,.12); --accent-line: rgba(106,140,255,.35);
+  --run: #58a6ff; --run-dim: rgba(88,166,255,.12);
+  --ok: #35c08a; --ok-dim: rgba(53,192,138,.12); --ok-line: rgba(53,192,138,.35);
+  --fail: #ff5f6e; --fail-dim: rgba(255,95,110,.12); --fail-line: rgba(255,95,110,.35);
+  --warn: #f0ad4b; --warn-dim: rgba(240,173,75,.12);
+  --hairline-top: inset 0 1px 0 rgba(255,255,255,.05);
+  --shadow-sm: var(--hairline-top), 0 1px 2px rgba(0,0,0,.35), 0 6px 16px -8px rgba(0,0,0,.7);
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace; --display: "Space Grotesk", "Inter", sans-serif; --body: "Inter", system-ui, sans-serif;
+  --r: 8px; --r-s: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(1000px 500px at 90% -10%, rgba(106,140,255,.06), transparent 60%),
+              radial-gradient(800px 450px at -5% 105%, rgba(165,139,255,.04), transparent 55%), var(--bg);
+  background-attachment: fixed; color: var(--text); font-family: var(--body); font-size: 12px; line-height: 1.45;
+  display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; height: 46px; padding: 0 14px;
+  border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-2) 94%, transparent); backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 10; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--accent-grad); display: grid; place-items: center;
+  font-family: var(--display); font-size: 11.5px; font-weight: 700; color: #080a0f;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 2px 8px rgba(106,140,255,.35); }
+.brand-title { font-family: var(--display); font-size: 13.5px; font-weight: 600; letter-spacing: -.2px; }
+.brand-desc { font-family: var(--mono); font-size: 9.5px; color: var(--muted); letter-spacing: .3px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 11px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--muted); white-space: nowrap; font-family: var(--mono); }
+.badge .bd { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+.badge.ok { color: var(--ok); border-color: var(--ok-line); background: var(--ok-dim); } .badge.ok .bd { background: var(--ok); }
+.badge.run { color: var(--run); border-color: rgba(88,166,255,.35); background: var(--run-dim); } .badge.run .bd { background: var(--run); animation: pulse 1.2s infinite; }
+.badge.warn { color: var(--warn); border-color: rgba(240,173,75,.35); background: var(--warn-dim); } .badge.warn .bd { background: var(--warn); }
+.badge.fail { color: var(--fail); border-color: var(--fail-line); background: var(--fail-dim); } .badge.fail .bd { background: var(--fail); }
+.time-label { color: var(--faint); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+.btn { height: 26px; padding: 0 11px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--raise); color: var(--text);
+  font: 500 11.5px var(--body); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--hairline-top); }
+.btn:hover { border-color: var(--accent-line); }
+.btn.primary { background: var(--accent-grad); color: #090a0c; border: none; font-weight: 600; }
+.btn.on { color: var(--ok); border-color: var(--ok-line); background: var(--ok-dim); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+main { flex: 1; padding: 14px; display: grid; gap: 12px; grid-template-columns: minmax(300px, 380px) 1fr; max-width: 1500px; width: 100%; margin: 0 auto; }
+.full { grid-column: 1 / -1; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; box-shadow: var(--shadow-sm); min-width: 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.card-title { font-family: var(--display); font-size: 12.5px; font-weight: 600; letter-spacing: .2px; }
+.eyebrow { font-family: var(--mono); font-size: 9.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .8px; }
+.muted { color: var(--muted); } .mono { font-family: var(--mono); }
+
+/* opportunity banner */
+.opp { border-color: var(--line); }
+.opp.has { border: 1px solid var(--ok-line); background: linear-gradient(180deg, rgba(53,192,138,.10), var(--panel) 70%); }
+.opp.flash { animation: flash 1.1s ease-in-out 3; }
+@keyframes flash { 50% { box-shadow: 0 0 0 3px rgba(53,192,138,.45), var(--shadow-sm); } }
+.opp h2 { font-family: var(--display); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.opp.has h2 { color: var(--ok); }
+.deal { display: grid; grid-template-columns: 22px 150px 1fr 120px; gap: 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.deal:first-of-type { border-top: 0; }
+.chk { color: var(--ok); font-weight: 700; font-size: 16px; line-height: 1; }
+.kind { font-weight: 600; } .kind.auction { color: var(--warn); }
+.store { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 0 6px; border-radius: 4px; background: var(--raise); color: var(--muted); margin-top: 2px; }
+.price { font-family: var(--mono); font-weight: 600; text-align: right; font-size: 13px; }
+.note { color: var(--warn); font-size: 11px; }
+
+/* runs */
+.runs { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow: auto; }
+.run { border: 1px solid var(--line-soft); border-radius: var(--r-s); padding: 8px 10px; cursor: pointer; background: var(--bg-2); }
+.run:hover, .run.sel { border-color: var(--accent-line); }
+.run-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.run-when { font-family: var(--mono); font-size: 11.5px; }
+.steps { display: flex; gap: 4px; margin-top: 6px; }
+.step { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.step.done { background: var(--ok); } .step.cur { background: var(--run); animation: pulse 1.2s infinite; } .step.bad { background: var(--fail); }
+.run-meta { margin-top: 5px; display: flex; gap: 10px; color: var(--muted); font-size: 11px; flex-wrap: wrap; }
+
+.log { font-family: var(--mono); font-size: 10.5px; background: #07080a; border: 1px solid var(--line-soft); border-radius: var(--r-s);
+  padding: 8px 10px; height: 300px; overflow: auto; white-space: pre-wrap; color: #b9c0cc; }
+.prods { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.prod { border: 1px solid var(--line-soft); border-radius: var(--r-s); padding: 10px; background: var(--bg-2); }
+.prod .v { font-family: var(--mono); font-size: 17px; font-weight: 600; margin: 3px 0; }
+.prod .v.deal-on { color: var(--ok); }
+.kv { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; font-family: var(--mono); }
+.empty { color: var(--faint); padding: 10px 0; }
+.hint { font-size: 11px; color: var(--muted); }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } .deal { grid-template-columns: 22px 1fr; } .deal .price { text-align: left; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">DW</div>
+    <div>
+      <div class="brand-title">Deal Watch</div>
+      <div class="brand-desc">RTX 5060 Ti 16GB · Lenovo P520 · HP Z4 G4 — every 6 h, read-only</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge" id="schedBadge"><span class="bd"></span><span id="schedText">schedule…</span></span>
+    <span class="badge" id="runBadge"><span class="bd"></span><span id="runText">no run</span></span>
+    <span class="badge"><span class="time-label">Local time</span><span id="clock">--:--:--</span></span>
+    <button class="btn" id="soundBtn" title="Play a chime when a new opportunity appears">🔔 Enable sound</button>
+    <button class="btn" id="testBtn" title="Play the opportunity chime">Test sound</button>
+    <a class="btn" href="/dashboard" target="_blank">Dashboard</a>
+    <button class="btn primary" id="runBtn" title="Start the scheduled check now (searches only, never buys)">Run now</button>
+  </div>
+</header>
+
+<main>
+  <section class="card opp full" id="opp">
+    <div class="card-head">
+      <h2 id="oppTitle">Opportunities</h2>
+      <span class="eyebrow" id="oppAt"></span>
+    </div>
+    <div id="deals"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><span class="card-title">Runs</span><span class="eyebrow" id="nextRun"></span></div>
+    <div class="runs" id="runs"><div class="empty">No run yet.</div></div>
+  </section>
+
+  <section class="card" style="display:flex; flex-direction:column; gap:12px;">
+    <div>
+      <div class="card-head"><span class="card-title" id="logTitle">Run log</span><span class="eyebrow" id="logLinks"></span></div>
+      <div class="log" id="log">Select a run.</div>
+      <div class="hint" id="logHint" style="margin-top:6px;"></div>
+    </div>
+    <div>
+      <div class="card-head"><span class="card-title">Best price per product (last cycle)</span><span class="eyebrow">price + shipping · with ~7% Miami tax</span></div>
+      <div class="prods" id="prods"><div class="empty">No cycle yet.</div></div>
+    </div>
+  </section>
+</main>
+
+<audio id="chime" src="/sound/opportunity.wav" preload="auto"></audio>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = v => v == null ? "—" : "$" + Number(v).toFixed(2);
+const KIND = {buy: "Buy now", configured: "Buy now (options selected)", auction: "Auction — bid is not a price"};
+let selected = null, last = null;
+let soundOn = localStorage.getItem("dw_sound") === "on";
+
+function setSoundBtn() {
+  $("soundBtn").textContent = soundOn ? "🔔 Sound on" : "🔕 Enable sound";
+  $("soundBtn").classList.toggle("on", soundOn);
+}
+async function chime() {
+  try { $("chime").currentTime = 0; await $("chime").play(); return true; }
+  catch (e) { $("soundBtn").textContent = "🔔 Click to allow sound"; return false; }
+}
+$("soundBtn").onclick = async () => {
+  soundOn = !soundOn; localStorage.setItem("dw_sound", soundOn ? "on" : "off"); setSoundBtn();
+  if (soundOn) {
+    await chime();  // this click is the user gesture the browser needs before it allows sound
+    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+  }
+};
+$("testBtn").onclick = chime;
+$("runBtn").onclick = async () => {
+  $("runBtn").disabled = true;
+  const r = await fetch("/api/run", {method: "POST"}).then(r => r.json()).catch(() => ({ok: false, message: "server not reachable"}));
+  $("runBtn").textContent = r.ok ? "Started" : "Run now";
+  if (!r.ok) alert("Could not start: " + r.message);
+  setTimeout(() => { $("runBtn").disabled = false; $("runBtn").textContent = "Run now"; refresh(); }, 4000);
+};
+
+function seenSet() { try { return new Set(JSON.parse(localStorage.getItem("dw_seen") || "[]")); } catch { return new Set(); } }
+function checkNew(deals) {
+  const seen = seenSet(), keys = deals.map(d => d.url + "|" + d.total), fresh = keys.filter(k => !seen.has(k));
+  if (fresh.length) {
+    localStorage.setItem("dw_seen", JSON.stringify([...new Set([...seen, ...keys])].slice(-300)));
+    $("opp").classList.remove("flash"); void $("opp").offsetWidth; $("opp").classList.add("flash");
+    if (soundOn) chime();
+    if ("Notification" in window && Notification.permission === "granted") {
+      const d = deals[keys.indexOf(fresh[0])];
+      new Notification("✓ Opportunity: " + d.product, {body: `${money(d.total)} on ${d.store} — ${d.title.slice(0, 90)}`});
+    }
+  }
+}
+
+function renderDeals(o, dealPrices) {
+  const deals = o.deals || [];
+  $("opp").classList.toggle("has", deals.length > 0);
+  $("oppTitle").innerHTML = deals.length ? `✓ Opportunity — ${deals.length} offer(s) at or under your deal price` : "No opportunity in the last cycle";
+  $("oppAt").textContent = o.at ? "cycle " + (o.cycle ?? "?") + " · " + o.at.replace("T", " ").slice(0, 16) : "no cycle yet";
+  const limits = Object.entries(dealPrices).map(([n, v]) => `${esc(n)} ≤ $${v}`).join(" · ");
+  $("deals").innerHTML = deals.length ? deals.map(d => `
+    <div class="deal">
+      <div class="chk">✓</div>
+      <div><div class="kind ${d.kind}">${esc(KIND[d.kind] || d.kind)}</div><span class="store">${esc(d.store)}</span>
+        ${d.kind === "auction" ? `<div class="note">${esc(d.time_left || "?")} left · ${d.bids ?? "?"} bids</div>` : ""}</div>
+      <div><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a>
+        <div class="muted">${esc(d.product)} · ${esc(d.condition || "")} · deal ≤ $${d.deal_price}</div>
+        ${(d.notes || []).map(n => `<div class="note">${esc(n)}</div>`).join("")}</div>
+      <div class="price">${money(d.total)}<div class="muted" style="font-weight:400">~${money(d.landed_est)} w/ tax</div></div>
+    </div>`).join("") : `<div class="empty">Deal prices (price + shipping): ${limits || "none set"}. Check seller, condition, returns and
+      compatibility before buying anything — nothing is bought automatically.</div>`;
+  checkNew(deals);
+}
+
+function stepBars(r) {
+  return [1, 2, 3].map(i => {
+    const code = [null, "price_watch", "config_check", "claude"][i];
+    let c = "";
+    if (r.exit_codes[code] !== undefined) c = r.exit_codes[code] === 0 ? "done" : "bad";
+    else if (r.status === "running" && r.step === i) c = "cur";
+    return `<div class="step ${c}" title="${["", "Price watch", "Option prices", "Claude report"][i]}"></div>`;
+  }).join("");
+}
+const STATUS = {running: ["run", "running"], ok: ["ok", "done"], warn: ["warn", "done with errors"], stopped: ["fail", "stopped"]};
+
+function renderRuns(rs) {
+  if (!rs.length) { $("runs").innerHTML = `<div class="empty">No run yet. The first scheduled run writes here.</div>`; return; }
+  if (!selected || !rs.find(r => r.id === selected)) selected = (rs.find(r => r.status === "running") || rs[0]).id;
+  $("runs").innerHTML = rs.map(r => {
+    const [cls, label] = STATUS[r.status] || ["", r.status];
+    return `<div class="run ${r.id === selected ? "sel" : ""}" data-id="${esc(r.id)}">
+      <div class="run-top"><span class="run-when">${esc((r.started || r.id).replace("T", " "))}</span>
+        <span class="badge ${cls}"><span class="bd"></span>${esc(label)}${r.status === "running" ? " · " + esc(r.step_name) : ""}</span></div>
+      <div class="steps">${stepBars(r)}</div>
+      <div class="run-meta"><span>${r.deals == null ? "deals: —" : (r.deals ? `<b style="color:var(--ok)">✓ ${r.deals} deal(s)</b>` : "no deal")}</span>
+        ${r.report ? `<a href="/reports/${esc(r.report)}" target="_blank">report</a>` : `<span>no report</span>`}
+        <a href="/reports/${esc(r.log)}" target="_blank">log</a></div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll(".run").forEach(el => el.onclick = () => { selected = el.dataset.id; renderRuns(rs); renderLog(rs); });
+  renderLog(rs);
+}
+
+function renderLog(rs) {
+  const r = rs.find(x => x.id === selected);
+  if (!r) return;
+  const box = $("log"), atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  $("logTitle").textContent = "Run " + (r.started || r.id).replace("T", " ");
+  $("logLinks").innerHTML = r.report ? `<a href="/reports/${esc(r.report)}" target="_blank">open report</a>` : "";
+  box.textContent = r.tail.join("\n") || "(empty)";
+  if (atEnd || r.status === "running") box.scrollTop = box.scrollHeight;
+  $("logHint").innerHTML = r.notes.length ? r.notes.map(n => `<div class="note">${esc(n)}</div>`).join("") : "";
+}
+
+function renderProducts(ps) {
+  if (!ps.length) { $("prods").innerHTML = `<div class="empty">No cycle yet.</div>`; return; }
+  $("prods").innerHTML = ps.map(p => {
+    const b = p.best, isDeal = b && p.deal_price && b.total <= p.deal_price;
+    const stores = Object.entries(p.by_store).map(([s, o]) => `<div class="kv"><span>${esc(s)}</span><a href="${esc(o.url)}" target="_blank">${money(o.total)}</a></div>`).join("");
+    const cfg = (p.configured || []).map(c => `<div class="kv"><span>eBay, options selected</span><a href="${esc(c.url)}" target="_blank">${money((c.page_price ?? 0) + (c.shipping ?? 0))}</a></div>`).join("");
+    return `<div class="prod"><div class="eyebrow">${esc(p.product)}</div>
+      <div class="v ${isDeal ? "deal-on" : ""}">${b ? (isDeal ? "✓ " : "") + money(b.total) : "no match"}</div>
+      <div class="kv"><span>deal ≤</span><span>${p.deal_price ? "$" + p.deal_price : "—"}</span></div>
+      ${b ? `<div class="kv"><span>with tax</span><span>${money(b.landed_est)}</span></div>` : ""}
+      ${stores}${cfg}
+      <div class="kv"><span>auctions under max</span><span>${p.auctions}</span></div></div>`;
+  }).join("");
+}
+
+function renderSchedule(s, running) {
+  const st = s.state || "unknown";
+  $("schedBadge").className = "badge " + (st === "Ready" ? "ok" : st === "Running" ? "run" : st === "Disabled" ? "warn" : "fail");
+  $("schedText").textContent = `schedule: ${st}${s.times ? " · " + s.times.join(" ") : ""}`;
+  $("nextRun").textContent = s.next && !s.next.startsWith("1999") ? "next " + s.next.replace("T", " ").slice(0, 16) : "";
+  $("runBadge").className = "badge " + (running ? "run" : "");
+  $("runText").textContent = running ? `running · step ${running.step}/3 ${running.step_name}` : (s.last ? "last " + s.last.replace("T", " ").slice(0, 16) : "no run yet");
+  $("runBtn").disabled = !!running;
+}
+
+async function refresh() {
+  try {
+    last = await fetch("/api/status").then(r => r.json());
+    renderSchedule(last.schedule, last.running);
+    renderDeals(last.opportunities, last.deal_prices);
+    renderRuns(last.runs);
+    renderProducts(last.products);
+  } catch (e) { $("runText").textContent = "monitor server not reachable"; }
+  setTimeout(refresh, last && last.running ? 5000 : 15000);
+}
+setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], {hour12: false}); }, 1000);
+setSoundBtn();
+refresh();
+</script>
+</body>
+</html>

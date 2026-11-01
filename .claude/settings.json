@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"@modules\\\\elevenLabs\\\\@downloads\" -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 15 LastWriteTime, Length, @{n='Path';e={$_.FullName.Replace\\(\\(Get-Location\\).Path,''\\)}} | Format-Table -AutoSize | Out-String -Width 250; Get-Content \"@modules\\\\elevenLabs\\\\simulate_run.bat\"; netstat -aon | findstr \":8765\")",
+      "PowerShell($r=\"@modules\\\\viral_research\"; Get-ChildItem $r -Depth 0 | Select Name; \"---downloads\"; Get-ChildItem \"$r\\\\@downloads\" -Depth 0 | Select Name; \"---zen\"; Get-ChildItem \"$r\\\\@downloads\" -Recurse -Directory | Where-Object { $_.FullName -match 'zen|medit|zan' } | Select -First 30 FullName)"
+    ]
+  }
+}

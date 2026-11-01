@@ -1,0 +1,42 @@
+{
+  "name": "amazon",
+  "title": "Amazon",
+  "description": "Search Amazon US (the user's own Chrome session and delivery address) and read result cards: price, list price, stock, delivery, rating, reviews, renewed, and the 'used & new offers' from-price. Read-only: never adds to cart, buys, or changes the address.",
+  "app_url": "https://www.amazon.com/",
+  "origins": [
+    "https://www.amazon.com"
+  ],
+  "requires_login": false,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "search": "amazon_search.py"
+  },
+  "settings": {
+    "search_via": "form",
+    "form_fallback_url": true,
+    "_form_fallback_url": "when typing can't reach the page (hidden tab while the user uses Chrome, or the box still wrong after one retry) the same search is opened by its URL and the page records it; false = fail the search instead (live 2026-10-28)",
+    "sales_tax_rate": 0.07,
+    "max_pages": 3,
+    "pause_seconds": [
+      4.0,
+      11.0
+    ],
+    "long_pause": {
+      "chance": 0.12,
+      "seconds": [
+        15,
+        40
+      ]
+    },
+    "type_ms_per_char": [
+      45,
+      140
+    ],
+    "read_bursts": [
+      4,
+      14
+    ],
+    "downloads_dir": "@downloads"
+  },
+  "updated": "2026-10-28"
+}

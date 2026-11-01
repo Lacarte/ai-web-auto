@@ -33,7 +33,7 @@ function refreshStatus() {
     }
 
     if (wsStatus) {
-      wsStatus.textContent = isConnected ? 'ws://localhost:8765 (live)' : 'offline';
+      wsStatus.textContent = isConnected ? `${resp.url || 'ws://localhost:8765'} (live)` : 'offline';
       wsStatus.style.color = isConnected ? 'var(--ok)' : 'var(--muted)';
     }
 

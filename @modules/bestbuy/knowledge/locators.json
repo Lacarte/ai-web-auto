@@ -1,0 +1,83 @@
+{
+ "version": 1,
+ "_about": "Learned live on bestbuy.com search pages on 2026-10-29 (scratch/bestbuy/probe_search.py, probe_cards.py, probe_input.py). Cards carry data-product-id (the SKU) and data-testid hooks - Best Buy's own stable attributes, not generated classes.",
+ "locators": {
+  "search_box": {
+   "page": "home",
+   "css": "#autocomplete-search-bar",
+   "xpath": "//textarea[@id='autocomplete-search-bar']",
+   "role": "combobox",
+   "name": "What can we help you find? Suggestions appear below",
+   "description": "Header search field - a TEXTAREA (placeholder 'Search Best Buy'). Sticky header: stays at the top while scrolling.",
+   "verified": "2026-10-29"
+  },
+  "search_submit": {
+   "page": "home",
+   "css": "#autocomplete-search-button",
+   "role": "button",
+   "name": "Submit search",
+   "description": "Header search button (data-testid SearchButton-TestID). Clicked with a trusted CDP click after typing.",
+   "notes": "#autocomplete-clear-button ('Clear') sits right before it - never take the first button near the box",
+   "verified": "2026-10-29"
+  },
+  "result_card": {
+   "page": "search",
+   "css": "li.product-list-item[data-product-id]",
+   "description": "One search result; data-product-id is the SKU. Cards render their content only when scrolled into view (empty innerText before).",
+   "verified": "2026-10-29"
+  },
+  "card_link": {
+   "within": "result_card",
+   "css": "a.product-list-item-link, a[href*=\"/product/\"]",
+   "description": "Product link; its text is the full title. URL /product/<slug>/<id>.",
+   "verified": "2026-10-29"
+  },
+  "card_price": {
+   "within": "result_card",
+   "css": "[data-testid=\"price-block-customer-price\"]",
+   "description": "Price to pay ('$472.99' followed by the split dollars/cents '$47299' - take the first $X.XX).",
+   "verified": "2026-10-29"
+  },
+  "card_comp_value": {
+   "within": "result_card",
+   "css": "[data-testid=\"price-block-regular-price\"]",
+   "state": "transient",
+   "description": "'Comp. Value: $479.99' - a reference value, NEVER the price.",
+   "verified": "2026-10-29"
+  },
+  "card_shipping": {
+   "within": "result_card",
+   "css": "[data-testid^=\"plp-shipping-messaging-\"]",
+   "state": "transient",
+   "description": "Shipping message for the user's store/location ('Shipping unavailable', or a delivery promise).",
+   "verified": "2026-10-29"
+  },
+  "card_pickup": {
+   "within": "result_card",
+   "css": "[data-testid^=\"plp-pickup-messaging-\"]",
+   "state": "transient",
+   "description": "Store pickup message ('Pickup unavailable' / pickup today at <store>).",
+   "verified": "2026-10-29"
+  },
+  "card_unavailable": {
+   "within": "result_card",
+   "css": "[data-testid^=\"plp-unavailable-\"]",
+   "state": "transient",
+   "description": "Disabled 'Unavailable' button: the product can't be bought at all.",
+   "verified": "2026-10-29"
+  },
+  "card_rating": {
+   "within": "result_card",
+   "css": "[data-testid=\"rnr-stats-link\"]",
+   "state": "transient",
+   "description": "'Rating 4.8 out of 5 stars with 904 reviews'.",
+   "verified": "2026-10-29"
+  },
+  "store_name": {
+   "page": "search",
+   "css": "header",
+   "description": "The header shows 'Your store <name>' - availability messages are for this store/location. Read only; never changed.",
+   "verified": "2026-10-29"
+  }
+ }
+}

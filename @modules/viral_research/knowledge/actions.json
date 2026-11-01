@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "actions": {
+    "discover": {
+      "page": "youtube_search",
+      "description": "Find videos in a niche: query variants (flat search, plus an under-4-minute search) and hashtag Shorts pages, per language.",
+      "evidence": "discovery.json lists every video with the searches that found it.",
+      "implemented_by": "viral_research.discover"
+    },
+    "baseline": {
+      "page": "youtube_channel_videos",
+      "description": "Each channel's normal: median views of its own recent uploads, Shorts and long-form separately.",
+      "evidence": "channels.json: median, sample size, window; 'sample too small' under 10 videos.",
+      "implemented_by": "viral_research.baselines"
+    },
+    "score": {
+      "page": "youtube_search",
+      "description": "Outlier multiplier = views / the channel's median for the same format; buckets = language x format.",
+      "evidence": "scored.json with tier, views per day, age; language mismatches and unscored videos counted as dropped.",
+      "implemented_by": "viral_research.score"
+    },
+    "shortlist": {
+      "page": "youtube_watch",
+      "description": "Top outliers (max 3 per channel) and controls (the same channels' ordinary videos, 0.5-1.5x), confirmed with full metadata; sponsored and live videos excluded.",
+      "evidence": "shortlist.json; format confirmed as vertical <= 180 s for Shorts.",
+      "implemented_by": "viral_research.shortlist"
+    },
+    "evidence": {
+      "page": "youtube_watch",
+      "description": "Captions (json3, word timings) or a local Whisper transcript of the first 30 s, top comments (outliers), thumbnail, media (<= 480p; long-form first 90 s), and ffmpeg measurements.",
+      "evidence": "evidence/<id>/: captions or transcript.json, comments.json, thumbnail.jpg, measures.json, frames/, contact_sheet.jpg.",
+      "sensitive": "downloads media - analysis only, kept local, never re-uploaded",
+      "implemented_by": "viral_research.evidence"
+    },
+    "analyze": {
+      "page": "youtube_watch",
+      "description": "Features outliers share and controls don't (>= 20 points, >= 3 outliers, >= 2 channels); back-test learned patterns on newer videos.",
+      "evidence": "analysis.json: comparison per feature with a pattern flag; back-test result.",
+      "implemented_by": "viral_research.analyze"
+    },
+    "check": {
+      "page": "youtube_watch",
+      "description": "Re-read view counts from the watch page HTML (independent of yt-dlp) for a sample of outliers.",
+      "evidence": "spot_check.json with the drift per video.",
+      "implemented_by": "viral_research.check"
+    }
+  }
+}

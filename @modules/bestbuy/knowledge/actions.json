@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "actions": {
+    "search_products": {
+      "page": "home",
+      "description": "Search Best Buy for a query; read every result card (price, Comp. Value, more-options-from price, shipping / pickup / unavailable messages, rating). Read-only.",
+      "inputs": {"query": "search words"},
+      "steps": [
+        "search_via=form: bring the bound tab to the front; wheel up to search_box if needed; type_cdp the query into search_box (textarea; click, clear, insertText); check it holds exactly the query and search_submit is visible and uncovered; CDP-click search_submit (never the Clear button next to it).",
+        "If typing can't reach the page (hidden tab) the same search is opened by URL (/site/searchpage.jsp?st=<query>) and the page records it.",
+        "Wait for a results page whose st= is the query, with result_card.",
+        "Read down with wheel flicks to the page end (cards render only when scrolled into view), then read every result_card.",
+        "Stop on a robot check / access-denied page (Blocked)."
+      ],
+      "evidence": "Each card has a SKU and a title; a price is read or the card is marked unavailable; availability comes from the card's own shipping / pickup / unavailable messages.",
+      "uses": ["search_box", "search_submit", "result_card", "card_link", "card_price", "card_comp_value", "card_shipping", "card_pickup", "card_unavailable", "card_rating", "store_name"],
+      "sensitive": false,
+      "implemented_by": "bestbuy_search.search_products",
+      "cli": "python bestbuy_search.py search \"rtx 3060 12gb\""
+    }
+  }
+}

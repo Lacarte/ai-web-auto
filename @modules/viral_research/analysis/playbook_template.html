@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niche playbook</title>
+<style>
+:root{
+  --bg:#f2f4f6;--panel:#ffffff;--panel2:#e8ecf0;--ink:#15202b;--muted:#5b6876;--line:#d5dbe2;
+  --amber:#d98e1f;--blue:#2f63e0;--strong:#14876a;--some:#b7791f;--none:#8a96a3;
+  --r-intro:#7c8ba1;--r-verse:#2f63e0;--r-chorus:#d94a6a;--r-solo:#7c4fe0;--r-outro:#5f6f80;--r-hook:#d98e1f;
+  --display:"Bahnschrift","DIN Alternate","Roboto Condensed","Segoe UI",system-ui,sans-serif;
+  --body:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141a;--panel:#151d25;--panel2:#1d2731;--ink:#e6ebf0;--muted:#97a3b0;--line:#2a3542;
+  --amber:#f0aa45;--blue:#7da2ff;--strong:#3fc39b;--some:#e3a64a;--none:#6f7c89;--r-verse:#5b85f0;--r-chorus:#e46a86;--r-solo:#9b77f0}}
+:root[data-theme="dark"]{
+  --bg:#0e141a;--panel:#151d25;--panel2:#1d2731;--ink:#e6ebf0;--muted:#97a3b0;--line:#2a3542;
+  --amber:#f0aa45;--blue:#7da2ff;--strong:#3fc39b;--some:#e3a64a;--none:#6f7c89;--r-verse:#5b85f0;--r-chorus:#e46a86;--r-solo:#9b77f0}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+/* top bar */
+.bar{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:16px;min-height:56px}
+.brand{font:600 13px var(--display);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.brand span{color:var(--muted);font-weight:400}
+nav{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none}
+nav a{font:500 13px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+nav a:hover{color:var(--ink);background:var(--panel2)}
+.theme{font:12px var(--display);background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:5px 9px;cursor:pointer}
+/* sections */
+section{padding:44px 0 8px}
+.eyebrow{font:600 12px var(--display);letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:0 0 6px}
+h2{font:600 30px/1.1 var(--display);letter-spacing:-.01em;margin:0 0 8px}
+h3{font:600 19px/1.2 var(--display);margin:0}
+.lead{color:var(--muted);max-width:72ch;margin:0 0 20px}
+/* hero: the formula as a sentence with fill-in slots */
+.hero{padding:40px 0 12px}
+.formula{font:600 clamp(28px,4.6vw,52px)/1.22 var(--display);letter-spacing:-.015em;margin:8px 0 18px;max-width:26ch}
+.slot{padding:0 .1em;border-bottom:.09em dashed currentColor;background:color-mix(in srgb,currentColor 9%,transparent);
+  border-radius:.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.slot.a{color:var(--r-verse)}.slot.b{color:var(--r-chorus)}.slot.c{color:var(--r-solo)}.slot.d{color:var(--amber)}
+.meta-line{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--muted);font:13px var(--display);letter-spacing:.04em}
+.meta-line b{color:var(--ink);font-weight:600}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:22px 0 0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px 12px 46px;position:relative;font-size:14px}
+.steps li::before{content:counter(s);position:absolute;left:12px;top:11px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);font:600 13px/24px var(--display);text-align:center}
+/* track switcher */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 18px}
+.tab{font:600 14px var(--display);letter-spacing:.03em;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab small{font-weight:400;opacity:.8;margin-left:6px}
+.status{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--display);letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--panel2);color:var(--muted)}
+.status.holds{color:var(--strong)}.status.untested{color:var(--some)}.status.observation{color:var(--none)}
+/* signature: the arrangement lane */
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;margin:0 0 18px}
+.lane-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.lane-head span{color:var(--muted);font-size:13px}
+.ruler{position:relative;height:18px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted)}
+.ruler i{position:absolute;top:0;transform:translateX(-50%);font-style:normal}
+.regions{position:relative;height:58px;margin-top:8px}
+.lane-body{overflow-x:auto;padding-bottom:4px}.lane-inner{min-width:680px;position:relative}
+.region{position:absolute;top:0;height:58px;border-radius:6px;padding:6px 8px;color:#fff;font:600 12px/1.25 var(--display);letter-spacing:.02em;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;transform-origin:left;animation:grow .7s cubic-bezier(.2,.7,.2,1) both}
+.region small{display:block;font:400 11px var(--body);opacity:.9;overflow:hidden;text-overflow:ellipsis}
+@keyframes grow{from{transform:scaleX(.2);opacity:0}to{transform:none;opacity:1}}
+.k-intro{background:var(--r-intro)}.k-verse{background:var(--r-verse)}.k-chorus{background:var(--r-chorus)}.k-solo{background:var(--r-solo)}.k-outro{background:var(--r-outro)}.k-hook{background:var(--r-hook)}
+.zone{position:absolute;top:-6px;bottom:-6px;border:2px solid var(--amber);border-radius:8px;background:color-mix(in srgb,var(--amber) 14%,transparent);pointer-events:none}
+.markers{position:relative;height:40px;margin-top:10px}
+.marker{position:absolute;top:0;transform:translateX(-1px);border-left:2px solid var(--ink);padding:0 0 0 6px;font:12px/1.3 var(--body);color:var(--muted);max-width:42%}
+.marker b{color:var(--ink);font:600 12px var(--display)}
+.lane-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted)}
+.lane-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* formula cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card-head .what{font:12px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tpl{position:relative;background:var(--panel2);border-radius:8px;padding:10px 12px;font:13px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.tpl .copy{position:absolute;top:6px;right:6px}
+.copy{font:600 11px var(--display);letter-spacing:.06em;text-transform:uppercase;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 8px;cursor:pointer}
+.copy.done{color:var(--strong);border-color:var(--strong)}
+.tpl.has-copy{padding-right:70px}
+.example{font-size:14px}.example b{font:600 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.dd{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13.5px}
+.dd ul{margin:0;padding-left:18px}.dd li{margin:2px 0}
+.dd h4{margin:0 0 4px;font:600 12px var(--display);letter-spacing:.1em;text-transform:uppercase}
+.dd .do h4{color:var(--strong)}.dd .dont h4{color:var(--r-chorus)}
+@media (max-width:560px){.dd{grid-template-columns:1fr}}
+.ev{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:7px}
+.evi{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;font-size:12.5px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--none)}
+.dot.strong{background:var(--strong)}.dot.some{background:var(--some)}.dot.info{background:transparent;border:1.5px solid var(--muted)}
+.evi .lab{color:var(--ink)}.evi .val{grid-column:2;color:var(--muted);font:12px var(--mono)}
+.meters{grid-column:2;display:grid;grid-template-columns:62px 1fr;gap:3px 8px;align-items:center;font:11px var(--display);letter-spacing:.04em;color:var(--muted);max-width:340px}
+.meter{height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:4px}
+.meter.o i{background:var(--amber)}.meter.c i{background:var(--none)}
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:600 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num{font:13px var(--mono);white-space:nowrap}
+.bar-cell{min-width:120px}.hbar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:5px}.hbar i{display:block;height:100%;background:var(--blue)}
+.pill{display:inline-block;font:600 11px var(--display);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--panel2);color:var(--muted)}
+.pill.proven{color:var(--strong)}.pill.bet{color:var(--amber)}.pill.avoid{color:var(--r-chorus)}
+/* ideas */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.idea{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.idea-top{display:flex;justify-content:space-between;gap:8px;align-items:center;font:12px var(--display);letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.idea h3{font:600 17px/1.25 var(--display);overflow-wrap:anywhere}
+.vu{display:flex;gap:2px;align-items:center}
+.vu i{width:6px;height:12px;border-radius:1px;background:var(--panel2)}
+.vu i.on{background:var(--strong)}.vu i.on.mid,.vu i.on.hi{background:var(--amber)}
+.idea dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0;font-size:13px}
+.idea dt{font:600 11px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.idea dd{margin:0}
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.shot{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column}
+.shot .img{position:relative;aspect-ratio:16/9;background:var(--panel2)}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .x{position:absolute;left:8px;bottom:8px;background:rgba(10,14,18,.82);color:#fff;font:600 13px var(--mono);padding:2px 7px;border-radius:5px}
+.shot .t{padding:9px 11px 11px;font-size:13px;line-height:1.35}
+.shot .t small{display:block;color:var(--muted);margin-top:3px}
+.note{font-size:12px;color:var(--amber);margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.box ul{margin:0;padding-left:18px}.box li{margin:4px 0}
+footer{color:var(--muted);font-size:12.5px;padding:40px 0 60px}
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <div class="brand">Playbook <span id="b-niche"></span></div>
+  <nav aria-label="Sections"><a href="#recipe">Recipe</a><a href="#channel">Channel</a><a href="#ideas">30 ideas</a><a href="#evidence">Evidence</a><a href="#confidence">How sure</a><a href="#scorecard">Scorecard</a></nav>
+  <button class="theme" id="theme" type="button" aria-label="Switch light or dark">Light / dark</button>
+</div></div>
+
+<main class="wrap">
+  <header class="hero" id="top">
+    <p class="eyebrow" id="h-eyebrow"></p>
+    <p class="formula" id="h-formula"></p>
+    <div class="meta-line" id="h-meta"></div>
+    <ol class="steps" id="h-steps"></ol>
+  </header>
+
+  <section id="recipe">
+    <p class="eyebrow">The recipe</p>
+    <h2>What to make, format by format</h2>
+    <p class="lead">Each template is copy-ready. Under every rule, the meters show how often the outliers did it against the same channels' ordinary videos — amber is the outliers, grey the controls.</p>
+    <div class="tabs" id="tracks" role="group" aria-label="Format"></div>
+    <div id="track"></div>
+  </section>
+
+  <section id="channel">
+    <p class="eyebrow">The channel</p>
+    <h2>Set it up once, the way the winners did</h2>
+    <p class="lead">The steadiest winners are one-sound channels: one genre or one repeated title signature on most uploads, and often the sound in the name.</p>
+    <div class="grid" id="channel-cards"></div>
+    <h3 style="margin:26px 0 10px">The winning channels</h3>
+    <div class="tablewrap"><table id="channels"></table></div>
+  </section>
+
+  <section id="ideas">
+    <p class="eyebrow">30 ideas</p>
+    <h2>Scored, ranked, ready to make</h2>
+    <p class="lead" id="ideas-lead"></p>
+    <div class="filters" id="idea-filters" role="group" aria-label="Filter ideas"></div>
+    <div class="ideas" id="idea-list"></div>
+  </section>
+
+  <section id="evidence">
+    <p class="eyebrow">Evidence</p>
+    <h2>The videos the recipe comes from</h2>
+    <p class="lead">The top outliers of each ranking. The number is how many times its channel's normal it got.</p>
+    <div class="gallery" id="gallery"></div>
+    <h3 style="margin:28px 0 10px">Concepts — proven, demanded, crowded?</h3>
+    <div class="tablewrap"><table id="concepts"></table></div>
+  </section>
+
+  <section id="confidence">
+    <p class="eyebrow">How sure</p>
+    <h2>What holds, what doesn't, what to avoid</h2>
+    <div class="two"><div class="box"><h3 style="margin-bottom:8px">How sure we are</h3><ul id="sure"></ul></div>
+      <div class="box"><h3 style="margin-bottom:8px">Risks</h3><ul id="risks"></ul></div></div>
+  </section>
+
+  <section id="scorecard">
+    <p class="eyebrow">Scorecard</p>
+    <h2>Let your results judge the formula</h2>
+    <div class="box" id="score-box"></div>
+  </section>
+  <footer id="foot"></footer>
+</main>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = n => n == null ? "-" : n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1e3 ? Math.round(n/1e3)+"K" : String(n);
+const fmtx = x => x == null ? "-" : (x >= 100 ? Math.round(x).toLocaleString() : x) + "×";
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+// theme toggle (per-viewer convenience)
+const saved = store.get("pb-theme"); if (saved) document.documentElement.dataset.theme = saved;
+$("theme").onclick = () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "light" : "dark"; store.set("pb-theme", document.documentElement.dataset.theme);
+};
+
+function copyButton(text) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "copy"; b.textContent = "Copy";
+  b.onclick = async () => {
+    try { await navigator.clipboard.writeText(text); } catch (e) {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
+    b.textContent = "Copied"; b.classList.add("done"); setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1400);
+  };
+  return b;
+}
+
+function fractionOf(v) { const m = String(v).match(/(\d+)\/(\d+) outliers vs (\d+)\/(\d+)/); return m ? [m[1]/m[2], m[3]/m[4]] : null; }
+function evidenceHTML(list) {
+  if (!list || !list.length) return "";
+  return '<div class="ev">' + list.map(e => {
+    const f = fractionOf(e.value);
+    const meters = f ? `<div class="meters"><span>outliers</span><div class="meter o"><i style="width:${Math.round(f[0]*100)}%"></i></div>
+      <span>controls</span><div class="meter c"><i style="width:${Math.round(f[1]*100)}%"></i></div></div>` : "";
+    return `<div class="evi"><span class="dot ${esc(e.strength)}" title="${esc(e.kind)}"></span><span class="lab">${esc(e.label)}</span>
+      <span class="val">${e.kind === "measured" ? "" : esc(e.kind) + " · "}${esc(e.value)}</span>${meters}</div>`;
+  }).join("") + "</div>";
+}
+
+function cardEl(c) {
+  const el = document.createElement("article"); el.className = "card";
+  el.innerHTML = `<div class="card-head"><h3>${esc(c.title)}</h3><span class="what">${esc(c.what || "")}</span></div>`;
+  if (c.template) { const t = document.createElement("div"); t.className = "tpl has-copy"; t.textContent = c.template; t.appendChild(copyButton(c.template)); el.appendChild(t); }
+  if (c.example) { const x = document.createElement("div"); x.className = "example"; x.innerHTML = `<b>Example</b>${esc(c.example)}`; el.appendChild(x); }
+  if ((c.do && c.do.length) || (c.dont && c.dont.length)) {
+    const dd = document.createElement("div"); dd.className = "dd";
+    dd.innerHTML = (c.do && c.do.length ? `<div class="do"><h4>Do</h4><ul>${c.do.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "<div></div>")
+      + (c.dont && c.dont.length ? `<div class="dont"><h4>Don't</h4><ul>${c.dont.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "");
+    el.appendChild(dd);
+  }
+  el.insertAdjacentHTML("beforeend", evidenceHTML(c.evidence));
+  return el;
+}
+
+function laneHTML(a) {
+  const L = a.length_s, pct = s => (100 * s / L).toFixed(2) + "%";
+  const ticks = []; const step = L > 150 ? 30 : L > 40 ? 10 : 5;
+  for (let s = 0; s <= L; s += step) ticks.push(`<i style="left:${pct(s)}${s === 0 ? ";transform:none" : s + step > L ? ";transform:translateX(-100%)" : ""}">${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}</i>`);
+  const regions = a.blocks.map((b, i) => `<div class="region k-${esc(b.kind)}" style="left:${pct(b.start)};width:calc(${pct(b.end - b.start)} - 3px);animation-delay:${i*70}ms" title="${esc(b.label)}">${esc(b.label)}<small>${esc(b.note || "")}</small></div>`).join("");
+  const zone = a.replay_zone ? `<div class="zone" style="left:${(a.replay_zone[0]*100).toFixed(1)}%;width:${((a.replay_zone[1]-a.replay_zone[0])*100).toFixed(1)}%" title="Most replayed"></div>` : "";
+  const markers = (a.markers || []).map(m => `<div class="marker" style="left:${pct(m.at)}"><b>${esc(m.label)}</b><br>${esc(m.note || "")}</div>`).join("");
+  const kinds = [...new Set(a.blocks.map(b => b.kind))];
+  return `<div class="lane"><div class="lane-head"><h3>${esc(a.title)}</h3><span>${esc(a.caption || "")}</span></div>
+    <div class="lane-body"><div class="lane-inner"><div class="ruler">${ticks.join("")}</div><div class="regions">${regions}${zone}</div><div class="markers">${markers}</div></div></div>
+    <div class="lane-legend">${kinds.map(k => `<span><i class="k-${k}"></i>${esc(k)}</span>`).join("")}${a.replay_zone ? `<span><i style="border:2px solid var(--amber);background:transparent"></i>most replayed (heatmaps)</span>` : ""}</div></div>`;
+}
+
+// hero
+$("b-niche").textContent = "· " + D.niche;
+$("h-eyebrow").textContent = `${D.niche} on YouTube · the recipe in one line`;
+$("h-formula").innerHTML = (D.formula_html || esc(D.one_liner));
+$("h-meta").innerHTML = (D.meta || []).map(m => `<span><b>${esc(m[0])}</b> ${esc(m[1])}</span>`).join("");
+$("h-steps").innerHTML = (D.start_here || []).map(s => `<li>${esc(s)}</li>`).join("");
+
+// tracks
+let current = store.get("pb-track") || (D.tracks[0] && D.tracks[0].key);
+function renderTracks() {
+  $("tracks").innerHTML = "";
+  D.tracks.forEach(t => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "tab"; b.setAttribute("aria-pressed", String(t.key === current));
+    b.innerHTML = `${esc(t.label)}<small>${esc(t.short || "")}</small>`; b.onclick = () => { current = t.key; store.set("pb-track", current); renderTracks(); };
+    $("tracks").appendChild(b);
+  });
+  const t = D.tracks.find(x => x.key === current) || D.tracks[0];
+  const box = $("track"); box.innerHTML = `<p style="margin:0 0 14px"><span class="status ${esc(t.status_kind)}">${esc(t.status)}</span> <span style="color:var(--muted);margin-left:6px">${esc(t.summary || "")}</span></p>`
+    + (t.arrangement ? laneHTML(t.arrangement) : "");
+  const g = document.createElement("div"); g.className = "grid"; t.cards.forEach(c => g.appendChild(cardEl(c))); box.appendChild(g);
+}
+renderTracks();
+
+// channel
+D.channel.forEach(c => $("channel-cards").appendChild(cardEl(c)));
+$("channels").innerHTML = `<thead><tr><th>channel</th><th>ranking</th><th>subscribers</th><th>uploads / week</th><th>one sound?</th><th>repeated signature</th><th>best</th></tr></thead><tbody>`
+  + D.channels.filter(c => c.ranking.endsWith("long")).sort((a, b) => (b.consistency || 0) - (a.consistency || 0)).map(c => `<tr>
+    <td>${esc(c.name)}</td><td>${esc(c.ranking)}</td><td class="num">${num(c.followers)}</td><td class="num">${c.uploads_per_week_90d ?? "-"}</td>
+    <td class="bar-cell"><span class="num">${Math.round((c.consistency || 0) * 100)}%</span> ${c.main_genre_word && (c.main_genre_share||0) >= .5 ? esc(c.main_genre_word) : ""}<div class="hbar"><i style="width:${Math.round((c.consistency||0)*100)}%"></i></div></td>
+    <td>${c.title_signature && (c.title_signature_share || 0) >= .1 ? `<code>${esc(c.title_signature)}</code> ${Math.round(c.title_signature_share*100)}%` : "-"}</td>
+    <td class="num">${fmtx(c.best_multiplier)}</td></tr>`).join("") + "</tbody>";
+
+// ideas
+$("ideas-lead").textContent = D.ideas_lead || "";
+const groups = [["all", "All"], ...[...new Set(D.ideas.map(i => i.ranking))].map(r => [r, r]), ["bet", "Bets only"]];
+let filter = store.get("pb-ideas") || "all";
+function vu(score) { const n = Math.max(1, Math.round(score / 27 * 12)); return `<span class="vu" aria-label="score ${score} of 27">${Array.from({length: 12}, (_, k) => `<i class="${k < n ? "on" : ""} ${k >= 8 ? "hi" : k >= 5 ? "mid" : ""}"></i>`).join("")}</span>`; }
+function renderIdeas() {
+  $("idea-filters").innerHTML = "";
+  groups.forEach(([k, label]) => { const b = document.createElement("button"); b.type = "button"; b.className = "tab"; b.setAttribute("aria-pressed", String(k === filter));
+    b.textContent = label; b.onclick = () => { filter = k; store.set("pb-ideas", k); renderIdeas(); }; $("idea-filters").appendChild(b); });
+  const list = D.ideas.filter(i => filter === "all" || i.ranking === filter || (filter === "bet" && i.bet));
+  $("idea-list").innerHTML = "";
+  list.forEach((i, idx) => {
+    const el = document.createElement("article"); el.className = "idea";
+    el.innerHTML = `<div class="idea-top"><span>#${i.n} · ${esc(i.ranking)} · ${i.bet ? '<span class="pill bet">bet</span>' : '<span class="pill proven">proven concept</span>'}</span>${vu(i.score)}</div>
+      <h3>${esc(i.title)}</h3>
+      <dl><dt>Concept</dt><dd>${esc(i.concept)}</dd><dt>Spice</dt><dd>${esc(i.lever)}</dd>
+      ${i.thumbnail ? `<dt>Thumb</dt><dd>${esc(i.thumbnail)}</dd>` : ""}${i.hook ? `<dt>First 3 s</dt><dd>${esc(i.hook)}</dd>` : ""}
+      <dt>Score</dt><dd><span class="num">${i.score}</span> = ${i.e}×${i.d}×${i.g}${i.cost ? ` − ${i.cost} cost` : ""}${i.risk ? ` − ${i.risk} risk` : ""} · predicted <b>${esc(i.band)}</b> your median</dd></dl>`;
+    el.querySelector("h3").after(copyButton(i.title)); el.querySelector(".copy").style.alignSelf = "flex-start"; el.querySelector(".copy").textContent = "Copy title";
+    $("idea-list").appendChild(el);
+  });
+}
+renderIdeas();
+
+// evidence
+$("gallery").innerHTML = D.gallery.map(g => `<a class="shot" href="${esc(g.url)}" target="_blank" rel="noopener">
+  <div class="img">${g.thumb ? `<img src="${esc(g.thumb)}" alt="" loading="lazy">` : ""}<span class="x">${fmtx(g.multiplier)}</span></div>
+  <div class="t">${esc(g.title)}<small>${esc(g.channel)} · ${num(g.views)} views · ${esc(g.ranking)}</small>${g.note ? `<div class="note">${esc(g.note)}</div>` : ""}</div></a>`).join("");
+const maxLift = Math.max(...D.concepts.map(c => c.lift || 0), 1);
+$("concepts").innerHTML = `<thead><tr><th>concept</th><th>beat their channel</th><th>channels</th><th>lift</th><th>median</th><th>recent supply</th><th>newest 30 days</th><th>status</th></tr></thead><tbody>`
+  + D.concepts.map(c => { const avoid = (D.avoid_concepts || []).includes(c.name); const h = c.holdout;
+    return `<tr><td>${esc(c.name)}</td><td class="num">${c.outliers}/${c.hits}</td><td class="num">${c.channels_with_outliers}</td>
+    <td class="bar-cell"><span class="num">${c.lift ?? "-"}</span><div class="hbar"><i style="width:${Math.round(100*(c.lift||0)/maxLift)}%"></i></div></td>
+    <td class="num">${fmtx(c.median_multiplier)}</td><td class="num">${c.recent_supply}</td>
+    <td class="num">${h.newest_n ? `${Math.round(h.newest_rate*100)}% of ${h.newest_n}` : "–"}</td>
+    <td><span class="pill ${avoid ? "avoid" : c.proven ? "proven" : "bet"}">${avoid ? "avoid" : c.proven ? "proven" : "bet"}</span></td></tr>`; }).join("") + "</tbody>";
+
+// confidence, risks, scorecard
+$("sure").innerHTML = (D.confidence || []).map(x => `<li>${esc(x)}</li>`).join("");
+$("risks").innerHTML = (D.risks || []).map(x => `<li>${esc(x)}</li>`).join("");
+$("score-box").innerHTML = `<p style="margin-top:0">${esc(D.scorecard_text || "")}</p><p><a href="scorecard.csv" download>Download scorecard.csv</a> · it keeps what you fill in when the playbook is rebuilt.</p>`;
+$("foot").textContent = `Built from run ${D.run}. Every measured number is recomputed from that run's files when the playbook is rebuilt.`;
+</script>
+</body>
+</html>

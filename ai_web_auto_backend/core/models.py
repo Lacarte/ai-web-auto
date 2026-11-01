@@ -38,6 +38,8 @@ class ActionType(str, Enum):
     KEY = "key"
     ACTIVATE_TAB = "activate_tab"
     LIST_TABS = "list_tabs"
+    CLOSE_TAB = "close_tab"  # closes only the tab the order is bound to
+    WHEEL = "wheel"  # trusted CDP mouse-wheel notches at a pointer position
     TYPE_CDP = "type_cdp"
     CLICK_CDP = "click_cdp"
     SET_DOWNLOAD_PATH = "set_download_path"

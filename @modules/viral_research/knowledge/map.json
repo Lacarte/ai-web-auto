@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "pages": {
+    "youtube_search": {
+      "url_pattern": "https://www.youtube.com/results?search_query={query}",
+      "purpose": "Discovery (flat via yt-dlp): views, duration, channel ID, title; no dates. Filters: sp=EgIQAQ== videos, sp=EgIYAQ== under 4 min."
+    },
+    "youtube_hashtag_shorts": {
+      "url_pattern": "https://www.youtube.com/hashtag/{tag}/shorts",
+      "purpose": "Shorts discovery: IDs and views only; channel comes from full metadata."
+    },
+    "youtube_channel_videos": {
+      "url_pattern": "https://www.youtube.com/channel/{channel_id}/videos",
+      "purpose": "Long-form baseline: last 30-40 uploads with views and approximate dates (youtubetab:approximate_date), one request."
+    },
+    "youtube_channel_shorts": {
+      "url_pattern": "https://www.youtube.com/channel/{channel_id}/shorts",
+      "purpose": "Shorts baseline: views only, newest first, no dates."
+    },
+    "youtube_watch": {
+      "url_pattern": "https://www.youtube.com/watch?v={video_id}",
+      "purpose": "Full metadata, captions, comments, media (yt-dlp); the raw HTML's ytInitialPlayerResponse is the independent view-count check."
+    }
+  }
+}

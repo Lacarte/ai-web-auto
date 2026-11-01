@@ -1,0 +1,93 @@
+{
+ "name": "build-deals",
+ "description": "The user's AI-video build (2026-10-30): one RTX 5060 Ti 16GB + a Lenovo P520 or HP Z4 G4 with 64GB RAM or more, two x16 slots for a 2nd GPU later, total <= $1,000 with Miami-Dade tax. Runs every 6 hours (06:00, 12:00, 18:00 - never midnight-6 AM) from Windows Task Scheduler (run-build-deals.bat). An offer at or under a product's deal_price gets a check mark and goes in the opportunity banner at the top of the dashboard; eBay auctions only when bid + shipping is under it and they end within 24 h (a bid is not a price). Selectable eBay listings never count at their 'from' price: config_check.py selects the 64GB options on the listing page and records the price the page then shows.",
+ "interval_minutes": 360,
+ "tax_rate": 0.07,
+ "stores": ["ebay", "amazon", "bestbuy", "pcsp"],
+ "reject_sets": {
+  "not_a_card": [
+   "\\blaptop\\b|\\bnotebook\\b|\\bmobile\\b|gaming (pc|desktop|computer)|desktop (pc|computer)|\\bcomputer\\b|\\bcore\\s?i[3579]\\b|\\bryzen\\s?[3579]\\b|\\bssd\\b|\\b\\d+\\s?GB\\s+(ram|ddr\\d?)\\b|\\blot of\\b|\\bbundle\\b|mining rig"
+  ],
+  "accessory": [
+   "replacement|cooling fan|\\bfans? only\\b|\\bfans? for\\b|\\bfor (rtx|nvidia|geforce|gpu)\\b|compatible with|heatsink|backplate|water\\s?block|\\bshroud\\b|\\bbracket\\b|\\bcable\\b|\\briser\\b|nvlink|\\bbridge\\b|thermal pad|\\bbios chip\\b"
+  ],
+  "not_a_system": [
+   "\\bbare\\s?bones?\\b",
+   "motherboard only|power supply only|\\bpsu only\\b|chassis only|case only|heatsink only|front bezel|side panel|\\bfan only\\b",
+   "\\bfor (hp|dell|lenovo|z4|thinkstation|p520)\\b|\\b(L?R)?DIMM\\b|\\bPC4-\\d+|\\b(ram|memory) kit\\b|\\bkit \\(\\d"
+  ]
+ },
+ "flag_sets": {
+  "risky": [
+   "\\bmodded\\b|\\bmod(ified)? fans?\\b|\\brepaired\\b|\\breflow(ed)?\\b|\\bno backplate\\b|\\bbent\\b|\\bcracked\\b|\\bmissing\\b|\\bfan noise\\b|\\bcoil whine\\b"
+  ]
+ },
+ "products": {
+  "RTX 5060 Ti 16GB": {
+   "queries": {
+    "ebay": ["rtx 5060 ti 16gb"],
+    "amazon": ["rtx 5060 ti 16gb"],
+    "bestbuy": ["rtx 5060 ti 16gb"],
+    "pcsp": ["https://pcserverandparts.com/refurbished-graphics-cards/?_bc_fsnf=1&Graphics+Card+Memory=16GB"]
+   },
+   "min": 300, "max": 900, "max_price": 650, "deal_price": 450,
+   "require": ["\\b5060\\s?-?Ti\\b", "\\b16\\s?GB?\\b|\\b16G\\b"],
+   "reject": ["\\b8\\s?GB\\b"],
+   "reject_sets": ["not_a_card", "accessory"],
+   "flag": ["vanguard|gaming\\s?trio|aorus|16[- ]?pin|12v-?2x6|12vhpwr"],
+   "flag_sets": ["risky"],
+   "ebay": {"min_feedback": 50, "auction_details": 3},
+   "amazon": {"pages": 2},
+   "_deal_rule": "deal_price 450: with a 64GB workstation at ~420 the build stays near $1,000 with tax. The user wants a native 8-pin, dual-slot card (Zotac Twin Edge/AMP 220.5 mm, MSI Ventus/Shadow 2X 227 mm, Gigabyte Windforce 208 mm / Eagle 215 mm); 16-pin or large models are flagged, not hidden."
+  },
+  "Lenovo P520 (64GB+)": {
+   "queries": {
+    "ebay": ["lenovo thinkstation p520 64gb"],
+    "amazon": ["lenovo thinkstation p520 64gb"],
+    "pcsp": ["thinkstation p520"]
+   },
+   "min": 150, "max": 1000, "max_price": 700, "deal_price": 420,
+   "require": ["\\bP520\\b", "\\b(64|96|128|192|256|384|512|768|1024)\\s?GB\\b(?!\\s*(?:\\w+\\s+)?(?:SSD|HDD|NVMe|M\\.2|SATA|SAS|storage|hard|drive|disk|eMMC|flash|HD\\b))"],
+   "reject": ["\\bP520c\\b"],
+   "reject_sets": ["not_a_system"],
+   "allow_excluded": ["no (gpu|graphics|video card)"],
+   "prefer": ["\\b(900|1000)\\s?W\\b", "\\b1\\s?TB\\b.*\\b(nvme|m\\.2)\\b"],
+   "flag_sets": ["risky"],
+   "ebay": {"min_feedback": 50},
+   "amazon": {"pages": 2},
+   "configure": {"model": "\\bP520\\b(?!c)", "ram_gb_min": 64, "psu_min_w": 0},
+   "_deal_rule": "every P520 supply (690/900/1000W) has two 8-pin GPU cables and takes a 2nd card (Lenovo Power Configurator v1.6); the P520c (single GPU) is rejected"
+  },
+  "1TB NVMe SSD": {
+   "queries": {
+    "ebay": ["1tb nvme ssd"],
+    "amazon": ["1tb nvme m.2 ssd"]
+   },
+   "min": 35, "max": 150, "max_price": 120,
+   "require": ["\\b1\\s?TB\\b", "nvme|m\\.2"],
+   "reject": ["\\blaptop\\b|external|enclosure|adapter|\\bcase\\b|\\blot\\b|\\bpull(ed)?\\b|for parts|\\b2\\s?TB\\b|\\b512\\s?GB\\b|\\b256\\s?GB\\b"],
+   "conditions": ["New"],
+   "ebay": {"min_feedback": 100, "auctions": false},
+   "amazon": {"pages": 1},
+   "_rule": "the build's required 1TB NVMe drive when the workstation has none; no deal banner (no deal_price)"
+  },
+  "HP Z4 G4 (64GB+)": {
+   "queries": {
+    "ebay": ["hp z4 g4 64gb"],
+    "amazon": ["hp z4 g4 workstation 64gb"],
+    "pcsp": ["hp z4 g4"]
+   },
+   "min": 150, "max": 1000, "max_price": 650, "deal_price": 420,
+   "require": ["\\bZ4\\s?G4\\b", "\\b(64|96|128|192|256|384|512|768|1024)\\s?GB\\b(?!\\s*(?:\\w+\\s+)?(?:SSD|HDD|NVMe|M\\.2|SATA|SAS|storage|hard|drive|disk|eMMC|flash|HD\\b))"],
+   "reject_sets": ["not_a_system"],
+   "allow_excluded": ["no (gpu|graphics|video card)"],
+   "prefer": ["\\b1000\\s?W\\b", "\\b1\\s?TB\\b.*\\b(nvme|m\\.2)\\b"],
+   "flag": ["\\b465\\s?W\\b|\\b750\\s?W\\b"],
+   "flag_sets": ["risky"],
+   "ebay": {"min_feedback": 50},
+   "amazon": {"pages": 2},
+   "configure": {"model": "\\bZ4\\s?G4\\b", "ram_gb_min": 64, "psu_min_w": 1000},
+   "_deal_rule": "HP QuickSpecs: the 465W supply has no GPU cables; 750W = one card through a 6-to-8-pin adapter; 1000W = two cards (with HP's card-guide kit). Check the supply before buying."
+  }
+ }
+}

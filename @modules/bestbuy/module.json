@@ -1,0 +1,44 @@
+{
+  "name": "bestbuy",
+  "title": "Best Buy",
+  "description": "Best Buy US product search (read-only): result cards - price, sold out / available, Open-Box offers, rating. Never adds to cart or buys.",
+  "app_url": "https://www.bestbuy.com/?intl=nosplash",
+  "origins": [
+    "https://www.bestbuy.com"
+  ],
+  "requires_login": false,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "search": "bestbuy_search.py"
+  },
+  "settings": {
+    "_intl": "intl=nosplash skips Best Buy's country-choice splash (from the user's link, 2026-10-28)",
+    "search_via": "form",
+    "form_fallback_url": true,
+    "_form_fallback_url": "hidden tab / typing lost: open the same search by URL and record it",
+    "sales_tax_rate": 0.07,
+    "max_pages": 1,
+    "pause_seconds": [
+      4.0,
+      11.0
+    ],
+    "long_pause": {
+      "chance": 0.12,
+      "seconds": [
+        15,
+        40
+      ]
+    },
+    "type_ms_per_char": [
+      45,
+      140
+    ],
+    "read_bursts": [
+      4,
+      14
+    ],
+    "downloads_dir": "@downloads",
+    "_max_pages": "no pagination seen on GPU searches (2026-10-29)"
+  },
+  "updated": "2026-10-28"
+}

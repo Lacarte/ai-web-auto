@@ -1,0 +1,26 @@
+{
+  "about": "Inputs for economics.md. List prices read 2026-10-27; kept_share and video length are assumptions, shown as such.",
+  "budget_usd": 100,
+  "plans_usd": {
+    "ElevenLabs Creator": 22,
+    "ElevenLabs Pro": 99,
+    "Kling Pro": 32.56
+  },
+  "plan_sources": {
+    "ElevenLabs Creator": "elevenlabs.io/pricing, list price (first month $11 promo)",
+    "ElevenLabs Pro": "elevenlabs.io/pricing, list price",
+    "Kling Pro": "Kling blog (undated): $25.99 first month, renews $32.56; live plan page not readable - UNVERIFIED"
+  },
+  "music_generation_minutes": {
+    "ElevenLabs Creator": 62,
+    "ElevenLabs Pro": 304
+  },
+  "illustrative_rpm_usd": [0.5, 1, 2, 4],
+  "scenarios": [
+    {"name": "Conservative (current tools)", "music_plan": "ElevenLabs Creator", "paid_tools": ["ElevenLabs Creator", "Kling Pro"], "kept_share": 0.4, "video_minutes": 45, "note": "60% of generations rejected"},
+    {"name": "Base (current tools)", "music_plan": "ElevenLabs Creator", "paid_tools": ["ElevenLabs Creator", "Kling Pro"], "kept_share": 0.7, "video_minutes": 45, "note": "about the share the owner's first batch implies"},
+    {"name": "Optimistic (current tools)", "music_plan": "ElevenLabs Creator", "paid_tools": ["ElevenLabs Creator", "Kling Pro"], "kept_share": 0.9, "video_minutes": 45, "note": "almost every generation kept"},
+    {"name": "Music-first, conservative", "music_plan": "ElevenLabs Pro", "paid_tools": ["ElevenLabs Pro"], "kept_share": 0.4, "video_minutes": 45, "note": "Kling paused; the existing character loop is reused"},
+    {"name": "Music-first, base", "music_plan": "ElevenLabs Pro", "paid_tools": ["ElevenLabs Pro"], "kept_share": 0.7, "video_minutes": 45, "note": "Kling paused; the existing character loop is reused"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "niche": "AI music",
+  "en": {
+    "queries": ["ai music", "ai generated song", "suno ai song", "udio ai music", "ai music video", "ai song cover",
+                "made with suno ai", "ai generated music video"],
+    "hashtags": ["aimusic", "sunoai", "aisong", "aigeneratedmusic", "suno"],
+    "must_match": "\\bai\\b|\\ba\\.i\\.|suno|udio|artificial intelligence|ai[- ]generated|\\bgenerated\\b|riffusion|mubert|elevenlabs",
+    "topic_match": "music|song|cover|remix|beat|lyrics|track|album|rap|hip.?hop|rock|metal|jazz|soul|pop|edm|lofi|lo-fi|ballad|anthem|melod|sing|vocal|choir|duet|instrumental|soundtrack|ost\\b|♪|🎵|🎶|🎤|🎸|🎹",
+    "categories": ["Music"]
+  },
+  "es": {
+    "queries": ["música con ia", "canción hecha con ia", "canción con inteligencia artificial", "música generada por ia",
+                "suno ia canción", "cover con ia", "video musical con ia", "música ia"],
+    "hashtags": ["musicaia", "musicaconia", "cancionconia", "sunoia", "musicaconinteligenciaartificial"],
+    "must_match": "\\bia\\b|\\bai\\b|suno|udio|inteligencia artificial|generad[ao]|elevenlabs",
+    "topic_match": "m[uú]sica|canci[oó]n|cover|versi[oó]n|remix|letra|beat|rap|rock|metal|salsa|bachata|cumbia|reggaet[oó]n|bolero|rumba|flamenco|balada|soul|pop|tango|corrido|ranchera|merengue|himno|melod|cant|vocal|instrumental|♪|🎵|🎶|🎤|🎸|🎹",
+    "categories": ["Music"]
+  }
+}

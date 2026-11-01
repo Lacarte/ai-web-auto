@@ -1,0 +1,38 @@
+{
+  "name": "pcserverandparts",
+  "title": "PC Server and Parts (PCSP)",
+  "description": "pcserverandparts.com (refurbished workstations, GPUs, parts) - read-only listing reader for categories and searches. Never adds to cart or configures.",
+  "app_url": "https://pcserverandparts.com/",
+  "origins": [
+    "https://pcserverandparts.com"
+  ],
+  "requires_login": false,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "read": "pcsp_search.py"
+  },
+  "settings": {
+    "sales_tax_rate": 0.07,
+    "max_pages": 2,
+    "pause_seconds": [
+      4.0,
+      11.0
+    ],
+    "long_pause": {
+      "chance": 0.12,
+      "seconds": [
+        15,
+        40
+      ]
+    },
+    "downloads_dir": "@downloads",
+    "_note": "added 2026-10-29 at the user's request (their 16GB refurbished GPU link)",
+    "search_via": "form",
+    "form_fallback_url": true,
+    "type_ms_per_char": [
+      45,
+      140
+    ]
+  },
+  "updated": "2026-10-29"
+}

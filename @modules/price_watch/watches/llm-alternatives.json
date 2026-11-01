@@ -1,0 +1,204 @@
+{
+  "name": "llm-alternatives",
+  "description": "Alternatives for the local-LLM workstation (2026-10-29 report): RTX 16GB cards, other 64GB+ workstations than the P520, and a market view of what 24GB cards really cost. Budgets: 16GB up to $550 (assumed - the user gave none), workstations up to $650 like the P520, 24GB the user's $600. Searches reach above the budgets so the report shows the market.",
+  "interval_minutes": 10,
+  "tax_rate": 0.07,
+  "stores": [
+    "ebay",
+    "amazon",
+    "bestbuy",
+    "pcsp"
+  ],
+  "reject_sets": {
+    "not_a_card": [
+      "\\blaptop\\b|\\bnotebook\\b|\\bmobile\\b|gaming (pc|desktop|computer)|desktop (pc|computer)|\\bcomputer\\b|\\bcore\\s?i[3579]\\b|\\bryzen\\s?[3579]\\b|\\bssd\\b|\\b\\d+\\s?GB\\s+(ram|ddr\\d?)\\b|\\blot of\\b|\\bbundle\\b|mining rig"
+    ],
+    "accessory": [
+      "replacement|cooling fan|\\bfans? only\\b|\\bfans? for\\b|\\bfor (rtx|nvidia|geforce|gpu)\\b|compatible with|heatsink|backplate|water\\s?block|\\bshroud\\b|\\bbracket\\b|\\bcable\\b|\\briser\\b|nvlink|\\bbridge\\b|thermal pad|\\bbios chip\\b"
+    ],
+    "not_a_workstation": [
+      "\\blaptop\\b|\\bnotebook\\b|\\bmobile workstation\\b|\\bbare\\s?bones?\\b|motherboard only|power supply only|\\bpsu only\\b|chassis only|case only|heatsink only|front bezel|side panel|\\bfan only\\b|\\bfor (dell|hp|lenovo|precision|thinkstation|z4)\\b|\\b(L?R)?DIMM\\b|\\bPC4-\\d+|\\b(ram|memory) kit\\b",
+      "\\bmotherboard\\b|\\bfan duct\\b|\\bbaffle\\b|\\bcaddy\\b|\\bheatsink\\b|\\bbackplane\\b|\\bfront control panel\\b|\\bpower supply\\b(?!.*\\bxeon|.*threadripper)"
+    ]
+  },
+  "flag_sets": {
+    "risky": [
+      "\\bmodded\\b|\\bmod(ified)? fans?\\b|\\brepaired\\b|\\breflow(ed)?\\b|\\bno backplate\\b|\\bbent\\b|\\bcracked\\b|\\bmissing\\b|\\bfan noise\\b|\\bcoil whine\\b"
+    ]
+  },
+  "products": {
+    "RTX 16GB (up to $550)": {
+      "queries": {
+        "ebay": [
+          "rtx 4060 ti 16gb",
+          "rtx 5060 ti 16gb",
+          "rtx a4000 16gb",
+          "rtx 4070 ti super 16gb"
+        ],
+        "amazon": [
+          "rtx 4060 ti 16gb",
+          "rtx 5060 ti 16gb",
+          "rtx a4000 16gb"
+        ],
+        "bestbuy": [
+          "rtx 16gb"
+        ],
+        "pcsp": [
+          "https://pcserverandparts.com/refurbished-graphics-cards/?_bc_fsnf=1&Graphics+Card+Memory=16GB"
+        ]
+      },
+      "min": 250,
+      "max": 1000,
+      "max_price": 550,
+      "require": [
+        "\\b16\\s?GB\\b|\\b16G\\b",
+        "\\b(4060\\s?Ti|5060\\s?Ti|4070\\s?Ti\\s?Super|4080|5070\\s?Ti|5080|a4000|rtx\\s?4000|quadro\\s?p5000|p5000|quadro\\s?rtx\\s?5000|rtx\\s?5000|gp100)\\b"
+      ],
+      "reject": [
+        "\\b(8|12)\\s?GB\\b",
+        "\\bMPX\\b|\\bapple\\b|\\bmac pro\\b"
+      ],
+      "reject_sets": [
+        "not_a_card",
+        "accessory"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "ebay": {
+        "min_feedback": 25
+      },
+      "amazon": {
+        "pages": 1
+      }
+    },
+    "Alternative workstations (64GB+)": {
+      "queries": {
+        "ebay": [
+          "dell precision 5820 64gb",
+          "hp z4 g4 64gb",
+          "lenovo thinkstation p720 64gb",
+          "dell precision 7820 64gb"
+        ],
+        "amazon": [
+          "dell precision 5820 workstation 64gb",
+          "hp z4 g4 workstation 64gb",
+          "lenovo thinkstation p720 64gb"
+        ],
+        "bestbuy": [
+          "workstation desktop 64gb"
+        ]
+      },
+      "min": 250,
+      "max": 1200,
+      "max_price": 650,
+      "require": [
+        "\\b(precision\\s?(t?5820|t?7820|t?7920|t?5810|t?7810)|z4\\s?g4|z6\\s?g4|z8\\s?g4|p720|p920|p620|p520)\\b",
+        "\\b(64|96|128|192|256|384|512|768|1024)\\s?GB\\b(?!\\s*(?:\\w+\\s+)?(?:SSD|HDD|NVMe|M\\.2|SATA|SAS|storage|hard|drive|disk|eMMC|flash|HD\\b))"
+      ],
+      "reject_sets": [
+        "not_a_workstation"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "prefer": [
+        "\\b(950|1000|1125|1400)\\s?W\\b",
+        "\\bxeon\\s?w-2[12]\\d{2}\\b"
+      ],
+      "allow_excluded": [
+        "no (gpu|graphics|video card)"
+      ],
+      "ebay": {
+        "min_feedback": 50
+      },
+      "amazon": {
+        "pages": 1
+      },
+      "_ram_rule": "the user's rule (2026-10-29): always 64GB RAM or more; sizes followed by SSD/HDD/NVMe are storage"
+    },
+    "Lenovo ThinkStation P620": {
+      "queries": {
+        "ebay": [
+          "lenovo thinkstation p620 64gb",
+          "lenovo p620 threadripper pro 64gb"
+        ],
+        "amazon": [
+          "lenovo thinkstation p620 64gb"
+        ],
+        "pcsp": [
+          "thinkstation p620"
+        ]
+      },
+      "min": 300,
+      "max": 2500,
+      "max_price": 650,
+      "require": [
+        "\\bP620\\b",
+        "\\b(64|96|128|192|256|384|512|768|1024)\\s?GB\\b(?!\\s*(?:\\w+\\s+)?(?:SSD|HDD|NVMe|M\\.2|SATA|SAS|storage|hard|drive|disk|eMMC|flash|HD\\b))"
+      ],
+      "reject": [
+        "\\bP620c\\b"
+      ],
+      "reject_sets": [
+        "not_a_workstation"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "prefer": [
+        "\\b(3955|3975|3995|5955|5965|5975|5995)WX\\b"
+      ],
+      "allow_excluded": [
+        "no (gpu|graphics|video card)"
+      ],
+      "ebay": {
+        "min_feedback": 50
+      },
+      "amazon": {
+        "pages": 1
+      },
+      "_ram_rule": "the user's rule (2026-10-29): always 64GB RAM or more; sizes followed by SSD/HDD/NVMe are storage"
+    },
+    "RTX 24GB (market view)": {
+      "queries": {
+        "ebay": [
+          "rtx 3090 24gb",
+          "rtx a5000 24gb"
+        ],
+        "amazon": [
+          "rtx 3090 24gb",
+          "rtx 4090 24gb"
+        ],
+        "pcsp": [
+          "rtx 3090 24gb",
+          "rtx a5000"
+        ]
+      },
+      "min": 400,
+      "max": 2200,
+      "max_price": 600,
+      "require": [
+        "\\b24\\s?GB\\b|\\b24G\\b"
+      ],
+      "reject": [
+        "\\b(48|20|32)\\s?GB\\b",
+        "\\ba6000\\b|6000\\s?ada"
+      ],
+      "reject_sets": [
+        "not_a_card",
+        "accessory"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "ebay": {
+        "min_feedback": 50,
+        "auction_details": 4
+      },
+      "amazon": {
+        "pages": 1
+      }
+    }
+  }
+}

@@ -5,8 +5,12 @@
 const DEFAULT_TOKEN = 'local-dev-token';
 
 export class WebSocketClient {
-  constructor(url) {
-    this.url = url;
+  // urls: one URL or a list tried in turn; a connection that closes before auth moves to the next one
+  // (another program can hold the first port, e.g. a plain HTTP server on 8765)
+  constructor(urls) {
+    this.urls = Array.isArray(urls) ? urls : [urls];
+    this._urlIndex = 0;
+    this.url = this.urls[0];
     this._ws = null;
     this._authToken = DEFAULT_TOKEN;
     this._reconnectDelay = 1000;
@@ -71,8 +75,10 @@ export class WebSocketClient {
     this._ws.onopen = () => {
       console.log('[WS] Connected, authenticating...');
       this._reconnectDelay = 1000;
-      // capabilities: tab_id = commands can be pinned to one tab (see the command router)
-      this._sendRaw({ type: 'auth', token: this._authToken, capabilities: ['tab_id'] });
+      // capabilities: tab_id = commands can be pinned to one tab (see the command router);
+      // background_nav = navigate honours activate: false; close_tab = closes the bound tab; wheel = trusted mouse wheel;
+      // script_fallback = execute_script reads through chrome.scripting where the debugger is refused
+      this._sendRaw({ type: 'auth', token: this._authToken, capabilities: ['tab_id', 'background_nav', 'close_tab', 'wheel', 'script_fallback'] });
     };
 
     this._ws.onmessage = (event) => {
@@ -102,6 +108,10 @@ export class WebSocketClient {
       const wasConnected = this._connected;
       this._connected = false;
       this._stopPing();
+      if (!wasConnected && this.urls.length > 1) {
+        this._urlIndex = (this._urlIndex + 1) % this.urls.length;
+        this.url = this.urls[this._urlIndex];
+      }
       if (!this._intentionalClose) {
         if (wasConnected) {
           console.log('[WS] Disconnected, reconnecting...');

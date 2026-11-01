@@ -1,0 +1,35 @@
+{
+  "name": "black-samurai-prelaunch",
+  "about": "Pre-launch research for a new AI-assisted Japanese-inspired music channel (owner's Seamless-app assets + the samurai-zen competitor data). Run: viral_research.py prelaunch --niche black-samurai-prelaunch",
+  "sources": {
+    "samurai_zen_run": "@downloads/samurai-zen/runs/samurai-zen-20261025",
+    "validation": "@downloads/samurai-zen/validation-20261027",
+    "raw_files": {
+      "samurai_zen_run": ["discovery.json", "channels.json", "scored.json", "shortlist.json", "spot_check.json", "concepts.json", "analysis.json"],
+      "validation": ["tabs.json", "fresh_month.json", "searches.json", "velocity.json", "autocomplete.json", "audio_existing.json", "audio_samples.json"]
+    },
+    "tabs_fetched_at_field": "fetched_at"
+  },
+  "owner": {
+    "root": "D:\\@Workspace\\@Development\\@Projects\\Seamless-app",
+    "sounds": "INPUT/SOUNDS",
+    "originals": "INPUT/SOUNDS/_ORIGINALS",
+    "playlist": "INPUT/SOUNDS/Sue o en otro idioma I Dream in Another Language  (2017).en.m3u",
+    "images": "INPUT/IMAGES",
+    "videos": "INPUT/VIDEOS",
+    "quotes": "INPUT/TEXT/samurai_wisdom.json",
+    "fonts": "@assets/fonts",
+    "render_dir": "OUTPUT/20261026-145342_kling_20261022_VIDEO_Create_a_6_5195_0",
+    "renders": ["final_video.mp4", "final_video_light_quotes.mp4", "final_video_light_scroll.mp4"],
+    "render_reports": ["manifest.json", "analysis.json", "final_video_light_scroll.json"],
+    "ffmpeg": "D:\\@Workspace\\@Development\\@Projects\\Seamless-app\\bin\\ffmpeg.exe",
+    "ffprobe": "D:\\@Workspace\\@Development\\@Projects\\Seamless-app\\bin\\ffprobe.exe"
+  },
+  "sample": {
+    "channels_per_direction": 15,
+    "new_candidates_per_direction": 8,
+    "page_limit": 60,
+    "min_on_niche_uploads": 3,
+    "min_on_niche_share": 0.3
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "gpus",
+  "description": "GPUs for the local-LLM workstation. Alerts when a new Buy It Now listing under max_price appears, or a tracked one drops in price. Prices = item + shipping to 33101 (tax shown as an estimate).",
+  "interval_minutes": 10,
+  "tax_rate": 0.07,
+  "queries": {
+    "RTX 3060 12GB": {"query": "rtx 3060 12gb", "min": 150, "max": 450, "max_price": 330,
+                      "require": ["3060", "12\\s?GB|12G\\b"],
+                      "reject": ["3060\\s*Ti|\\bTi\\b", "laptop|mobile|desktop|gaming\\s+pc|computer|\\blot\\b"],
+                      "min_feedback": 25},
+    "RTX 5060 Ti 16GB": {"query": "rtx 5060 ti 16gb", "min": 300, "max": 1000, "max_price": 640,
+                         "require": ["5060\\s*Ti", "16\\s?GB|16G\\b"],
+                         "reject": ["\\b8\\s?GB\\b", "laptop|desktop|gaming\\s+pc|computer|\\blot\\b"],
+                         "min_feedback": 25},
+    "RTX 3090 24GB": {"query": "rtx 3090", "min": 400, "max": 2000, "max_price": 1250,
+                      "require": ["3090"],
+                      "reject": ["nvlink|bridge|laptop|desktop|gaming\\s+pc|computer|\\blot\\b|water\\s*block"],
+                      "min_feedback": 50},
+    "RTX A4000 16GB": {"query": "nvidia rtx a4000", "min": 250, "max": 1300, "max_price": 800,
+                       "require": ["A4000", "16\\s?GB"],
+                       "reject": ["\\bAda\\b|laptop|daughter|MXM|7760|thinkpad"],
+                       "min_feedback": 25}
+  }
+}

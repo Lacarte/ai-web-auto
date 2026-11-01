@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pages": {
+    "home": {
+      "url": "https://pcserverandparts.com/",
+      "purpose": "Entry page.",
+      "ready_when_any": [
+        "site_search"
+      ]
+    },
+    "category": {
+      "url_pattern": "https://pcserverandparts.com/<category>/?<facets>",
+      "purpose": "Category or search listing: refurbished-graphics-cards/?_bc_fsnf=1&Graphics+Card+Memory=16GB (the user's link), workstations/lenovo-workstations/lenovo-p520-thinkstation/, search.php?search_query=<words>.",
+      "ready_when_any": [
+        "listing"
+      ],
+      "notes": "lenovo-p620-thinkstation/ does not exist (404 'PCSP - Not Found', 2026-10-29): P620 listings come from search.php?search_query=thinkstation+p620. Shipping cost is not shown on listings."
+    }
+  }
+}

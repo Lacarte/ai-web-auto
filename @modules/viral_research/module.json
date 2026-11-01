@@ -1,0 +1,40 @@
+{
+  "name": "viral_research",
+  "title": "Viral research",
+  "description": "In a niche, find the videos that beat their own channel's normal, measure what they do differently from the same channels' ordinary videos, and turn it into a production brief. One submodule per platform (YouTube first). Free, local tools only.",
+  "app_url": "https://www.youtube.com/",
+  "origins": [
+    "https://www.youtube.com"
+  ],
+  "requires_login": false,
+  "driver": "yt-dlp (project venv, Node as JS runtime) + ffmpeg (Seamless-app\\bin) + faster-whisper (on-device's whisper venv); the AI Web-Auto platform is not needed for YouTube",
+  "entry_points": {
+    "run": "viral_research.py"
+  },
+  "settings": {
+    "ffmpeg_dir": "D:\\@Workspace\\@Development\\@Projects\\Seamless-app\\bin",
+    "whisper_python": "C:\\Users\\Admin\\.venvs\\whisper\\Scripts\\python.exe",
+    "whisper_model": "small",
+    "parallel_requests": 3,
+    "min_seconds_between_requests": 1.5,
+    "cookies_from_browser": null,
+    "cookies_file": null,
+    "outliers_per_bucket": 12,
+    "measure_per_bucket": 8,
+    "vision": {
+      "enabled": true,
+      "server": "D:\\@Workspace\\@Development\\@Projects\\on-device\\llama.cpp-b11606\\llama-server.exe",
+      "model": "C:\\AI\\models\\openbmb\\MiniCPM-V-4.7-1B\\MiniCPM-V-4_7-1B-Q4_K_M.gguf",
+      "mmproj": "C:\\AI\\models\\openbmb\\MiniCPM-V-4.7-1B\\mmproj-model-f16.gguf",
+      "port": 8098,
+      "threads": 4,
+      "max_minutes": 20
+    },
+    "long_form_seconds_measured": 90,
+    "max_age_days": 365,
+    "max_channel_tabs": 200,
+    "max_shorts_tabs": 80,
+    "max_shortlist_candidates": 60
+  },
+  "updated": "2026-10-25"
+}

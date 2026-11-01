@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "pages": {
+    "home": {
+      "url": "https://www.ebay.com/",
+      "purpose": "Entry page; preflight lands here when the eBay tab is elsewhere.",
+      "ready_when_any": [
+        "search_box"
+      ]
+    },
+    "search": {
+      "url": "https://www.ebay.com/sch/i.html",
+      "purpose": "Search results (query in URL params: _nkw, LH_BIN, LH_Sold, _udlo/_udhi, _stpos ZIP, _pgn page).",
+      "ready_when_any": [
+        "result_card",
+        "no_results"
+      ],
+      "notes": "Exact matches come first; after the 'Results matching fewer words' divider eBay fills the page with loosely related items - those are ignored."
+    },
+    "item": {
+      "url_pattern": "https://www.ebay.com/itm/{item_id}",
+      "purpose": "Listing page: price, condition, shipping to the ZIP, returns, seller card, item specifics, photos.",
+      "ready_when_any": [
+        "item_title"
+      ]
+    },
+    "description": {
+      "url_pattern": "https://itm.ebaydesc.com/itmdesc/{item_id}",
+      "purpose": "The seller's description, served in iframe#desc_ifr from another origin; opened directly to read it.",
+      "ready_when_any": [
+        "description_body"
+      ]
+    }
+  }
+}

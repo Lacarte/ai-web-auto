@@ -1,0 +1,280 @@
+{
+  "niche": "AI music",
+  "one_liner": "Take a melody people already love, move it into an unexpected genre and another decade, on a channel that only makes that sound.",
+  "formula_html": "Take <span class=\"slot a\">a melody people already love</span>, move it into <span class=\"slot b\">an unexpected genre</span> and <span class=\"slot c\">another decade</span>, on <span class=\"slot d\">a channel that only makes that sound</span>.",
+  "start_here": [
+    "Choose one sound for the channel and name it after that sound (Channel → name).",
+    "Set up the channel and the upload settings once (Channel).",
+    "Make idea #1 with the Spanish long-video recipe, then cut its chorus into a Short.",
+    "Run its two thumbnails through YouTube Studio's Test & Compare.",
+    "Fill the scorecard at day 7 and day 28; keep what lands in its band."
+  ],
+  "tracks": [
+    {
+      "key": "es-long", "label": "Spanish · long video", "short": "main bet", "status": "Patterns found · back-test not possible",
+      "status_kind": "untested",
+      "summary": "12 outliers vs 12 ordinary videos of the same channels. The older videos had no pattern to test, so treat this as strong evidence, not proof.",
+      "arrangement": {
+        "title": "Content formula — a genre-swap cover, about 4:30", "caption": "Coloured blocks: what to put where. Amber frame: where viewers rewind most.",
+        "length_s": 270, "replay_zone": [0.12, 0.25],
+        "blocks": [
+          {"label": "Intro", "note": "melody on the genre's instrument", "kind": "intro", "start": 0, "end": 25},
+          {"label": "Verse", "kind": "verse", "start": 25, "end": 55},
+          {"label": "Chorus", "note": "hook", "kind": "chorus", "start": 55, "end": 85},
+          {"label": "Verse", "kind": "verse", "start": 85, "end": 115},
+          {"label": "Chorus", "kind": "chorus", "start": 115, "end": 145},
+          {"label": "Solo", "note": "the new genre shows off", "kind": "solo", "start": 145, "end": 175},
+          {"label": "Last chorus", "note": "a step higher", "kind": "chorus", "start": 175, "end": 225},
+          {"label": "Outro", "kind": "outro", "start": 225, "end": 270}
+        ],
+        "markers": [
+          {"at": 25, "label": "Voice enters", "note": "measured 11–37 s in the covers"},
+          {"at": 175, "label": "Key change", "note": "practice, not measured"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "[Origen o compositor] – [Canción] | Cover IA [Género] [Época] [emoción]",
+         "example": "Tradicional mexicana – La Llorona | Cover IA Heavy Metal 80s dramático",
+         "do": ["Start with “Origin – Song”", "Name the new genre and the decade", "One emotion word: emotivo, dramático, épico", "12–14 words, about 75 characters"],
+         "dont": ["Name a real singer whose voice you imitate", "Leave out the genre — it is the promise"],
+         "evidence": [
+           {"label": "Starts “Artist – Song”", "slot": "es-long/title/starts_artist_dash_song"},
+           {"label": "An emotion word", "slot": "es-long/title/emotion_word"},
+           {"label": "Names a genre", "slot": "es-long/title/genre_word"},
+           {"label": "Title length (characters)", "slot": "es-long/title/chars"},
+           {"label": "The concept behind it", "concept": "genre-swap cover of a famous song"}]},
+        {"title": "Thumbnail", "what": "formula",
+         "template": "Photoreal performer styled in the NEW genre, face visible\nBig text: [CANCIÓN] / Versión [Género]\nSmall corner text: Generado con IA",
+         "example": "A rock singer in a white rebozo with an electric guitar, rain and candles — “LA LLORONA / Versión Heavy Metal”",
+         "do": ["Face visible, photoreal", "Text = song + genre, or no text when the era scene says it"],
+         "dont": ["Make the singer look like a real artist"],
+         "evidence": [
+           {"label": "A face", "measure": "es-long/thumb_face"},
+           {"label": "Photoreal", "measure": "es-long/thumb_photo"},
+           {"label": "Any text (less than the controls)", "measure": "es-long/thumb_text"}]},
+        {"title": "Sound & picture", "what": "formula",
+         "template": "Master around −16 LUFS, keep the dynamics\nOne cinematic scene or a slow push-in — cuts optional\n4–6 min for one song · 25–30 min for a mix",
+         "do": ["Let the instruments breathe", "One world, one palette"],
+         "dont": ["Over-compress to sound loud"],
+         "evidence": [
+           {"label": "Loudness (LUFS)", "measure": "es-long/lufs"},
+           {"label": "Length (seconds)", "measure": "es-long/duration_s"},
+           {"label": "Cuts per minute", "measure": "es-long/cuts_per_min"}]},
+        {"title": "Description", "what": "formula",
+         "template": "[Género] [época] con [instrumentos]: “[Canción]” reimaginada [emoción].\n\n[2–3 líneas: la historia de la canción y de esta versión]\n\n🎶 Arreglo y voz creados con IA · melodía tradicional / de dominio público.\n🔔 Suscríbete: [tu promesa, p. ej. un clásico en heavy metal cada viernes]\n\n#[género] #cover #coveria #[canción] #[época] #musicaconia #[emoción] #[canal]",
+         "example": "Heavy metal de los 80 con guitarras gemelas y doble bombo: “La Llorona” reimaginada con todo su drama.",
+         "do": ["First line = the style in plain words", "Say it is made with AI", "About 8 hashtags, at the end", "About 1,300 characters"],
+         "dont": ["Paste someone else's prompt or lyrics"],
+         "evidence": [
+           {"label": "First line describes the style", "slot": "es-long/description/first_line_is_style"},
+           {"label": "Hashtags", "slot": "es-long/description/hashtags"},
+           {"label": "Length (characters)", "slot": "es-long/description/chars"},
+           {"label": "Style described somewhere", "slot": "es-long/description/style_line"}]},
+        {"title": "Tags", "what": "formula",
+         "template": "[canción], [origen o compositor], [canción] [género], [género] cover, [género] [época], cover con ia, música con ia, [género] en español, [emoción], [nombre del canal]",
+         "example": "la llorona, canción tradicional mexicana, la llorona metal, heavy metal cover, heavy metal 80s, cover con ia, música con ia, metal en español, balada dramática, folclor de acero",
+         "do": ["About 10 tags", "Repeat the title's words"],
+         "evidence": [
+           {"label": "Number of tags", "slot": "es-long/tags/count"},
+           {"label": "Tags repeat title words", "slot": "es-long/tags/title_words_tag"},
+           {"label": "An AI tag", "slot": "es-long/tags/ai_tag"}]}
+      ]
+    },
+    {
+      "key": "en-long", "label": "English · long video", "short": "back-tested", "status": "Back-test holds", "status_kind": "holds",
+      "summary": "12 outliers vs 12 ordinary videos of the same channels. Patterns learned on older videos also picked better newer ones (median 2.14× vs 1.43×).",
+      "arrangement": {
+        "title": "Content formula — a song or a cover, about 4:00", "caption": "Music first; the chorus inside the most-replayed zone.",
+        "length_s": 240, "replay_zone": [0.13, 0.34],
+        "blocks": [
+          {"label": "Music", "note": "no talking", "kind": "intro", "start": 0, "end": 8},
+          {"label": "Verse", "kind": "verse", "start": 8, "end": 45},
+          {"label": "Chorus", "note": "hook", "kind": "chorus", "start": 45, "end": 80},
+          {"label": "Verse", "kind": "verse", "start": 80, "end": 110},
+          {"label": "Chorus", "kind": "chorus", "start": 110, "end": 145},
+          {"label": "Bridge / duet", "kind": "solo", "start": 145, "end": 175},
+          {"label": "Last chorus", "kind": "chorus", "start": 175, "end": 215},
+          {"label": "Outro", "kind": "outro", "start": 215, "end": 240}
+        ],
+        "markers": [
+          {"at": 8, "label": "First words", "note": "about 5–10 s in the outliers"},
+          {"at": 150, "label": "Slow picture", "note": "under 1 cut per minute"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "[Song] ([Decade] [Genre] Version) [AI Cover]\nfor an original: [SONG NAME] — [genre descriptor] (Official Music Video)",
+         "example": "Amazing Grace (1950s Soul Version) [AI Cover]",
+         "do": ["A bracket tag: (… Version), [AI Cover], (Official Music Video)", "About 11 words, 64 characters"],
+         "dont": ["Emoji in the title"],
+         "evidence": [
+           {"label": "A bracket tag", "slot": "en-long/title/brackets"},
+           {"label": "Says cover / version", "slot": "en-long/title/cover_word"},
+           {"label": "Emoji (avoid)", "slot": "en-long/title/emoji"},
+           {"label": "Title length (characters)", "slot": "en-long/title/chars"}]},
+        {"title": "Thumbnail", "what": "formula",
+         "template": "Face + the song name in big letters (table stakes)\nThe era or world in one image: a vintage stage, a longship, a swamp at night",
+         "example": "A crooner at a vintage microphone with a small band in warm stage light — “AMAZING GRACE · 1958”",
+         "do": ["One unmistakable era or world"],
+         "evidence": [
+           {"label": "Text on it", "measure": "en-long/thumb_text"},
+           {"label": "A face", "measure": "en-long/thumb_face"}]},
+        {"title": "Sound & picture", "what": "formula",
+         "template": "Master around −14 LUFS\nUnder 1 cut per minute: one world, slow motion\n3–5 min",
+         "evidence": [
+           {"label": "Talks in the first 3 s (avoid)", "measure": "en-long/speaks_in_first_3s"},
+           {"label": "Words in the first 15 s", "measure": "en-long/words_first_15s"},
+           {"label": "Loudness (LUFS)", "measure": "en-long/lufs"},
+           {"label": "Cuts per minute", "measure": "en-long/cuts_per_min"}]},
+        {"title": "Description", "what": "formula",
+         "template": "[One line of story: who sings, what happened]\n[Style line: genre, decade, instruments, voices]\nMade with AI ([what]) · the melody is traditional / public domain.\n\n#[genre] #[decade] #aicover  ← the first 3 hashtags show above the title\n[more hashtags inside the text, not only at the end]",
+         "example": "She sang it every Sunday until the war took the radio. A 1950s soul ballad with upright bass, brushed drums and a tenor sax.",
+         "do": ["Open with a story line", "About 7–8 hashtags, not all at the end"],
+         "evidence": [
+           {"label": "First line tells a story", "slot": "en-long/description/first_line_is_story"},
+           {"label": "Hashtags", "slot": "en-long/description/hashtags"},
+           {"label": "Hashtags only at the end (avoid)", "slot": "en-long/description/hashtags_last"}]},
+        {"title": "Tags", "what": "formula",
+         "template": "[song], [song] [decade] version, [decade] [genre], [genre] ai cover, ai cover, [channel name]",
+         "example": "amazing grace, amazing grace 1950s version, 1950s soul, soul ai cover, ai cover, soul hymnal 1958",
+         "evidence": [
+           {"label": "Number of tags", "slot": "en-long/tags/count"},
+           {"label": "An AI tag", "slot": "en-long/tags/ai_tag"}]}
+      ]
+    },
+    {
+      "key": "shorts", "label": "Shorts", "short": "trailers", "status": "Observations only", "status_kind": "observation",
+      "summary": "Few Shorts outliers (6 Spanish, 3 English) and their patterns failed the back-test: use Shorts as trailers of the long versions and test.",
+      "arrangement": {
+        "title": "Content formula — a 45-second trailer", "caption": "Sing at once, change the picture by 2 s, end where you began.",
+        "length_s": 45, "replay_zone": [0.94, 1.0],
+        "blocks": [
+          {"label": "Hook", "note": "sung at 0:00", "kind": "hook", "start": 0, "end": 4},
+          {"label": "Chorus", "note": "lyric captions", "kind": "chorus", "start": 4, "end": 26},
+          {"label": "Lift", "kind": "verse", "start": 26, "end": 38},
+          {"label": "Loop", "note": "ends on frame 1", "kind": "outro", "start": 38, "end": 45}
+        ],
+        "markers": [
+          {"at": 2, "label": "First picture change", "note": "median 2.3 s (Spanish outliers)"},
+          {"at": 38, "label": "Back to the start", "note": "visual poems peak at 99%"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "[A short poetic line] — or — [Song], [the twist]",
+         "example": "La Llorona, en 4 géneros · Amazing Grace, but it's 1958",
+         "do": ["About 30 characters", "Hashtags in the description, not the title"],
+         "evidence": [
+           {"label": "Title length, Spanish", "slot": "es-shorts/title/chars"},
+           {"label": "Title length, English", "slot": "en-shorts/title/chars"}]},
+        {"title": "Edit", "what": "formula",
+         "template": "0:00 sing the hook — no intro\n0:02 first picture change, then every ~7 s\nLyric captions, the sung word highlighted\nEnd on the first frame so it loops · 15–60 s, vertical",
+         "evidence": [
+           {"label": "First picture change (s), Spanish", "measure": "es-shorts/first_cut_at"},
+           {"label": "Cuts per minute, Spanish", "measure": "es-shorts/cuts_per_min"},
+           {"label": "Voice in the first 3 s, English", "measure": "en-shorts/speaks_in_first_3s"}]},
+        {"title": "Description & tags", "what": "formula",
+         "template": "Spanish: [2–3 lines — the story or a lyric line] + #musicaconia #[género] #[canción] #shorts\nEnglish: hashtags only, about 15\nTags: about 10 (song, genre, decade, ai cover, channel)",
+         "evidence": [
+           {"label": "Description length, Spanish", "slot": "es-shorts/description/chars"},
+           {"label": "Hashtags, English", "slot": "en-shorts/description/hashtags"},
+           {"label": "Number of tags, Spanish", "slot": "es-shorts/tags/count"}]},
+        {"title": "Link it to the long version", "what": "practice",
+         "template": "Related video → the long version of the same song\nPinned comment: “Versión completa en el canal” / “Full version on the channel”",
+         "evidence": [{"kind": "practice", "label": "Why", "text": "the long format is where the evidence is"}]}
+      ]
+    }
+  ],
+  "channel": [
+    {"title": "Channel name", "what": "formula",
+     "template": "[the sound] + [a craft, place or era word] — 2–3 words, in your audience's language",
+     "example": "Folclor de Acero · Leyendas en Metal · Bolero Soul 1955 · Soul Hymnal 1958 · Doo-Wop Folklore · Vinyl Sermon — all six @handles were free on 2026-10-25",
+     "do": ["Put the sound in the name", "One channel = one sound", "Check youtube.com/@YourName is free"],
+     "dont": ["Real artist names or trademarks", "“AI” in the name — say it in the description instead"],
+     "evidence": [
+       {"label": "Sound in the name", "channels": "sound_in_name"},
+       {"label": "One sound per channel", "channels": "one_sound"}]},
+    {"title": "Handle & About", "what": "formula",
+     "template": "@[NameWithoutSpaces] (20 characters or fewer)\n\nAbout:\n[What, in one line: “Canciones tradicionales en heavy metal de los 80.”]\n[When: “Un clásico nuevo cada viernes.”]\n[How: “Arreglos y voces creados con IA; melodías tradicionales o de dominio público.”]",
+     "evidence": [{"kind": "practice", "label": "Not measured", "text": "About pages are not in the data"}]},
+    {"title": "Series & playlists", "what": "formula",
+     "template": "One repeated signature on every title: “| Cover IA Heavy Metal emotivo”, “(Flamenco 2026)”\nOne playlist per series · end screen → the next song of the series",
+     "evidence": [
+       {"label": "Consistency of the winners", "channels": "one_sound"},
+       {"kind": "observation", "label": "Signatures", "text": "see “repeated signature” in the channel table below"}]},
+    {"title": "Upload rhythm", "what": "formula",
+     "template": "1–2 long videos a week, on fixed days\n+ a Short trailer for each long video",
+     "evidence": [
+       {"label": "Winning channels' rhythm", "channels": "rhythm"},
+       {"label": "Small channels break out too", "channels": "small"}]},
+    {"title": "Pinned comment", "what": "formula",
+     "template": "Pin your own first comment: where to go next —\nthe next song of the series, another version of this song, or the playlist",
+     "example": "“¿Te gusta el soul? Escucha La Paloma en Bolero Soul 1955 → [link]”",
+     "evidence": [{"kind": "observation", "label": "On the outliers", "text": "7 of the 25 outliers whose comments were read had the creator's comment on top (sequel, other version, community)"}]},
+    {"title": "Upload settings (every video)", "what": "checklist",
+     "template": "Category: Music\nVideo & title language: Spanish / English\nComments: on\nAudience: not made for kids\nAltered or synthetic content: yes, when it looks or sounds real\nSubtitles: upload the lyrics (Shorts: burn them in)\nVisibility: public, at your fixed day and hour",
+     "dont": ["Turn comments off", "Mark it “made for kids” (it turns comments off)"],
+     "evidence": [
+       {"label": "Comments on, Spanish long", "slot": "es-long/settings/comments_on"},
+       {"label": "Comments on, English long", "slot": "en-long/settings/comments_on"},
+       {"label": "Own subtitles uploaded, Spanish long", "slot": "es-long/settings/creator_subtitles"},
+       {"kind": "policy", "label": "Disclosure, audience, category", "text": "not visible in the data — YouTube policy and good practice; the category made no measurable difference"}]}
+  ],
+  "ideas_lead": "Score = evidence × demand × gap (each 1 to 3, from the concept table) − cost. Predicted band = the result to expect against your own channel's median. Every melody is traditional, public domain, or yours.",
+  "ideas": [
+    {"n": 1, "ranking": "es-long", "concept": "genre swap", "title": "Tradicional mexicana – La Llorona | Cover IA Heavy Metal 80s dramático", "e": 3, "d": 3, "g": 3, "lever": "genre + decade", "thumbnail": "rock singer in a white rebozo, electric guitar, candles + “LA LLORONA / Versión Heavy Metal”", "hook": "the Llorona melody as a distorted riff, no voice"},
+    {"n": 2, "ranking": "en-long", "concept": "era swap", "title": "Amazing Grace (1950s Soul Version) [AI Cover]", "e": 3, "d": 3, "g": 3, "lever": "decade", "thumbnail": "a crooner at a vintage microphone, small band, warm stage light", "hook": "upright bass and brushed snare, a sax plays the melody"},
+    {"n": 3, "ranking": "es-long", "concept": "era swap", "title": "Iradier – La Paloma | Cover IA Bolero Soul 1955 emotivo", "e": 3, "d": 3, "g": 3, "lever": "decade", "thumbnail": "a 1955 ballroom, singer at a chrome microphone", "hook": "a soft organ and a sax on the melody"},
+    {"n": 4, "ranking": "en-long", "concept": "genre swap", "title": "In the Hall of the Mountain King (Viking War Metal Version) [AI]", "e": 3, "d": 3, "g": 3, "lever": "genre + world", "thumbnail": "a warrior in snow and firelight + the song name", "hook": "war drums, the creeping melody on low strings"},
+    {"n": 5, "ranking": "es-long", "concept": "genre swap", "title": "Bizet – Habanera de Carmen | Cover IA Rumba Flamenca bajo la lluvia", "e": 3, "d": 3, "g": 3, "lever": "genre + one-world visuals", "thumbnail": "one performer in your own colour signature, rain", "hook": "rasgueado guitar and palmas state the melody"},
+    {"n": 6, "ranking": "en-long", "concept": "era swap", "title": "Wellerman (1960s Doo-Wop Version) [AI Cover]", "e": 3, "d": 3, "g": 3, "lever": "decade", "thumbnail": "a 1960s vocal group under a streetlamp", "hook": "a bass voice “doom-doom”, finger snaps"},
+    {"n": 7, "ranking": "es-long", "concept": "era swap", "title": "Tradicional – Las Mañanitas | Cover IA Soul de los 50 para un cumpleaños", "e": 3, "d": 3, "g": 3, "lever": "decade + dedication", "thumbnail": "a birthday cake on a 1950s stage", "hook": "a crooner hums the first line over brushed drums"},
+    {"n": 8, "ranking": "en-long", "concept": "genre swap", "title": "House of the Rising Sun (Swamp Outlaw Country Version) [AI Cover]", "e": 3, "d": 3, "g": 3, "lever": "genre + world", "thumbnail": "a lantern-lit bayou porch + the song name", "hook": "a slide guitar and a stomp box — your own arrangement"},
+    {"n": 9, "ranking": "es-long", "concept": "genre swap", "title": "Beethoven – Para Elisa | Cover IA Bachata romántica", "e": 3, "d": 3, "g": 3, "lever": "genre + what-if", "thumbnail": "a bachata guitarist in a Santo Domingo street, piano keys in the corner", "hook": "the famous five notes on a bachata requinto"},
+    {"n": 10, "ranking": "es-long", "concept": "era swap", "title": "Tradicional – De Colores | Cover IA Soul Gospel de los 60", "e": 3, "d": 3, "g": 3, "lever": "decade + faith", "thumbnail": "a gospel choir in 1960s robes, coloured light", "hook": "a Hammond organ swell and handclaps"},
+    {"n": 11, "ranking": "es-shorts", "concept": "genre swap", "title": "La Llorona, en 4 géneros", "e": 3, "d": 3, "g": 3, "lever": "a genre switch every 10 s (trailer of #1)", "hook": "metal riff at 0:00, then bolero, rumba, reggaetón"},
+    {"n": 12, "ranking": "en-shorts", "concept": "genre swap", "title": "Amazing Grace, in 5 genres", "e": 3, "d": 3, "g": 3, "lever": "a genre switch every 10 s (trailer of #2)", "hook": "the first line sung as metal, then soul, reggae, bachata, choir"},
+    {"n": 13, "ranking": "es-shorts", "concept": "genre swap", "title": "Habanera, en rumba", "e": 3, "d": 3, "g": 3, "lever": "trailer of #5", "hook": "the chorus with palmas at 0:00"},
+    {"n": 14, "ranking": "en-shorts", "concept": "era swap", "title": "Amazing Grace, but it's 1958", "e": 3, "d": 3, "g": 3, "lever": "trailer of #2", "hook": "the crooner's first line at 0:00"},
+    {"n": 15, "ranking": "en-long", "concept": "era swap", "title": "Danny Boy in 10 Decades — 1920s Jazz to 2020s Drill (AI)", "e": 3, "d": 3, "g": 3, "cost": 1, "lever": "decade journey", "thumbnail": "a ten-year timeline of microphones", "hook": "a scratchy 1920s gramophone intro"},
+    {"n": 16, "ranking": "en-long", "concept": "legend what-if", "title": "Lacrimosa (90s R&B Slow Jam Version) — What If Mozart…? [AI]", "e": 2, "d": 3, "g": 2, "lever": "what-if + genre", "thumbnail": "a powdered-wig composer in a 90s studio", "hook": "a 90s drum machine under the Lacrimosa line"},
+    {"n": 17, "ranking": "en-long", "concept": "grief ballad", "title": "The Water Is Wide (Live Piano Ballad) — The Last Song Before the Ship Left", "e": 2, "d": 2, "g": 3, "lever": "story subtitle", "thumbnail": "a singer at a piano by a harbour window", "hook": "a single piano note and a breath"},
+    {"n": 18, "ranking": "es-long", "concept": "grief ballad", "title": "Te Busco en la Lluvia — Balada en vivo, piano y voz (canción original, IA)", "e": 2, "d": 2, "g": 3, "lever": "story subtitle, your own song", "thumbnail": "a singer on a rainy stage, one spotlight", "hook": "rain and a piano chord"},
+    {"n": 19, "ranking": "es-long", "concept": "language swap", "title": "Xochitl — Canción original en náhuatl (IA)", "e": 2, "d": 2, "g": 3, "lever": "language and culture", "thumbnail": "flowers and an Aztec codex style, the title in náhuatl", "hook": "a huehuetl drum and a flute"},
+    {"n": 20, "ranking": "es-shorts", "concept": "language swap", "title": "¿La Bamba en náhuatl?", "e": 2, "d": 2, "g": 3, "lever": "language + a question", "hook": "the first line sung in náhuatl at 0:00"},
+    {"n": 21, "ranking": "es-long", "concept": "debate", "title": "Subí 30 canciones con IA en 30 días: mis números reales", "e": 2, "d": 3, "g": 2, "cost": 1, "lever": "your own data (after the test)", "thumbnail": "your face + a YouTube Studio graph", "hook": "the best number on screen at 0:00"},
+    {"n": 22, "ranking": "en-long", "concept": "debate", "title": "Real Singer or AI? 50 Listeners, One Blind Test", "e": 2, "d": 3, "g": 2, "cost": 1, "lever": "contrast", "thumbnail": "two microphones, one glowing", "hook": "two voices sing the same line"},
+    {"n": 23, "ranking": "en-long", "concept": "epic world", "title": "THE DROWNED CHOIR — Saltwater Saints Ep. 1 (Official Music Video)", "e": 2, "d": 2, "g": 2, "cost": 1, "lever": "world + series + duet", "thumbnail": "a choir under water, lanterns", "hook": "waves, then a low choir"},
+    {"n": 24, "ranking": "es-long", "concept": "long mix", "title": "Bachata de los 90 – 8 canciones nuevas para despecharse (Mix IA, 35 min)", "e": 2, "d": 2, "g": 2, "cost": 1, "lever": "decade + heartbreak", "thumbnail": "a 90s jukebox and a broken heart", "hook": "the best chorus of the mix first"},
+    {"n": 25, "ranking": "en-long", "concept": "long mix", "title": "Euro Disco 1984 — One Hour of New Retro Love Songs (AI)", "e": 2, "d": 2, "g": 2, "cost": 1, "lever": "decade", "thumbnail": "a neon dance floor, 1984", "hook": "a synth arpeggio and a four-on-the-floor kick"},
+    {"n": 26, "ranking": "es-shorts", "concept": "visual poem", "title": "Vidrio negro.", "e": 2, "d": 1, "g": 2, "lever": "lyric captions", "hook": "the lyric's first line sung over a fantasy portrait"},
+    {"n": 27, "ranking": "en-shorts", "concept": "visual poem", "title": "Glass Saints — a visual poem", "e": 2, "d": 1, "g": 2, "cost": 1, "lever": "your own art style + a loop", "hook": "a sung line at 0:00 over a slow painting"},
+    {"n": 28, "ranking": "en-shorts", "concept": "faith", "bet": true, "title": "Be Thou My Vision, as a Celtic war chant", "e": 1, "d": 2, "g": 3, "lever": "genre + faith", "hook": "bodhrán and a war cry, then the hymn"},
+    {"n": 29, "ranking": "en-shorts", "concept": "name song", "bet": true, "title": "A song for everyone named Olivia", "e": 1, "d": 1, "g": 3, "lever": "comment loop (“do my name”)", "hook": "“Olivia…” sung at 0:00"},
+    {"n": 30, "ranking": "es-shorts", "concept": "humour", "bet": true, "title": "Le pedí a la IA una canción para mi suegra", "e": 1, "d": 2, "g": 1, "lever": "humour", "hook": "the funniest line first"}
+  ],
+  "avoid_concepts": ["how I made it / tutorial"],
+  "gallery_notes": {
+    "BQfTszTlPGk": "An AI-tool company's promo, not AI music — not used.",
+    "pIokUU2Y4tc": "A creator's award clip, not music — not used.",
+    "55rkr_niUlQ": "A talk about monetising AI music (debate concept)."
+  },
+  "confidence": [
+    "English long videos: the patterns held in the back-test (median 2.14× vs 1.43× on newer videos).",
+    "Spanish long videos: strong patterns, but the older half had none to test against.",
+    "Shorts: few outliers, and the patterns failed the back-test — observations only.",
+    "Every view count re-checked on YouTube's watch pages matched (12 of 12).",
+    "Known flaw, fixed for the next run: this run's controls were not checked for the niche, so “the title names the AI” is not a finding.",
+    "Concept outlier rates look high because search results lean to videos that already did well — compare the lift.",
+    "Vision labels: thumbnails 72/72 (spot-checked); opening frames only 3/50 (shared CPU) — the frames were reviewed by eye."
+  ],
+  "risks": [
+    "Covers of copyrighted songs get Content ID claims: the money goes to the rights holder. Use traditional / public-domain melodies (old melody and words, not a modern arrangement) or your own songs.",
+    "Imitating a real singer's voice or face breaks YouTube's rules and, in places, the law.",
+    "YouTube asks you to disclose realistic AI content, and it does not monetise mass-produced, repetitive (“inauthentic”) content — vary the songs and make real choices in each one.",
+    "Free tiers of hosted AI music tools are usually non-commercial — check the terms before monetising.",
+    "Tutorials and AI-music news are crowded and fading: only 2 of 21 new tutorials beat their channel's normal."
+  ],
+  "scorecard_text": "For each published video, write its link and its views at 7 and 28 days, then divide by your channel's median (new channel: the median of your first 5 uploads). Keep what lands in or above its predicted band; drop what lands below twice."
+}

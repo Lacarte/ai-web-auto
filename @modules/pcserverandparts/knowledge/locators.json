@@ -1,0 +1,56 @@
+{
+ "version": 1,
+ "_about": "Learned live on pcserverandparts.com (BigCommerce, 'PCSP') on 2026-10-29: scratch/pcsp/probe_category.py, probe_rows.py. Every listing row/card carries data-entity-id (product id) and data-sku.",
+ "locators": {
+  "listing": {
+   "page": "category",
+   "css": "article.card[data-entity-id], .pcspRdy__row[data-entity-id], .pcspByoL__row[data-entity-id]",
+   "description": "One listing. Three layouts: product card (article.card: 'Was: $461.99 | $193.02 | 10 in stock | Add to cart'), ready-system row (.pcspRdy__row: specs | price | stock | Add to cart), build-your-own row (.pcspByoL__row / card with 'FROM $X | Custom build | Configure' = a base price, not a complete system).",
+   "verified": "2026-10-29"
+  },
+  "listing_title": {
+   "within": "listing",
+   "css": ".card-title, .pcspRdy__name, h3, h4",
+   "state": "transient",
+   "description": "Title on product cards; ready/BYO rows have no title element - their text is the title.",
+   "verified": "2026-10-29"
+  },
+  "listing_link": {
+   "within": "listing",
+   "css": "a[href]",
+   "description": "Product page link (rows are themselves <a href> for BYO).",
+   "verified": "2026-10-29"
+  },
+  "add_to_cart": {
+   "within": "listing",
+   "css": "a[href*=\"cart.php?action=add\"], a.card-button--add-to-cart, button",
+   "state": "transient",
+   "description": "'Add to cart' - presence = buyable as listed. READ ONLY - NEVER clicked.",
+   "verified": "2026-10-29"
+  },
+  "next_page": {
+   "page": "category",
+   "css": ".pagination-item--next a, a[rel=\"next\"]",
+   "state": "transient",
+   "description": "Next page link (none on the pages probed)."
+  },
+  "site_search": {
+   "page": "home",
+   "css": "#search_query_adv",
+   "role": "textbox",
+   "name": "Search Keyword:",
+   "description": "Header search field (BigCommerce). Ready signal of every page; searches go by URL (search.php?search_query=).",
+   "verified": "2026-10-29",
+   "xpath": "//input[@id='search_query_adv']"
+  },
+  "search_submit": {
+   "page": "home",
+   "css": "button[aria-label=\"Search\"]",
+   "role": "button",
+   "name": "Search",
+   "description": "Header search button next to #search_query_adv. Clicked with a trusted CDP click after typing (the user asked to type the searches, 2026-10-29).",
+   "notes": "seen in preflight's page snapshot 2026-10-29 (discovered/home-20261029-005600.json); confirm live",
+   "verified": "2026-10-29"
+  }
+ }
+}

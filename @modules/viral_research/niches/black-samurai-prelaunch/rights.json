@@ -1,0 +1,106 @@
+{
+  "about": "Facts behind rights_matrix.csv. analysis/prelaunch.rights_status() turns them into a status: blocked_reasons > missing evidence (terms_verified / plan_known / provenance_complete) > clarify > conditions. Terms read 2026-10-27; see evidence_ledger.csv for URLs and dates.",
+  "groups": {
+    "sounds": {
+      "provider": "ElevenLabs Music (owner reports Creator plan)",
+      "intended_use": "soundtrack of monetized long-form YouTube videos",
+      "terms_verified": true,
+      "plan_known": false,
+      "provenance_complete": false,
+      "evidence": "Music Terms (updated 2026-10-09) Exhibit A: Starter and above permit online commercial use except film/TV/radio/studio games; Free is personal use and cannot download - files exist, so a paid plan at download is likely (INFERRED). Owner says Creator; no invoice or generation history seen.",
+      "missing_provenance": "ElevenLabs generation IDs, prompts, settings, plan on 2026-10-23 and 2026-10-26; the _ORIGINALS carry an ffmpeg encoder tag (Lavf63), so they may be re-encoded rather than the untouched downloads",
+      "clarify": ["Content ID / distributor registration of Creator-plan output (Terms silent; output may not be unique - ToS s10)", "no IP warranty or indemnity on self-serve plans (ToS s10-11) - accept the risk knowingly"],
+      "conditions": ["turn on YouTube's altered/synthetic disclosure (AI music is the main focus)", "no music library, free-for-streamers offer, downloads or sample packs (Music Terms s4.2)", "do not remove ElevenLabs provenance signals (Use Policy s10)"]
+    },
+    "originals": {
+      "provider": "ElevenLabs Music (owner reports Creator plan)",
+      "intended_use": "archive of the generated originals (not published)",
+      "terms_verified": true,
+      "plan_known": false,
+      "provenance_complete": false,
+      "evidence": "Same as the published tracks; kept as the reference for any dispute.",
+      "missing_provenance": "generation IDs and dates from the ElevenLabs history page; proof these are the untouched downloads"
+    },
+    "images": {
+      "provider": "ChatGPT image generation (OpenAI), edited in Photoshop",
+      "intended_use": "video frame, overlay and thumbnail art",
+      "terms_verified": true,
+      "plan_known": true,
+      "provenance_complete": false,
+      "evidence": "OpenAI Terms of Use (effective 2026-01-01): 'you ... own the Output', rights assigned 'if any'; output 'may not be unique'; Service Terms s6: no likeness of a real person without consent - the character is fictional.",
+      "missing_provenance": "prompts, generation dates and the original PNGs as downloaded (Content Credentials are lost through edits and screenshots)",
+      "conditions": ["keep the character fictional - do not present him as Yasuke or any real person", "do not claim the art is hand-made"]
+    },
+    "videos": {
+      "provider": "Kling AI (owner reports Pro membership)",
+      "intended_use": "the 6-second breathing loop repeated through each video",
+      "terms_verified": true,
+      "plan_known": false,
+      "provenance_complete": false,
+      "evidence": "Kling paid-service terms (effective 2026-10-10) s3.1.2: members' commercial use of Output 'is not restricted' during the membership; ToS (2026-04-21) s4.6: otherwise commercial use needs written permission; free-tier output must carry Kling branding.",
+      "missing_provenance": "membership start date vs the clip's creation (2026-10-22), prompt, source image, credits used",
+      "clarify": ["whether commercial rights in clips made during the Pro membership survive cancellation ('during the Validity Period of your Membership')"]
+    },
+    "fonts": {
+      "provider": "Google Fonts families under the SIL Open Font License (licence files present)",
+      "intended_use": "quote typography rendered into the video",
+      "terms_verified": true,
+      "plan_known": true,
+      "provenance_complete": true,
+      "evidence": "OFL text present next to every font file; the OFL allows use in any document or video, including commercial.",
+      "conditions": ["do not sell or redistribute the font files themselves"]
+    },
+    "quotes": {
+      "provider": "Gemini suggestions",
+      "intended_use": "on-screen quotes in the video",
+      "blocked_reasons": ["the file as-is presents 9 modern authors' lines and 3 known misattributions as 'samurai wisdom' - see the per-quote rows"],
+      "evidence": "70 quotes traced 2026-10-27 (quote provenance check)."
+    },
+    "renders": {
+      "provider": "Seamless-app render of the assets above",
+      "intended_use": "the finished video",
+      "terms_verified": true,
+      "plan_known": false,
+      "provenance_complete": false,
+      "evidence": "A render inherits the strictest status of what it contains.",
+      "missing_provenance": "inherits the music and Kling provenance gaps"
+    }
+  },
+  "overrides": {
+    "\\.m3u(\\.bak|\\.url)?$": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "clarify": [], "conditions": ["local playlist only - not published; its file name is a 2017 film title, so don't reuse that name publicly"], "intended_use": "track order for the render", "provider": "owner"},
+    "OFL-.*\\.txt$": {"conditions": ["keep with the fonts"], "intended_use": "licence record"},
+    "vlcsnap-": {"provider": "screenshot of the owner's Kling video", "clarify": ["inherits the Kling question (clip rights after cancellation)"], "missing_provenance": "which clip and frame; inherits the Kling gaps", "plan_known": false},
+    "roller\\.(png|psd)$": {"provider": "parchment scroll art (owner reports ChatGPT)", "missing_provenance": "how the scroll was made (prompt/date) - not recorded"},
+    "final_video_light_(quotes|scroll)\\.mp4$": {"blocked_reasons": ["burns in the quote set, which contains blocked quotes (modern authors and misattributions presented as samurai wisdom)"]},
+    "(manifest|analysis|final_video_light_scroll)\\.json$": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "clarify": [], "conditions": ["internal render report - not published"], "intended_use": "render evidence", "provider": "Seamless-app"}
+  },
+  "quotes": {
+    "classes": {
+      "AUTHENTIC-SAMURAI": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "conditions": ["credit as a paraphrase of the named work (Musashi / Hagakure)", "native-speaker check of the Japanese"], "intended_use": "on-screen quote"},
+      "PROVERB": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "conditions": ["label 'Japanese proverb'"], "intended_use": "on-screen quote"},
+      "OTHER-SOURCE-OLD": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "conditions": ["credit the real (non-samurai) source or drop it", "never under a 'samurai wisdom' banner"], "intended_use": "on-screen quote"},
+      "OTHER-SOURCE-MODERN": {"blocked_reasons": ["a modern author's line presented as samurai wisdom (misattribution; may be protected)"], "intended_use": "on-screen quote"},
+      "MISATTRIBUTION-RISK": {"blocked_reasons": ["a widely circulated misattribution - rewrite or replace with a real proverb"], "intended_use": "on-screen quote"},
+      "ORIGINAL/GENERIC": {"terms_verified": true, "plan_known": true, "provenance_complete": true, "conditions": ["present as original reflections, not as quotations", "native-speaker check of the Japanese (several lines are English idioms calqued)"], "intended_use": "on-screen text", "evidence": "No source found; reads as AI-written. Google Terms (effective 2026-07-30): 'Google won't claim ownership over that content'."}
+    },
+    "by_number": {
+      "14": "AUTHENTIC-SAMURAI", "55": "AUTHENTIC-SAMURAI", "69": "AUTHENTIC-SAMURAI", "70": "AUTHENTIC-SAMURAI",
+      "18": "PROVERB",
+      "1": "OTHER-SOURCE-OLD", "6": "OTHER-SOURCE-OLD", "22": "OTHER-SOURCE-OLD", "25": "OTHER-SOURCE-OLD", "29": "OTHER-SOURCE-OLD",
+      "30": "OTHER-SOURCE-OLD", "32": "OTHER-SOURCE-OLD", "42": "OTHER-SOURCE-OLD", "43": "OTHER-SOURCE-OLD", "45": "OTHER-SOURCE-OLD", "46": "OTHER-SOURCE-OLD",
+      "17": "OTHER-SOURCE-MODERN", "26": "OTHER-SOURCE-MODERN", "37": "OTHER-SOURCE-MODERN", "40": "OTHER-SOURCE-MODERN", "44": "OTHER-SOURCE-MODERN",
+      "51": "OTHER-SOURCE-MODERN", "59": "OTHER-SOURCE-MODERN", "67": "OTHER-SOURCE-MODERN",
+      "7": "MISATTRIBUTION-RISK", "13": "MISATTRIBUTION-RISK", "68": "MISATTRIBUTION-RISK"
+    },
+    "source_note": {
+      "1": "Tao Te Ching 33 (HIGH)", "6": "Mark Twain, Pudd'nhead Wilson ch.12, 1894 (HIGH)", "7": "modern 'Japanese proverb' with no Japanese original; real proverb is 柳に雪折れなし (MED)",
+      "13": "'Knowing yourself is the beginning of all wisdom', unsourced Aristotle attribution (MED)", "14": "Musashi, Dokkōdō, first clause only (MED)",
+      "17": "Shunryu Suzuki, Zen Mind, Beginner's Mind, 1970 (MED)", "18": "七転び八起き (HIGH)", "22": "Tao Te Ching 33, garbled (HIGH)",
+      "25": "Seneca, De Brevitate Vitae (MED)", "26": "Joyce Meyer variant, living author (MED)", "29": "Leonardo, Codex Atlanticus (MED)",
+      "30": "Bashō, 1693 (HIGH)", "32": "Zhuangzi ch.7 (MED)", "37": "Clare Boothe Luce 1931 / fake Leonardo (MED)", "40": "Jim Watkins / 2010 tweet (MED)",
+      "42": "echo of Tao Te Ching 33 (LOW)", "43": "Zechariah 4:10 (LOW)", "44": "close to Jordan Peterson, 12 Rules, Rule 6 (LOW)", "45": "Ecclesiastes 3:7 (LOW)",
+      "46": "Alexander Pope (LOW)", "51": "Billy Graham (MED)", "55": "Musashi, Go Rin no Sho, Water Book (MED)", "59": "Melody Beattie, living author (HIGH)",
+      "67": "Steve Jobs, Stanford 2005 (MED)", "68": "Charles Marshall 2003, misattributed to C.S. Lewis (MED)", "69": "Hagakure Book 1 (MED)", "70": "Hagakure Book 1 (MED)"
+    }
+  }
+}

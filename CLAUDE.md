@@ -21,6 +21,11 @@ ai_web_auto_backend/        # WebSocket server + AI agent + utilities
   module_kit.py                # Shared toolkit: check, preflight, discover, related, verify, new
   _template/                   # Copied by `module_kit.py new`
   elevenLabs/                  # ElevenLabs Music: generate, download + verify, clean history
+  ebay/                        # eBay product search (read-only): N. America, user conditions, BIN + auctions (bids, time left, watchers), sold comps, listings, trust, jobs
+  amazon/                      # Amazon (read-only): result cards + product pages (real price of the selected option, buyable?, Prime, new/used, seller)
+  pcserverandparts/            # PC Server and Parts (refurbished): listing reader - price, Was, stock, build-your-own base prices; shipping not shown
+  bestbuy/                     # Best Buy (read-only): result cards - price, Comp. Value, more-options-from, shipping/pickup/unavailable for the store
+  price_watch/                 # Cross-store tracker (eBay + Amazon + Best Buy): timer, alerts, comparison dashboard with Prime, page-checked Amazon offers, auctions table
 @learning-process/             # Learning process artifacts
   scripts/                     # Test, discovery, learner, and execution scripts
   output/                      # Screenshots, element data, recipes, learned selectors
@@ -31,6 +36,10 @@ skool-output/              # Downloaded Skool course files (gitignored)
 ## Quick Start
 
 ### 1. Install dependencies
+```
+install.bat
+```
+Creates `venv`, installs `requirements.txt`, and prints the extension load steps. Or manually:
 ```
 python -m venv venv
 venv\Scripts\activate
@@ -120,7 +129,9 @@ Two skills live in `.claude/skills/` and handle different use cases:
 | **ai-web-auto-driver** | `.claude/skills/ai-web-auto-driver.md` | **Drive** the existing platform for one-off tasks: scrape data, read DOM, post a comment, fill a form. Pick this when the user says "use ai-web-auto to...", "via the extension...", or asks for an ad-hoc automation that doesn't need a new standalone extension. Contains all lessons learned about the tab-targeting bug, React input filling, ProseMirror editors, and the single-`execute_script` pattern. |
 | **web-auto** | `.claude/skills/web-auto.md` | **Build** a new standalone Chrome extension from scratch. Pick this when the user says "build an extension to automate X", "create a new extension for Y", or wants a reusable packaged automation output. The process and definition of done are in **Creating a New Extension — Standard Process** below; the skill supplies the techniques. |
 
-Both skills load automatically based on the user's phrasing. If unsure which to use, read the TRIGGER section of each file — `ai-web-auto-driver` handles the "use the platform" case, `web-auto` handles the "build something new" case.
+| **viral-research** | `.claude/skills/viral-research.md` | **Research** a niche: videos that beat their own channel's normal, what they do differently, and a point-by-point report on how to go viral. Runs `@modules/viral_research` (YouTube now; TikTok, Instagram, Facebook planned); full instructions in `@modules/viral_research/INSTRUCTIONS.md`. |
+
+The skills load automatically based on the user's phrasing. If unsure which to use, read the TRIGGER section of each file — `ai-web-auto-driver` handles the "use the platform" case, `web-auto` handles the "build something new" case.
 
 ## Creating a New Extension — Standard Process
 

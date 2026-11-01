@@ -588,6 +588,204 @@ async def _poll(fn, timeout: float, interval: float = 0.5):
     return value
 
 
+def human_delay(settings: dict[str, Any], rng=None) -> float:
+    """Seconds to wait before the next page load, paced like a person: uniform in settings.pause_seconds, and now
+    and then (long_pause.chance) a longer read (long_pause.seconds). Polite pacing, not a way around a block:
+    a robot check still stops the order for the human."""
+    import random
+    rng = rng or random
+    lo, hi = settings.get("pause_seconds", [3.0, 8.0])
+    long = settings.get("long_pause") or {}
+    if long and rng.random() < long.get("chance", 0.0):
+        return rng.uniform(*long.get("seconds", [12.0, 35.0]))
+    return rng.uniform(lo, hi)
+
+
+async def human_pause(settings: dict[str, Any]) -> float:
+    secs = human_delay(settings)
+    await asyncio.sleep(secs)
+    return secs
+
+
+SEARCH_BOX_JS = r"""JSON.stringify(((boxSel, btnSel) => {
+  const box = document.querySelector(boxSel), btn = document.querySelector(btnSel);
+  if (!box || !btn) return {err: 'search box or search button not on this page'};
+  const r = btn.getBoundingClientRect(), x = Math.round(r.x + r.width / 2), y = Math.round(r.y + r.height / 2);
+  const hit = document.elementFromPoint(x, y);
+  return {value: box.value, x, y, size: r.width * r.height,
+          covered: !(hit && (hit === btn || btn.contains(hit) || hit.contains(btn))),
+          hit: hit ? hit.tagName + '.' + (hit.className || '') : null, page: document.visibilityState};
+})(__ARGS__))"""
+
+BOX_IN_VIEW_JS = r"""JSON.stringify((sel => { const b = document.querySelector(sel); if (!b) return null;
+  const r = b.getBoundingClientRect();
+  return {in_view: r.width > 0 && r.top >= 0 && r.bottom <= innerHeight, top: Math.round(r.top), w: innerWidth, h: innerHeight};
+})(__ARGS__))"""
+
+LINK_JS = r"""JSON.stringify(((sel, scroll) => {
+  const a = [...document.querySelectorAll(sel)].find(e => e.href && e.getAttribute('aria-disabled') !== 'true');
+  if (!a) return null;
+  const q = a.getBoundingClientRect();
+  if (scroll) { if (q.top < 0 || q.bottom > innerHeight) a.scrollIntoView({block: 'center', behavior: 'instant'}); return {scrolled: true}; }
+  const x = Math.round(q.x + q.width / 2), y = Math.round(q.y + q.height / 2), hit = document.elementFromPoint(x, y);
+  return {href: a.href, x, y, covered: !(hit && (hit === a || a.contains(hit))), hit: hit ? hit.tagName + '.' + (hit.className || '') : null};
+})(__ARGS__))"""
+
+IN_VIEW_JS = r"""((sel) => { const a = document.querySelector(sel);
+  if (!a) return innerHeight + scrollY >= document.documentElement.scrollHeight - 5;
+  const r = a.getBoundingClientRect(); return r.top > 0 && r.top < innerHeight * 0.85; })(__ARGS__)"""
+
+
+async def think(lo: float = 0.4, hi: float = 1.3) -> None:
+    """A short random beat before typing or clicking."""
+    import random
+    await asyncio.sleep(random.uniform(lo, hi))
+
+
+async def bring_to_front(server) -> None:
+    """Trusted input is dropped in a hidden tab: bring the bound tab to the front (activate_tab is pinned to it)."""
+    try:
+        await _command(server, "activate_tab", {"query": ""}, timeout_ms=8000)
+        await asyncio.sleep(0.4)
+    except Exception:
+        pass
+
+
+async def scroll_to(module: Module, server, key: str, max_bursts: int = 30, rng=None) -> dict[str, Any] | None:
+    """Bring a registered element (e.g. the header search box) into view the way a person would: quick mouse-wheel
+    flicks back up the page. Falls back to an instant scrollIntoView (no wheel command, or still out of view)."""
+    import random
+    rng = rng or random
+    sel = json.dumps(module.css(key))
+    st = None
+    for _ in range(max_bursts):
+        st = await _run_script(server, BOX_IN_VIEW_JS.replace("__ARGS__", sel))
+        if not st:
+            return st
+        if st["in_view"]:
+            # eBay's header is sticky: scrolled down it is position:fixed and slides in from above - wait until it
+            # stops moving, or type_cdp clicks where the box was a moment ago (live 2026-10-28)
+            await asyncio.sleep(0.6)
+            again = await _run_script(server, BOX_IN_VIEW_JS.replace("__ARGS__", sel))
+            if again and again["in_view"] and abs(again["top"] - st["top"]) <= 1:
+                return again
+            continue
+        x, y = int(st["w"] * rng.uniform(0.35, 0.65)), int(st["h"] * rng.uniform(0.35, 0.7))
+        up = st["top"] < 0
+        resp = await _command(server, "wheel", {"x": x, "y": y, "notches": rng.randint(6, 12),
+                                                "delta_y": (-1 if up else 1) * rng.randint(100, 125),
+                                                "notch_delay_ms": rng.randint(25, 70)}, timeout_ms=15000)
+        if resp.status != "success":
+            break
+        await asyncio.sleep(rng.uniform(0.15, 0.5))
+    await _run_script(server, f"JSON.stringify((b => {{ if (b) b.scrollIntoView({{block: 'center', behavior: 'instant'}}); return 1; }})(document.querySelector({sel})))")
+    await asyncio.sleep(0.3)
+    return await _run_script(server, BOX_IN_VIEW_JS.replace("__ARGS__", sel))
+
+
+async def type_and_submit(module: Module, server, query: str, box_key: str = "search_box",
+                          submit_key: str = "search_submit", settings: dict[str, Any] | None = None) -> str:
+    """Search like a person: click the search box, clear it, type the query (CDP insertText, varied speed), check the
+    box holds exactly the query and the button is visible and uncovered, then click the button (trusted CDP click).
+    Raises instead of clicking blind. Returns the URL before the click (to tell the results page apart)."""
+    import random
+    settings = settings or module.settings
+    await bring_to_front(server)
+    before = (await _run_script(server, "JSON.stringify(location.href)"))
+    lo, hi = settings.get("type_ms_per_char", [45, 140])
+    args = json.dumps(module.css(box_key)) + ", " + json.dumps(module.css(submit_key))
+    for attempt in range(2):
+        # the box sits in the page header: after reading down a results page it is out of view, and type_cdp's click
+        # on it would land outside the window (live 2026-10-28: the box kept the previous query)
+        await scroll_to(module, server, box_key)
+        await think()
+        r = await _command(server, "type_cdp", {"text": query, "xpath": module._locator(box_key)["xpath"], "clear": True,
+                                                "delay_per_char": random.randint(lo, hi)}, timeout_ms=30000)
+        if r.status != "success":
+            raise RuntimeError(f"typing into the search box failed: {r.error}")
+        pt = await _run_script(server, SEARCH_BOX_JS.replace("__ARGS__", args))
+        if pt.get("err"):
+            raise RuntimeError(pt["err"])
+        if (pt.get("value") or "").strip() == query.strip():
+            break
+        if attempt == 0:
+            await bring_to_front(server)  # once more, from the top
+    else:
+        raise RuntimeError(f"the search box holds {pt.get('value')!r}, not {query!r} (page {pt.get('page')}) - not submitting")
+    if pt["covered"] or not pt["size"]:
+        raise RuntimeError(f"the search button is covered ({pt.get('hit')}) or not visible - not clicking blind")
+    await think(0.3, 1.0)
+    await server.click_cdp(pt["x"], pt["y"])
+    return before
+
+
+async def click_link(module: Module, server, key: str) -> dict[str, Any] | None:
+    """Trusted click on a registered link (e.g. Next page) after checking it is uncovered. Returns {href, clicked}
+    (clicked False when covered - the caller may open href instead), or None when there is no such link."""
+    args = json.dumps(module.css(key))
+    if not await _run_script(server, LINK_JS.replace("__ARGS__", args + ", true")):
+        return None
+    await think(0.4, 1.0)
+    pt = await _run_script(server, LINK_JS.replace("__ARGS__", args + ", false"))  # measured after the scroll settled
+    if not pt:
+        return None
+    if pt["covered"]:
+        return {"href": pt["href"], "clicked": False, "hit": pt.get("hit")}
+    await server.click_cdp(pt["x"], pt["y"])
+    return {"href": pt["href"], "clicked": True}
+
+
+async def read_down(module: Module, server, until_key: str | None = None, bursts: tuple[int, int] = (8, 40)) -> dict[str, Any]:
+    """Read down a page with mouse-wheel flicks until until_key (e.g. the Next link) is in view, the page ends, or
+    a random number of flicks in `bursts` (people don't read every result)."""
+    import random
+    stop = IN_VIEW_JS.replace("__ARGS__", json.dumps(module.css(until_key))) if until_key else None
+    return await human_scroll(server, stop, max_bursts=random.randint(*bursts))
+
+
+def wheel_burst(rng=None) -> dict[str, Any]:
+    """One flick of a mouse wheel as a person does it: a few notches of ~100 px, quick notches, then a pause to
+    read; now and then a notch back up."""
+    import random
+    rng = rng or random
+    if rng.random() < 0.12:
+        return {"notches": 1, "delta_y": -rng.randint(90, 120), "notch_delay_ms": rng.randint(40, 110),
+                "pause": rng.uniform(0.6, 1.8)}
+    return {"notches": rng.randint(3, 8), "delta_y": rng.randint(90, 125), "notch_delay_ms": rng.randint(35, 110),
+            "pause": rng.uniform(0.4, 1.9)}
+
+
+async def human_scroll(server, stop_js: str | None = None, max_bursts: int = 40, rng=None) -> dict[str, Any]:
+    """Scroll down with trusted mouse-wheel events (the tab must be in front) in person-like bursts, the pointer
+    resting over the page's middle, until stop_js returns true or the page end. Falls back to window.scrollBy on an
+    extension without the wheel command. Returns {bursts, via, end}."""
+    import random
+    rng = rng or random
+    vp = await _run_script(server, "JSON.stringify({w: innerWidth, h: innerHeight})")
+    via, bursts, last_y, still = "wheel", 0, None, 0
+    for bursts in range(1, max_bursts + 1):
+        b = wheel_burst(rng)
+        x = int(vp["w"] * rng.uniform(0.35, 0.65))
+        y = int(vp["h"] * rng.uniform(0.35, 0.7))
+        resp = None
+        if via == "wheel":
+            resp = await _command(server, "wheel", {"x": x, "y": y, **{k: b[k] for k in ("notches", "delta_y", "notch_delay_ms")}},
+                                  timeout_ms=15000)
+            if resp.status != "success":
+                via = "script"  # older extension: no wheel command
+        if via == "script":
+            await _run_script(server, f"(() => {{ scrollBy(0, {b['notches'] * b['delta_y']}); return 1; }})()")
+        await asyncio.sleep(b["pause"])
+        if stop_js and await _run_script(server, stop_js):
+            return {"bursts": bursts, "via": via, "end": "target in view"}
+        pos = await _run_script(server, "JSON.stringify(scrollY)")
+        still = still + 1 if pos == last_y and b["delta_y"] > 0 else 0
+        if still >= 2:
+            return {"bursts": bursts, "via": via, "end": "page end"}
+        last_y = pos
+    return {"bursts": bursts, "via": via, "end": "max bursts"}
+
+
 async def _any_present(module: Module, server, keys: list[str]) -> list[str]:
     present = await probe(module, server, keys)
     return [k for k, v in present.items() if v]

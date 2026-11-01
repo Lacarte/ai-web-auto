@@ -1,0 +1,2054 @@
+{
+  "name": "llm-workstation-1500",
+  "title": "Local LLM workstation <= $1,500 delivered to Miami - one NVIDIA GPU now, 64GB RAM, second GPU later",
+  "budget": 1500,
+  "ship_to_zip": "33101",
+  "read_top": 4,
+  "notes": [
+    "Parts / not working / untested listings are excluded (user rule).",
+    "Auction bids are never used as prices; only Buy It Now.",
+    "Landed cost = price + shipping to 33101 + 7% FL/Miami-Dade sales tax (estimate; eBay shows the exact tax at checkout)."
+  ],
+  "components": {
+    "gpu": {
+      "label": "GPU - RTX 3060 12GB",
+      "searches": [
+        [
+          "rtx 3060 12gb",
+          150,
+          450
+        ]
+      ],
+      "sold": [
+        "rtx 3060 12gb",
+        120,
+        450
+      ],
+      "require": [
+        "3060",
+        "12\\s?GB|12G\\b"
+      ],
+      "reject": [
+        "3060\\s*Ti|\\bTi\\b",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "\\b8\\s?GB\\b(?![^|]*12\\s?GB)",
+        "3050|3070|3080|2060|4060|5060",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [
+        [
+          "\\b8G\\b|\\b8\\s?GB\\b",
+          "title/specs mention 8GB on a 12GB card"
+        ],
+        [
+          "modded|modified|aftermarket\\s*fan|replaced\\s*fan|fan\\s*mod",
+          "fan was modified/replaced - ask what was done"
+        ],
+        [
+          "\\bLHR\\b.*\\bOEM\\b|\\bDell\\b|\\bHP\\b|\\bLenovo\\b|\\bAlienware\\b",
+          "OEM pull (Dell/HP/Lenovo) - no retail warranty; confirm 1x 8-pin and length"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "spec_checks": [
+        {
+          "field": "Memory Size",
+          "reject_if": "^(2|4|6|8|16|24) ?GB"
+        },
+        {
+          "field": "Chipset/GPU Model",
+          "reject_if": "3060 ?Ti|3050|3070|3080"
+        }
+      ],
+      "read_top": 10,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "covers": [
+        "gpu"
+      ],
+      "platform": null
+    },
+    "cpu": {
+      "label": "CPU - AM4 Ryzen (no APU)",
+      "searches": [
+        [
+          "ryzen 5 5600",
+          40,
+          250
+        ],
+        [
+          "ryzen 7 5700x",
+          60,
+          260
+        ],
+        [
+          "ryzen 7 3700x",
+          40,
+          200
+        ],
+        [
+          "ryzen 5 5600x",
+          40,
+          250
+        ]
+      ],
+      "sold": [
+        "ryzen 5 5600",
+        30,
+        250
+      ],
+      "require": [
+        "ryzen\\s*[579]\\s*(5600X3D|5700X3D|5800X3D|5600X?|5700X|5800X?|3600X?|3700X|3800X)\\b"
+      ],
+      "reject": [
+        "\\d{4}G[ET]?\\b|\\bAPU\\b",
+        "5500|4500|4600|3400|3200G|1600|2600",
+        "bent|missing pin",
+        "laptop|AM5|7600|9600|threadripper|epyc",
+        "\\bbundle|combo|motherboard\\b"
+      ],
+      "catalog_key": "cpus",
+      "spec_checks": [
+        {
+          "field": "Socket",
+          "reject_if": "AM5|LGA|AM3"
+        }
+      ],
+      "diversify": [
+        "5700X3D|5800X3D|5600X3D",
+        "5700X(?!3D)",
+        "5600X(?!3D)",
+        "5600(?![XGT\\d])",
+        "3700X",
+        "5800X(?!3D)"
+      ],
+      "read_top": 6,
+      "covers": [
+        "cpu"
+      ],
+      "platform": "am4"
+    },
+    "motherboard": {
+      "label": "Motherboard - AM4 ATX, 2 x16 slots",
+      "searches": [
+        [
+          "asus prime x570-pro",
+          40,
+          350
+        ],
+        [
+          "x570 aorus pro",
+          40,
+          350
+        ],
+        [
+          "x570 aorus ultra",
+          40,
+          350
+        ],
+        [
+          "asrock x570 taichi",
+          40,
+          400
+        ],
+        [
+          "msi x570 gaming pro carbon",
+          40,
+          350
+        ],
+        [
+          "rog strix x570-e",
+          40,
+          400
+        ],
+        [
+          "asus prime x470-pro",
+          30,
+          250
+        ],
+        [
+          "msi x470 gaming pro carbon",
+          30,
+          250
+        ],
+        [
+          "proart b550-creator",
+          40,
+          350
+        ],
+        [
+          "b550 aorus master",
+          40,
+          350
+        ],
+        [
+          "b550 taichi",
+          40,
+          350
+        ],
+        [
+          "b550 vision d",
+          40,
+          350
+        ],
+        [
+          "msi b550-a pro",
+          30,
+          200
+        ],
+        [
+          "tuf gaming b550-plus",
+          30,
+          200
+        ],
+        [
+          "msi x570-a pro",
+          30,
+          220
+        ],
+        [
+          "tuf gaming x570-plus",
+          30,
+          220
+        ]
+      ],
+      "sold": [
+        "asus prime x570-pro",
+        30,
+        350
+      ],
+      "require": [
+        "X570|X470|B550"
+      ],
+      "reject": [
+        "bent|missing pin|damaged socket",
+        "\\bmicro\\s*atx\\b|\\bmATX\\b|\\bM-ATX\\b|\\bITX\\b",
+        "\\bcombo|bundle|w/\\s*(ryzen|cpu)|with\\s+(ryzen|cpu)\\b",
+        "no\\s*bios|bios\\s*(chip\\s*)?missing",
+        "\\b\\d+\\s*GB\\b|\\bRAM\\b|\\bmemory\\b|\\bDIMM\\b|\\bfor\\s+(msi|asus|gigabyte|asrock)\\b"
+      ],
+      "catalog_key": "boards",
+      "spec_checks": [
+        {
+          "field": "Form Factor",
+          "reject_if": "Micro|mATX|ITX"
+        },
+        {
+          "field": "Socket",
+          "reject_if": "AM5|LGA|AM3"
+        }
+      ],
+      "covers": [
+        "motherboard"
+      ],
+      "platform": "am4",
+      "per_catalog_model": true
+    },
+    "ram": {
+      "label": "RAM - 64GB (2x32GB) DDR4 UDIMM non-ECC",
+      "searches": [
+        [
+          "64gb ddr4 3200 2x32gb desktop",
+          50,
+          500
+        ],
+        [
+          "2x32gb ddr4 udimm",
+          50,
+          500
+        ],
+        [
+          "64gb ddr4 3600 2x32gb",
+          50,
+          500
+        ]
+      ],
+      "sold": [
+        "64gb ddr4 3200 2x32gb desktop",
+        40,
+        500
+      ],
+      "require": [
+        "DDR4",
+        "2\\s*x\\s*32|32\\s*GB?\\s*x\\s*2|64\\s*GB?\\s*\\(?\\s*2\\s*x|2x32|kit of 2|\\(2 x 32"
+      ],
+      "reject": [
+        "SO-?DIMM|laptop|notebook|260[- ]?pin",
+        "(?<!non-)(?<!non )\\bECC\\b|registered|\\bRDIMM\\b|\\bLRDIMM\\b|server|\\bREG\\b",
+        "DDR5|DDR3",
+        "4\\s*x\\s*16|4x16|1\\s*x\\s*32|single"
+      ],
+      "catalog_key": null,
+      "spec_checks": [
+        {
+          "field": "ECC|Error Correction",
+          "reject_if": "^(Yes|ECC)"
+        },
+        {
+          "field": "Form Factor",
+          "reject_if": "SO-?DIMM|260"
+        },
+        {
+          "field": "Registered|Buffered",
+          "reject_if": "^(Registered|Buffered|Fully Buffered|Load Reduced|Yes)"
+        },
+        {
+          "field": "^Type$|Memory Type",
+          "reject_if": "DDR5|DDR3"
+        },
+        {
+          "field": "Number of Modules",
+          "reject_if": "^(1|4|8)\\s*$|^(1|4|8)\\D"
+        },
+        {
+          "field": "Capacity per Module",
+          "reject_if": "^(4|8|16|64) ?GB"
+        }
+      ],
+      "read_top": 8,
+      "covers": [
+        "ram"
+      ],
+      "platform": "am4"
+    },
+    "psu": {
+      "label": "PSU - 850W quality, native cables",
+      "searches": [
+        [
+          "corsair rm850x",
+          50,
+          220
+        ],
+        [
+          "corsair rm850e",
+          50,
+          200
+        ],
+        [
+          "seasonic focus gx-850",
+          50,
+          220
+        ],
+        [
+          "850w 80 plus gold fully modular",
+          50,
+          200
+        ]
+      ],
+      "sold": [
+        "corsair rm850x",
+        40,
+        220
+      ],
+      "require": [
+        "850\\s?W|850\\b"
+      ],
+      "reject": [
+        "no\\s*cables?|without\\s*cables?|cables?\\s*not\\s*included|unit\\s*only|psu\\s*only|missing\\s*cables?",
+        "\\bSFX\\b",
+        "bronze|white label|80\\+?\\s*plus\\s*(standard|white)",
+        "partial\\s+cable|couples?\\s+cables"
+      ],
+      "prefer": [
+        "RM850x|RM850e|RM850\\b|Focus\\s*GX|Focus\\s*PX|SuperNOVA\\s*(G[3-7]|P[2-6]|GT)|Straight\\s*Power|Pure\\s*Power\\s*12|MPG\\s*A850G|Toughpower\\s*GF|NZXT\\s*C850|V850|HX850|Vertex"
+      ],
+      "catalog_key": null,
+      "spec_checks": [
+        {
+          "field": "Maximum Power|Wattage|Power",
+          "reject_if": "^(4|5|6|7)\\d\\d ?W|^1[0-9]{3} ?W"
+        }
+      ],
+      "read_top": 16,
+      "confirm_in_listing": [
+        [
+          "(all|original|stock|full|complete|oem)\\s+(set\\s+of\\s+)?(the\\s+)?(modular\\s+)?(power\\s+)?cables|(modular\\s+)?cables?\\s+(are\\s+)?included|includes?\\s+(all\\s+)?(the\\s+)?(original\\s+)?(modular\\s+)?cables|with\\s+(all\\s+)?(the\\s+)?(original\\s+)?(modular\\s+)?cables|cable\\s+(set|kit|bag|pack)|all\\s+cables",
+          "cables not confirmed - ask for a photo of every original modular cable (incl. 2+ PCIe 8-pin)"
+        ]
+      ],
+      "desc_reject": [
+        {
+          "pattern": "modular\\s+cables?\\s+(are\\s+)?not\\s+included|cables?\\s+(are\\s+)?(missing|not\\s+included)|no\\s+(modular\\s+)?cables|without\\s+(modular\\s+)?cables|missing\\s+(modular\\s+)?cables|(power\\s+supply|psu)\\s+unit\\s+only|\\bunit\\s+only\\b|\\bpsu\\s+only\\b|only\\s+(has|comes\\s+with|includes)\\s+.{0,25}cable|item\\s+only|if\\s+it\\s+is\\s+not\\s+listed\\s+it\\s+is\\s+not\\s+included\\s*-\\s*such\\s+as\\s+power\\s+cables",
+          "unless": "(all|original|stock|full|complete|oem)\\s+(set\\s+of\\s+)?(the\\s+)?(modular\\s+)?(power\\s+)?cables|(modular\\s+)?cables?\\s+(are\\s+)?included|includes?\\s+(all\\s+)?(the\\s+)?(original\\s+)?(modular\\s+)?cables|with\\s+(all\\s+)?(the\\s+)?(original\\s+)?(modular\\s+)?cables|cable\\s+(set|kit|bag|pack)|all\\s+cables",
+          "why": "PSU sold without its modular cables"
+        },
+        {
+          "pattern": "partial\\s+(modular\\s+)?cables?|some\\s+(of\\s+the\\s+)?cables|couples?\\s+(of\\s+)?cables|only\\s+(\\d+|one|two|three)\\s+(modular\\s+)?cables?|missing\\s+(some|the|a)\\s+.{0,20}cables?",
+          "why": "PSU with an incomplete cable set"
+        }
+      ],
+      "read_first": "cables?|cable\\s*set|all\\s+cables|w/\\s*cables|with\\s+cables",
+      "covers": [
+        "psu"
+      ],
+      "platform": null
+    },
+    "ssd": {
+      "label": "SSD - 1TB NVMe",
+      "searches": [
+        [
+          "wd blue sn580 1tb",
+          30,
+          200
+        ],
+        [
+          "wd black sn770 1tb",
+          30,
+          200
+        ],
+        [
+          "1tb nvme m.2 ssd new",
+          30,
+          200
+        ]
+      ],
+      "sold": [
+        "wd blue sn580 1tb",
+        20,
+        200
+      ],
+      "require": [
+        "1\\s?TB",
+        "NVMe|PCIe|SN580|SN770|SN850|990|980|970|P3|P5|KC3000|NV[123]|MP600|SN5000",
+        "\\b(WD|Western Digital|Samsung|Crucial|Kingston|SK\\s*hynix|Hynix|Solidigm|Team\\s*Group|TeamGroup|Sabrent|Lexar|Corsair|Seagate|Intel|Micron|ADATA|XPG|Patriot|PNY|Inland|SanDisk|Silicon Power|Acer Predator|Fanxiang|Kioxia|Toshiba)\\b"
+      ],
+      "reject": [
+        "SATA|mSATA|2\\.5\\s*\"|2\\.5\\s*in|external|portable|\\bUSB\\b|enclosure",
+        "2\\s?TB|512\\s?GB|256\\s?GB|4\\s?TB",
+        "2230|2242|steam deck"
+      ],
+      "catalog_key": null,
+      "spec_checks": [
+        {
+          "field": "Interface",
+          "reject_if": "^SATA|USB"
+        },
+        {
+          "field": "Storage Capacity|Capacity",
+          "reject_if": "^(128|256|512) ?GB|^(2|4) ?TB"
+        }
+      ],
+      "read_top": 6,
+      "covers": [
+        "ssd"
+      ],
+      "platform": null
+    },
+    "case": {
+      "label": "Case - airflow ATX, fits two GPUs",
+      "searches": [
+        [
+          "corsair 4000d airflow",
+          30,
+          180
+        ],
+        [
+          "phanteks p400a",
+          30,
+          160
+        ],
+        [
+          "lancool 216",
+          30,
+          180
+        ],
+        [
+          "montech air 903",
+          30,
+          180
+        ],
+        [
+          "fractal pop air",
+          30,
+          160
+        ],
+        [
+          "nzxt h7 flow",
+          30,
+          180
+        ]
+      ],
+      "sold": [
+        "corsair 4000d airflow",
+        20,
+        180
+      ],
+      "require": [
+        "4000D|P400A|Lancool\\s*216|AIR\\s*903|Pop\\s*Air|H7\\s*Flow"
+      ],
+      "reject": [
+        "mini|micro|\\bITX\\b|\\bmATX\\b",
+        "panel only|glass only|front panel|replacement|feet|bracket|dust filter|\\bfan\\s*only",
+        "shattered|broken glass|cracked"
+      ],
+      "catalog_key": "cases",
+      "read_top": 6,
+      "covers": [
+        "case"
+      ],
+      "platform": null
+    },
+    "cooler": {
+      "label": "CPU cooler - air, AM4",
+      "searches": [
+        [
+          "thermalright peerless assassin 120",
+          15,
+          80
+        ],
+        [
+          "thermalright assassin x 120",
+          10,
+          60
+        ],
+        [
+          "deepcool ak400",
+          10,
+          60
+        ]
+      ],
+      "sold": null,
+      "require": [
+        "Peerless\\s*Assassin|Assassin\\s*X|AX120|PA120|AK400"
+      ],
+      "reject": [
+        "LGA\\s*1700\\s*only|bracket only|fan only|mounting kit only",
+        "AM5 only"
+      ],
+      "catalog_key": "coolers",
+      "read_top": 8,
+      "spec_checks": [
+        {
+          "field": "^(Model|MPN)$",
+          "require": "Assassin|AX\\s?120|PA\\s?120|Peerless|AK400|AG400|TL-C12"
+        }
+      ],
+      "covers": [
+        "cooler"
+      ],
+      "platform": null
+    },
+    "gpu_3090": {
+      "label": "GPU - RTX 3090 24GB",
+      "covers": [
+        "gpu"
+      ],
+      "searches": [
+        [
+          "rtx 3090 24gb",
+          400,
+          2000
+        ],
+        [
+          "rtx 3090",
+          400,
+          2000
+        ]
+      ],
+      "sold": [
+        "rtx 3090",
+        300,
+        2500
+      ],
+      "require": [
+        "3090"
+      ],
+      "reject": [
+        "3080|3070|4090",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "water\\s*block|backplate\\s*only|shroud\\s*only|fan\\s*only|box\\s*only",
+        "\\bmining\\s*rig\\b|\\blot\\s+of\\b|\\bx\\s*[2-9]\\b\\s*(cards|gpus)",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [],
+      "read_top": 2,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "platform": null,
+      "note": "24GB is out of the $1,500 budget: sold median $1,599 (n=113, 2026-10-28); read 2 listings as price evidence"
+    },
+    "gpu_4060ti16": {
+      "label": "GPU - RTX 4060 Ti 16GB",
+      "covers": [
+        "gpu"
+      ],
+      "searches": [
+        [
+          "rtx 4060 ti 16gb",
+          250,
+          900
+        ]
+      ],
+      "sold": [
+        "rtx 4060 ti 16gb",
+        200,
+        900
+      ],
+      "require": [
+        "4060\\s*Ti",
+        "16\\s?GB|16G\\b"
+      ],
+      "reject": [
+        "\\b8\\s?GB\\b(?![^|]*16)",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "water\\s*block|backplate\\s*only|shroud\\s*only|fan\\s*only|box\\s*only",
+        "\\bmining\\s*rig\\b|\\blot\\s+of\\b|\\bx\\s*[2-9]\\b\\s*(cards|gpus)",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [
+        [
+          "\\b8G\\b|\\b8\\s?GB\\b",
+          "title mentions 8GB on a 16GB card"
+        ]
+      ],
+      "read_top": 6,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "platform": null
+    },
+    "gpu_5060ti16": {
+      "label": "GPU - RTX 5060 Ti 16GB",
+      "covers": [
+        "gpu"
+      ],
+      "searches": [
+        [
+          "rtx 5060 ti 16gb",
+          300,
+          1000
+        ]
+      ],
+      "sold": [
+        "rtx 5060 ti 16gb",
+        250,
+        1000
+      ],
+      "require": [
+        "5060\\s*Ti",
+        "16\\s?GB|16G\\b"
+      ],
+      "reject": [
+        "\\b8\\s?GB\\b(?![^|]*16)",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "water\\s*block|backplate\\s*only|shroud\\s*only|fan\\s*only|box\\s*only",
+        "\\bmining\\s*rig\\b|\\blot\\s+of\\b|\\bx\\s*[2-9]\\b\\s*(cards|gpus)",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [],
+      "read_top": 6,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "platform": null
+    },
+    "gpu_a4000": {
+      "label": "GPU - RTX A4000 16GB",
+      "covers": [
+        "gpu"
+      ],
+      "searches": [
+        [
+          "nvidia rtx a4000",
+          250,
+          1300
+        ]
+      ],
+      "sold": [
+        "nvidia rtx a4000",
+        200,
+        1300
+      ],
+      "require": [
+        "A4000",
+        "16\\s?GB|16G\\b"
+      ],
+      "reject": [
+        "\\bAda\\b|4000\\s*SFF|A4000\\s*Laptop",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "water\\s*block|backplate\\s*only|shroud\\s*only|fan\\s*only|box\\s*only",
+        "\\bmining\\s*rig\\b|\\blot\\s+of\\b|\\bx\\s*[2-9]\\b\\s*(cards|gpus)",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [],
+      "read_top": 6,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "platform": null
+    },
+    "gpu_a5000": {
+      "label": "GPU - RTX A5000 24GB",
+      "covers": [
+        "gpu"
+      ],
+      "searches": [
+        [
+          "nvidia rtx a5000",
+          600,
+          2500
+        ]
+      ],
+      "sold": [
+        "nvidia rtx a5000",
+        500,
+        2500
+      ],
+      "require": [
+        "A5000",
+        "24\\s?GB|24G\\b"
+      ],
+      "reject": [
+        "\\bAda\\b|laptop",
+        "laptop|notebook|mobile|\\bMXM\\b",
+        "water\\s*block|backplate\\s*only|shroud\\s*only|fan\\s*only|box\\s*only",
+        "\\bmining\\s*rig\\b|\\blot\\s+of\\b|\\bx\\s*[2-9]\\b\\s*(cards|gpus)",
+        "desktop|gaming\\s+pc|\\btower\\b|computer|workstation|\\bxps\\b|optiplex|precision|\\bz[2468]\\d0\\b|nvlink|\\bbridge\\b|daughter\\s*board|\\bMXM\\b|thinkpad|\\bP1[57]\\s*gen|\\blot\\b|\\b\\d+\\s*x\\s+(rtx|gpu|card)"
+      ],
+      "mismatch": [],
+      "read_top": 0,
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|working|functional|benchmark|stress",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "catalog_key": "gpus",
+      "platform": null,
+      "note": "out of budget: sold median $2,100 (n=90, 2026-10-28); not read"
+    },
+    "bundle_am4": {
+      "label": "AM4 bundle - CPU + motherboard + 64GB DDR4",
+      "covers": [
+        "cpu",
+        "motherboard",
+        "ram"
+      ],
+      "searches": [
+        [
+          "ryzen 5600 motherboard 64gb ddr4 combo",
+          150,
+          700
+        ],
+        [
+          "ryzen 5700x motherboard 64gb ddr4",
+          150,
+          750
+        ],
+        [
+          "ryzen 5800x motherboard 64gb ram combo",
+          150,
+          800
+        ],
+        [
+          "am4 combo 64gb ddr4 ryzen",
+          150,
+          750
+        ],
+        [
+          "ryzen x570 64gb bundle",
+          150,
+          800
+        ],
+        [
+          "ryzen b550 64gb bundle",
+          150,
+          750
+        ]
+      ],
+      "sold": [
+        "ryzen motherboard 64gb ddr4 combo",
+        100,
+        800
+      ],
+      "require": [
+        "\\b(64|96|128|192|256)\\s?GB\\b(?!\\s*(SSD|NVMe|M\\.2|HDD|storage|eMMC|flash))",
+        "ryzen|\\bAM4\\b",
+        "motherboard|\\bmobo\\b|combo|bundle|kit|B550|X570|B450|X470|A520"
+      ],
+      "reject": [
+        "\\bno\\s+(cpu|processor|ram|memory|motherboard)\\b|\\bcpu\\s+only\\b|\\bboard\\s+only\\b|\\bram\\s+only\\b",
+        "\\d{4}G[ET]?\\b|\\bAPU\\b",
+        "\\bDDR5\\b|\\bAM5\\b|laptop|SO-?DIMM",
+        "\\bmini\\s*pc\\b|\\bITX\\b",
+        "\\bbent\\b|\\bmissing\\s+pins?\\b",
+        "\\b(gaming|desktop)\\s+pc\\b|\\bcomputer\\b|\\btower\\b|rtx|gtx|radeon\\s+rx"
+      ],
+      "read_top": 10,
+      "catalog_key": "boards",
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|\\bbios\\b|\\bpost(s|ed)?\\b|boots?|working",
+          "no evidence the parts were tested together (ask for a BIOS-screen photo)"
+        ]
+      ],
+      "platform": "am4"
+    },
+    "bundle_am5": {
+      "label": "AM5 bundle - CPU + motherboard + 64GB DDR5",
+      "covers": [
+        "cpu",
+        "motherboard",
+        "ram"
+      ],
+      "searches": [
+        [
+          "ryzen 7600 b650 64gb ddr5 combo",
+          250,
+          900
+        ],
+        [
+          "am5 combo 64gb ddr5 ryzen",
+          250,
+          950
+        ],
+        [
+          "ryzen 7700 motherboard 64gb ddr5",
+          250,
+          950
+        ]
+      ],
+      "sold": [
+        "am5 combo 64gb ddr5 ryzen",
+        200,
+        950
+      ],
+      "require": [
+        "\\b(64|96|128|192|256)\\s?GB\\b(?!\\s*(SSD|NVMe|M\\.2|HDD|storage|eMMC|flash))",
+        "ryzen|\\bAM5\\b",
+        "DDR5|\\bAM5\\b|B650|X670|B850|X870|A620"
+      ],
+      "reject": [
+        "\\bno\\s+(cpu|processor|ram|memory|motherboard)\\b|\\bcpu\\s+only\\b|\\bboard\\s+only\\b",
+        "\\bDDR4\\b|\\bAM4\\b|laptop|SO-?DIMM",
+        "\\bmini\\s*pc\\b|\\bITX\\b|\\bbent\\b",
+        "\\b(gaming|desktop)\\s+pc\\b|\\bcomputer\\b|\\btower\\b|rtx|gtx|radeon\\s+rx"
+      ],
+      "read_top": 6,
+      "catalog_key": "boards",
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|\\bbios\\b|\\bpost(s|ed)?\\b|boots?|working",
+          "no evidence the parts were tested together (ask for a BIOS-screen photo)"
+        ]
+      ],
+      "platform": "am5"
+    },
+    "workstation": {
+      "label": "Workstation - complete system with >=64GB RAM",
+      "covers": [
+        "cpu",
+        "motherboard",
+        "ram",
+        "psu",
+        "case",
+        "cooler"
+      ],
+      "searches": [
+        [
+          "dell precision 5820 64gb",
+          150,
+          1000
+        ],
+        [
+          "hp z4 g4 64gb",
+          150,
+          1000
+        ],
+        [
+          "lenovo thinkstation p520 64gb",
+          150,
+          1000
+        ],
+        [
+          "dell precision 7820 64gb",
+          150,
+          1100
+        ],
+        [
+          "hp z6 g4 64gb",
+          150,
+          1100
+        ],
+        [
+          "precision 5820 950w",
+          150,
+          1000
+        ]
+      ],
+      "sold": [
+        "dell precision 5820 64gb",
+        100,
+        1000
+      ],
+      "require": [
+        "\\b(64|96|128|192|256)\\s?GB\\b(?!\\s*(SSD|NVMe|M\\.2|HDD|storage|eMMC|flash))",
+        "5820|7820|Z4\\s*G4|Z6\\s*G4|P520"
+      ],
+      "reject": [
+        "\\bno\\s+(cpu|processor|ram|memory|psu|power\\s*supply)\\b|\\bbarebones?\\b|chassis\\s+only|motherboard\\s+only|case\\s+only",
+        "laptop|\\bmobile\\b|\\b7820\\s*laptop|\\bmini\\b|\\bSFF\\b|small\\s+form"
+      ],
+      "read_top": 20,
+      "catalog_key": "workstations",
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|\\bpost(s|ed)?\\b|boots?|working|functional|refurbished",
+          "no testing described - ask how it was tested"
+        ]
+      ],
+      "platform": "xeon_w",
+      "diversify": [
+        "5820.*\\b9[05]0\\s?W",
+        "Z4\\s*G4.*\\b(750|1000)\\s?W",
+        "P520.*\\b900\\s?W",
+        "7820.*\\b(950|1400)\\s?W",
+        "5820",
+        "Z4\\s*G4",
+        "P520",
+        "7820",
+        "Z6\\s*G4"
+      ],
+      "allow_price_range": true
+    },
+    "cpumb_am5": {
+      "label": "AM5 CPU + motherboard combo (RAM bought separately)",
+      "covers": [
+        "cpu",
+        "motherboard"
+      ],
+      "platform": "am5",
+      "searches": [
+        [
+          "ryzen 7600 b650 motherboard combo",
+          180,
+          700
+        ],
+        [
+          "ryzen 7700 b650 combo",
+          200,
+          750
+        ],
+        [
+          "am5 cpu motherboard combo",
+          180,
+          700
+        ]
+      ],
+      "sold": [
+        "ryzen 7600 b650 combo",
+        150,
+        700
+      ],
+      "require": [
+        "ryzen|\\bAM5\\b",
+        "B650|X670|B850|X870|A620|\\bAM5\\b",
+        "motherboard|\\bmobo\\b|combo|bundle|\\bboard\\b|B650|X670",
+        "\\b(7[4-9]00X?(3D)?|9[6-9]00X?(3D)?|7500F|8[4-7]00F)\\b"
+      ],
+      "reject": [
+        "\\bno\\s+(cpu|processor|motherboard)\\b|\\bcpu\\s+only\\b|\\bboard\\s+only\\b",
+        "\\bDDR4\\b|\\bAM4\\b|laptop",
+        "\\bITX\\b|mini\\s*pc|\\bbent\\b",
+        "\\b(gaming|desktop)\\s+pc\\b|\\bcomputer\\b|\\btower\\b|rtx|gtx|radeon\\s+rx",
+        "\\b8[0-9]00G\\b|\\b8[0-9]00F\\b"
+      ],
+      "read_top": 3,
+      "catalog_key": "boards",
+      "confirm_in_listing": [
+        [
+          "\\btest(ed|ing)?\\b|\\bbios\\b|\\bpost(s|ed)?\\b|boots?|working",
+          "no evidence the pair was tested together (ask for a BIOS-screen photo)"
+        ]
+      ]
+    },
+    "ram_ddr5": {
+      "label": "RAM - 64GB (2x32GB) DDR5 desktop",
+      "covers": [
+        "ram"
+      ],
+      "platform": "am5",
+      "searches": [
+        [
+          "64gb ddr5 2x32gb desktop",
+          100,
+          700
+        ],
+        [
+          "64gb ddr5 6000 kit",
+          100,
+          700
+        ]
+      ],
+      "sold": [
+        "64gb ddr5 2x32gb",
+        80,
+        700
+      ],
+      "require": [
+        "DDR5",
+        "2\\s*x\\s*32|32\\s*GB?\\s*x\\s*2|64\\s*GB?\\s*\\(?\\s*2\\s*x|2x32|kit of 2|\\(2 x 32"
+      ],
+      "reject": [
+        "SO-?DIMM|laptop|notebook|262[- ]?pin",
+        "(?<!non-)(?<!non )\\bECC\\b|registered|\\bRDIMM\\b|server",
+        "DDR4|DDR3",
+        "4\\s*x\\s*16|1\\s*x\\s*32|single"
+      ],
+      "spec_checks": [
+        {
+          "field": "Form Factor",
+          "reject_if": "SO-?DIMM"
+        },
+        {
+          "field": "ECC|Error Correction",
+          "reject_if": "^(Yes|ECC)"
+        }
+      ],
+      "read_top": 2,
+      "catalog_key": null
+    }
+  },
+  "catalog": {
+    "_about": "Compatibility facts used by the rules. 'verified' entries were checked on the manufacturer's page/manual (source); 'unverified' ones are from general knowledge and are shown as unconfirmed in the report.",
+    "boards": {
+      "ASUS PRIME X570-PRO": {
+        "match": "prime\\s*x570-?\\s*pro",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (x8/x8); 3rd slot PCIe 4.0 x4 chipset",
+        "bios_flashback": false,
+        "ryzen5000_min_bios": "5600/5700X: 4021, 5600X: 2606 - no BIOS Flashback, ask seller for the BIOS version (a 3700X boots on any)",
+        "source": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/PRIME_X570-PRO/G17432_PRIME_X570-PRO_UM_v3_WEB.pdf",
+        "page": "PDF p.8, p.20",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 (x16) + NVMe in M.2_1 (CPU)",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 4.0 (not with APUs)",
+          "nvme_slot": "M.2_1",
+          "sata_lost": null,
+          "page": "p.viii, p.1-7"
+        },
+        "sharing": [
+          "no sharing statement in the manual ('none stated' is not a confirmed absence)"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/PRIME_X570-PRO/E17432_PRIME_X570-PRO_UM_v3_web.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "Gigabyte X570 AORUS PRO (WIFI)": {
+        "match": "x570\\s*aorus\\s*pro",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIEX8); PCIEX4 chipset x4",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.gigabyte.com/FileList/Manual/mb_manual_x570-aorus-pro-wifi_v2_e.pdf",
+        "page": "p.8; Q-Flash Plus p.24",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16 (PCIEX8 empty) + NVMe in M2A_SOCKET",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16 (pos 2) + PCIEX8 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 4.0",
+          "nvme_slot": "M2A_SOCKET",
+          "sata_lost": null,
+          "page": "p.8"
+        },
+        "sharing": [
+          "PCIEX16 drops to x8 when PCIEX8 is used (p.8)"
+        ],
+        "manual_url": "https://download.gigabyte.com/FileList/Manual/mb_manual_x570-aorus-pro-wifi_v2_e.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "Gigabyte X570 AORUS ULTRA": {
+        "match": "x570\\s*aorus\\s*ultra",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIEX8)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.gigabyte.com/FileList/Manual/mb_manual_x570-aorus-ultra_1002_e.pdf",
+        "page": "p.8; Q-Flash Plus p.25",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16 + NVMe in M2A_SOCKET",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16 (pos 2) + PCIEX8 (pos 5)",
+          "widths": "x8/x8 CPU",
+          "nvme_slot": "M2A_SOCKET",
+          "sata_lost": null,
+          "page": "p.8, p.21"
+        },
+        "sharing": [
+          "PCIe SSD in M2C disables SATA3 4/5 (p.21)"
+        ],
+        "manual_url": "https://download.gigabyte.com/FileList/Manual/mb_manual_x570-aorus-ultra_1002_e.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASRock X570 Taichi": {
+        "match": "x570\\s*taichi",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIE3)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.asrock.com/Manual/X570%20Taichi.pdf",
+        "page": "PDF p.10-11, Flashback p.18",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIE1 (x16) + NVMe in M2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIE1 (pos 2) + PCIE3 (pos 5)",
+          "widths": "x8/x8 CPU (Gen4 with Ryzen 3000)",
+          "nvme_slot": "M2_1 or M2_2 (M2_3 disables PCIE5)",
+          "sata_lost": null,
+          "page": "p.2-3, p.29"
+        },
+        "sharing": [
+          "'If M2_3 is occupied, PCIE5 slot will be disabled' (p.29)",
+          "M.2 CPU/chipset source not stated"
+        ],
+        "manual_url": "https://download.asrock.com/Manual/X570%20Taichi.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "MSI MPG X570 GAMING PRO CARBON WIFI": {
+        "match": "x570\\s*gaming\\s*pro\\s*carbon",
+        "x8x8": false,
+        "second_slot": "PCI_E3: PCIe 4.0 x4 from the chipset",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download-2.msi.com/archive/mnu_exe/mb/M7B93v1.2-EURO.pdf",
+        "page": "PDF p.30 slot table",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCI_E1 + NVMe in M2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCI_E1 (pos 2) + PCI_E3 (pos 5)",
+          "widths": "x16 CPU + x4 (PCIe 4.0); no x8/x8",
+          "nvme_slot": "M2_1",
+          "sata_lost": null,
+          "page": "p.4-5, p.18"
+        },
+        "sharing": [
+          "no sharing statement; PCI_E3 source not labelled"
+        ],
+        "manual_url": "https://download-2.msi.com/archive/mnu_exe/mb/M7B93v1.2-EURO.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASUS ROG STRIX X570-E": {
+        "match": "strix\\s*x570-?e",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (x8/x8)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": "5600/5700X: 4021, 5600X: 2606",
+        "source": "https://rog.asus.com/motherboards/rog-strix/rog-strix-x570-e-gaming-model/spec/",
+        "page": "manual PDF p.21",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 + NVMe in M.2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 4.0",
+          "nvme_slot": "M.2_1",
+          "sata_lost": null,
+          "page": "p.viii, p.1-7"
+        },
+        "sharing": [
+          "PCIEX16_3 shares bandwidth with PCIE_X1_2 (p.viii)",
+          "manual note contradicts its own table on x16_2/x16_3 sharing (p.1-7)"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/ROG_STRIX_X570-E_GAMING/E15826_ROG_STRIX_X570-E_GAMING_UM_v2_WEB.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASUS PRIME X470-PRO": {
+        "match": "prime\\s*x470-?\\s*pro",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIe 3.0 x8/x8)",
+        "bios_flashback": false,
+        "ryzen5000_min_bios": "5600/5700X: 5861, 5600X: 5809 - no BIOS Flashback; with an old BIOS a Ryzen 5000 will not POST",
+        "source": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/PRIME_X470-PRO/E13883_PRIME__X470-PRO_UM_WEB.pdf",
+        "page": "PDF p.8",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 (3.0 x16) + NVMe in M.2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 3.0",
+          "nvme_slot": "M.2_1 (M.2_2 is x2 and may drop to SATA)",
+          "sata_lost": null,
+          "page": "p.viii, p.1-7"
+        },
+        "sharing": [
+          "M.2_2 drops to SATA mode when PCIe x1_1 or x1_3 is occupied (p.ix)"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/PRIME_X470-PRO/E13883_PRIME__X470-PRO_UM_WEB.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "MSI X470 GAMING PRO CARBON": {
+        "match": "x470\\s*gaming\\s*pro\\s*carbon",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCI_E3, PCIe 3.0)",
+        "bios_flashback": false,
+        "ryzen5000_min_bios": "not published (MSI blocks automated fetch) - ask seller; no Flash BIOS button",
+        "source": "https://download-2.msi.com/archive/mnu_exe/mb/E7B78v1.2-GSE-LITE.pdf",
+        "page": "PDF p.32",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCI_E1 + NVMe in M2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCI_E1 (pos 2) + PCI_E3 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 3.0",
+          "nvme_slot": "M2_1",
+          "sata_lost": null,
+          "page": "p.17-18, p.33"
+        },
+        "sharing": [
+          "'PCI_E5 slot will be unavailable when installing M.2 PCIe SSD in M2_2 slot' (p.17)"
+        ],
+        "manual_url": "https://download-2.msi.com/archive/mnu_exe/mb/E7B78v1.2-GSE-LITE.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASUS ProArt B550-CREATOR": {
+        "match": "proart\\s*b550",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (x8/x8)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": "5600/5700X: 2603",
+        "source": "https://www.asus.com/motherboards-components/motherboards/proart/proart-b550-creator/techspec/",
+        "page": "manual PDF p.24",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 + NVMe in M.2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x8/x8 CPU PCIe 4.0",
+          "nvme_slot": "M.2_1",
+          "sata_lost": null,
+          "page": "p.vii, p.1-8"
+        },
+        "sharing": [
+          "a card in PCIEX16_3 disables Thunderbolt 4 output; M.2_2 (default x4) disables both x1 slots"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/ProArt_B550-CREATOR/E17757_ProArt_B550-CREATOR_UM_WEB.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "Gigabyte B550 AORUS MASTER": {
+        "match": "b550\\s*aorus\\s*master",
+        "x8x8": false,
+        "second_slot": "PCIe 3.0 x4 from the chipset (CPU lanes go to M.2)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.gigabyte.com/FileList/Manual/mb_manual_b550-aorus-master_1001_210329_e.pdf",
+        "page": "p.7",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16 + NVMe in M2A_CPU ONLY (M2B/M2C halve the GPU to x8)",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16 (pos 2) + PCIEX4_1 (pos 5)",
+          "widths": "x16 CPU + x4 chipset 3.0; no x8/x8",
+          "nvme_slot": "M2A_CPU",
+          "sata_lost": null,
+          "page": "p.7, p.20"
+        },
+        "sharing": [
+          "PCIEX16 drops to x8 when M2B_CPU or M2C_CPU is used (p.7)"
+        ],
+        "manual_url": "https://download.gigabyte.com/FileList/Manual/mb_manual_b550-aorus-master_1001_210329_e.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASRock B550 Taichi": {
+        "match": "b550\\s*taichi",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIE3)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.asrock.com/Manual/B550%20Taichi.pdf",
+        "page": "PDF p.10-11",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIE1 + NVMe in M2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIE1 (pos 2) + PCIE3 (pos 5)",
+          "widths": "x8/x8 CPU",
+          "nvme_slot": "M2_1 or M2_2",
+          "sata_lost": null,
+          "page": "p.2-3, p.26"
+        },
+        "sharing": [
+          "PCIE5 drops to x2 if PCIE2 or PCIE4 is used (p.26)"
+        ],
+        "manual_url": "https://download.asrock.com/Manual/B550%20Taichi.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "Gigabyte B550 VISION D": {
+        "match": "b550\\s*vision\\s*d",
+        "x8x8": true,
+        "second_slot": "x8 from CPU (PCIEX8)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download.gigabyte.com/FileList/Manual/mb_manual_b550-vision-d_1002_e.pdf",
+        "page": "p.8",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16 + NVMe in M2A_CPU",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16 (pos 2) + PCIEX8 (pos 5)",
+          "widths": "x8/x8 CPU",
+          "nvme_slot": "M2A_CPU",
+          "sata_lost": null,
+          "page": "p.8"
+        },
+        "sharing": [
+          "M2B_SB disables PCIEX4 (p.8)"
+        ],
+        "manual_url": "https://download.gigabyte.com/FileList/Manual/mb_manual_b550-vision-d_1002_e.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "MSI B550-A PRO": {
+        "match": "b550-?a\\s*pro",
+        "x8x8": false,
+        "second_slot": "PCI_E3: PCIe 3.0 x4 from the chipset",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download-2.msi.com/archive/mnu_exe/mb/B550-APRO_EN.pdf",
+        "page": "PDF p.29",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCI_E1 (CPU x16) + NVMe in M2_1 (CPU), no conflict",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCI_E1 (pos 2) + PCI_E3 (pos 5)",
+          "widths": "x16 CPU + x4 chipset PCIe 3.0",
+          "nvme_slot": "M2_1 only - a PCIe SSD in M2_2 disables PCI_E3",
+          "sata_lost": null,
+          "page": "p.17, p.29"
+        },
+        "sharing": [
+          "'When installing PCIe SSD in M.2_2 slot, PCI_E3 slot will be unavailable.' (p.17, p.29)"
+        ],
+        "manual_url": "https://download-2.msi.com/archive/mnu_exe/mb/B550-APRO_EN.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASUS TUF GAMING B550-PLUS": {
+        "match": "tuf\\s*(gaming\\s*)?b550-?plus",
+        "x8x8": false,
+        "second_slot": "PCIe 3.0 x4 from the chipset (x1 if any x1 slot is used)",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": "5600/5700X: 2423",
+        "source": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/TUF_GAMING_B550-PLUS/E16576_TUF_GAMING_B550-PLUS_UM_WEB.pdf",
+        "page": "PDF p.10",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 + NVMe in M.2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x16 CPU + x4 chipset 3.0 - drops to x1 if ANY x1 slot is used",
+          "nvme_slot": "M.2_1",
+          "sata_lost": null,
+          "page": "p.vi, p.x"
+        },
+        "sharing": [
+          "'PCIE 3.0 X16_2 runs x1 mode when any of the PCIe 3.0 x1 slots is occupied' (p.vi)",
+          "M.2_2 disables SATA6G_56"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/TUF_GAMING_B550-PLUS/E16576_TUF_GAMING_B550-PLUS_UM_WEB.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "MSI X570-A PRO": {
+        "match": "x570-?a\\s*pro",
+        "x8x8": false,
+        "second_slot": "PCI_E3: PCIe 4.0 x4 from the chipset",
+        "bios_flashback": true,
+        "ryzen5000_min_bios": null,
+        "source": "https://download-2.msi.com/archive/mnu_exe/mb/E7C37v3.1.pdf",
+        "page": "PDF p.29",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCI_E1 + NVMe in M2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCI_E1 (pos 2) + PCI_E3 (pos 5)",
+          "widths": "x16 CPU + x4 PCH; no x8/x8",
+          "nvme_slot": "M2_1",
+          "sata_lost": null,
+          "page": "p.15-16, p.29"
+        },
+        "sharing": [
+          "PCI_E2 unavailable when PCI_E4 is used (p.15)"
+        ],
+        "manual_url": "https://download-2.msi.com/archive/mnu_exe/mb/E7C37v3.1.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      },
+      "ASUS TUF GAMING X570-PLUS": {
+        "match": "tuf\\s*(gaming\\s*)?x570-?plus",
+        "x8x8": false,
+        "second_slot": "PCIe 4.0 x4 from the chipset",
+        "bios_flashback": false,
+        "ryzen5000_min_bios": "5600/5700X: 4021, 5600X: 2607 - no BIOS Flashback, ask seller",
+        "source": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/TUF_GAMING_X570-PLUS/E15235_TUF_GAMING_X570-PLUS_UM_WEB.pdf",
+        "page": "PDF p.20",
+        "note": "",
+        "status": "verified 2026-10-28 (manufacturer manual/spec)",
+        "stage1_config": "GPU in PCIEX16_1 + NVMe in M.2_1",
+        "stage2_config": {
+          "possible": true,
+          "gpu_slots": "PCIEX16_1 (pos 2) + PCIEX16_2 (pos 5)",
+          "widths": "x16 CPU + x4 chipset 4.0; no x8/x8",
+          "nvme_slot": "M.2_1",
+          "sata_lost": null,
+          "page": "p.viii, p.1-7"
+        },
+        "sharing": [
+          "no sharing statement in the manual"
+        ],
+        "manual_url": "https://dlcdnets.asus.com/pub/ASUS/mb/SocketAM4/TUF_GAMING_X570-PLUS/E15235_TUF_GAMING_X570-PLUS_UM_WEB.pdf",
+        "gpu_positions": [
+          2,
+          5
+        ],
+        "gpu_positions_note": "slot positions inferred from the manual's layout drawing (measured pitch); anchor = lowest slot as position 7",
+        "form_factor": "ATX"
+      }
+    },
+    "cases": {
+      "Corsair 4000D Airflow": {
+        "match": "4000D",
+        "gpu_max_mm": 360,
+        "cooler_max_mm": 170,
+        "slots": 7,
+        "fans_included": "2x 120mm",
+        "source": "https://www.corsair.com/us/en/p/pc-cases/cc-9011200-ww/4000d-airflow-tempered-glass-mid-tower-atx-case-black-cc-9011200-ww"
+      },
+      "Phanteks Eclipse P400A": {
+        "match": "P400A",
+        "gpu_max_mm": 420,
+        "cooler_max_mm": 160,
+        "slots": null,
+        "fans_included": "varies by variant (not stated)",
+        "source": "https://legacy.phanteks.com/assets/manuals/PH-EC400ATG.pdf"
+      },
+      "Lian Li LANCOOL 216": {
+        "match": "Lancool\\s*216|LAN216",
+        "gpu_max_mm": 392,
+        "cooler_max_mm": 180.5,
+        "slots": 7,
+        "fans_included": "2x 160mm front + 1x 140mm rear",
+        "source": "https://lian-li.com/product/lancool-216/"
+      },
+      "Montech AIR 903 MAX": {
+        "match": "AIR\\s*903\\s*MAX",
+        "gpu_max_mm": 400,
+        "cooler_max_mm": 180,
+        "slots": 7,
+        "fans_included": "3x 140mm ARGB front + 1x 140mm rear",
+        "source": "https://www.montechpc.com/air-903-max"
+      },
+      "Montech AIR 903 BASE": {
+        "match": "AIR\\s*903",
+        "gpu_max_mm": 400,
+        "cooler_max_mm": 180,
+        "slots": 7,
+        "fans_included": "2x 140mm front + 1x 140mm rear",
+        "source": "https://www.montechpc.com/air-903-base"
+      },
+      "Fractal Design Pop Air": {
+        "match": "Pop\\s*Air",
+        "gpu_max_mm": 405,
+        "cooler_max_mm": 170,
+        "slots": 7,
+        "fans_included": "3x 120mm (2 front, 1 rear)",
+        "source": "https://www.fractal-design.com/products/cases/pop/pop-air/black-tg-clear-tint/"
+      },
+      "NZXT H7 Flow": {
+        "match": "H7\\s*Flow",
+        "gpu_max_mm": 400,
+        "cooler_max_mm": 185,
+        "slots": 7,
+        "fans_included": "2 (2022) or 3 (2024) x 120mm",
+        "source": "https://support.nzxt.com/hc/en-us/articles/37837320894875-H7-2022-2023-Series-Specs"
+      }
+    },
+    "coolers": {
+      "Thermalright Peerless Assassin 120 SE": {
+        "match": "Peerless\\s*Assassin|PA120",
+        "height_mm": 155,
+        "am4": true,
+        "source": "https://www.thermalright.com/product/peerless-assassin-120-se/"
+      },
+      "Thermalright Assassin X 120 R SE": {
+        "match": "Assassin\\s*X|AX120",
+        "height_mm": 148,
+        "am4": true,
+        "source": "https://www.thermalright.com/product/assassin-x-120-refined-se/"
+      },
+      "DeepCool AK400": {
+        "match": "AK400",
+        "height_mm": 155,
+        "am4": true,
+        "source": "https://www.deepcool.com/products/Cooling/cpuaircoolers/AK400-Performance-CPU-Cooler-1851-1700-AM5/2024/15222.shtml"
+      }
+    },
+    "gpus": {
+      "MSI RTX 3060 VENTUS 2X 12G OC": {
+        "match": "(?=.*3060)Ventus\\s*2X",
+        "length_mm": 235,
+        "thickness_mm": 42,
+        "power": "1x 8-pin",
+        "source": "https://storage-asset.msi.com/datasheet/vga/global/GeForce-RTX-3060-VENTUS-2X-12G-OC.pdf"
+      },
+      "MSI RTX 3060 VENTUS 3X 12G OC": {
+        "match": "(?=.*3060)Ventus\\s*3X",
+        "length_mm": 305,
+        "thickness_mm": 42,
+        "power": "1x 8-pin",
+        "source": "https://storage-asset.msi.com/datasheet/vga/global/GeForce-RTX-3060-VENTUS-3X-12G-OC.pdf"
+      },
+      "ZOTAC RTX 3060 Twin Edge OC": {
+        "match": "(?=.*3060)Twin\\s*Edge",
+        "length_mm": 224.1,
+        "thickness_mm": 39.2,
+        "slots": 2,
+        "power": "1x 8-pin",
+        "source": "https://www.zotac.com/us/product/graphics_card/zotac-gaming-geforce-rtx-3060-twin-edge-oc"
+      },
+      "Gigabyte RTX 3060 EAGLE OC 12G": {
+        "match": "(?=.*3060)Eagle",
+        "length_mm": 242,
+        "thickness_mm": 41,
+        "power": "1x 8-pin",
+        "source": "https://www.gigabyte.com/Graphics-Card/GV-N3060EAGLE-OC-12GD-rev-20/sp"
+      },
+      "Gigabyte RTX 3060 GAMING OC 12G": {
+        "match": "Gigabyte.*Gaming\\s*OC|GV-N3060GAMING",
+        "length_mm": 282,
+        "thickness_mm": 41,
+        "power": "1x 8-pin",
+        "source": "https://www.gigabyte.com/Graphics-Card/GV-N3060GAMING-OC-12GD-rev-20/sp"
+      },
+      "ASUS Dual RTX 3060 V2 OC": {
+        "match": "(?=.*3060)ASUS.*\\bDual\\b",
+        "length_mm": 200,
+        "thickness_mm": 38,
+        "slots": 2,
+        "power": "1x 8-pin",
+        "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx3060-o12g-v2/techspec/"
+      },
+      "ASUS Phoenix RTX 3060": {
+        "match": "(?=.*3060)Phoenix",
+        "length_mm": 177,
+        "thickness_mm": 51,
+        "slots": 2.55,
+        "power": "1x 8-pin",
+        "source": "ASUS techspec PH-RTX3060-12G"
+      },
+      "ASUS TUF RTX 3060 OC": {
+        "match": "(?=.*3060)ASUS.*\\bTUF\\b",
+        "length_mm": 301,
+        "thickness_mm": 54,
+        "slots": 2.7,
+        "power": "1x 8-pin",
+        "source": "ASUS techspec TUF-RTX3060-O12G-GAMING"
+      },
+      "ASUS ROG Strix RTX 3060 OC": {
+        "match": "(?=.*3060)Strix",
+        "length_mm": 300,
+        "thickness_mm": 53.5,
+        "slots": 2.7,
+        "power": "1x 8-pin",
+        "source": "https://rog.asus.com/graphics-cards/graphics-cards/rog-strix/rog-strix-rtx3060-o12g-gaming-model/spec/"
+      },
+      "EVGA RTX 3060 XC GAMING": {
+        "match": "(?=.*3060)EVGA.*\\bXC\\b",
+        "length_mm": 201.8,
+        "slots": 2,
+        "power": "1x 8-pin",
+        "source": "https://www.evga.com/products/product.aspx?pn=12G-P5-3657-KR"
+      }
+    },
+    "cpus": {
+      "Ryzen 5 5600": {
+        "match": "5600(?![XGT\\d])",
+        "socket": "AM4",
+        "pcie": "4.0",
+        "ecc": "Yes (requires board support) - not needed: non-ECC kit",
+        "source": "https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-5-5600.html"
+      },
+      "Ryzen 7 5700X": {
+        "match": "5700X(?!3D)",
+        "socket": "AM4",
+        "pcie": "4.0",
+        "ecc": "Yes (requires board support)",
+        "source": "https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-5000-series/amd-ryzen-7-5700x.html"
+      },
+      "Ryzen 5 5600X": {
+        "match": "5600X(?!3D)",
+        "socket": "AM4",
+        "pcie": "4.0",
+        "source": "https://www.amd.com/en/products/processors/desktops/ryzen/5000-series/amd-ryzen-5-5600x.html"
+      },
+      "Ryzen 7 3700X": {
+        "match": "3700X",
+        "socket": "AM4",
+        "pcie": "4.0",
+        "source": "https://www.amd.com/en/support/downloads/drivers.html/processors/ryzen/ryzen-3000-series/amd-ryzen-7-3700x.html"
+      }
+    },
+    "apu_note": "AMD AM4 chipset page: Ryzen with Radeon graphics are limited to 1x8 PCIe Gen3 for graphics; no maker states 5000G x8/x8 -> G-series excluded. https://www.amd.com/en/products/processors/chipsets/am4.html",
+    "workstations": {
+      "Dell Precision 7820": {
+        "match": "7820",
+        "platform": "xeon_sp",
+        "max_gpu_mm": 312,
+        "source": "https://web.archive.org/web/2020/https://japancatalog.dell.com/c/wp-content/uploads/Precision_5820_7820_Towers_Technical_Guidebook.pdf p.23-24",
+        "psus": {
+          "950": {
+            "aux8": 1,
+            "aux6": 1,
+            "per_card_w": 250,
+            "two_card_w": 250,
+            "note": "1 CPU: two 250 W double-wide cards; 2 CPUs: two 150 W single-wide only"
+          }
+        },
+        "two_cpu_limit_w": 150,
+        "dual_slots": "slots 2 and 4 (CPU x16 Gen3)",
+        "m2": null,
+        "m2_ok": null
+      },
+      "Dell Precision 5820": {
+        "match": "5820",
+        "platform": "xeon_w",
+        "max_gpu_mm": 312,
+        "source": "https://web.archive.org/web/2020/https://japancatalog.dell.com/c/wp-content/uploads/Precision_5820_7820_Towers_Technical_Guidebook.pdf p.23-24; https://dl.dell.com/topicspdf/precision-5820-workstation_Owners-Manual2_en-us.pdf p.89-93",
+        "psus": {
+          "425": {
+            "aux8": 0,
+            "aux6": 0,
+            "per_card_w": 0,
+            "two_card_w": 0,
+            "note": "no PCIe supplementary power connector"
+          },
+          "950": {
+            "aux8": 2,
+            "aux6": 0,
+            "per_card_w": 300,
+            "two_card_w": 250,
+            "note": "two 6+2-pin; 250 W per slot when two high-power cards"
+          }
+        },
+        "dual_slots": "slots 2 and 4 (CPU x16 Gen3); a double-wide card in slot 2 covers slot 3 - the cards sit adjacent",
+        "max_gpu_note": "VERIFIED: full length 12.28 in / 312 mm (Technical Guidebook p.23)",
+        "m2": null,
+        "m2_ok": null
+      },
+      "HP Z4 G4": {
+        "match": "Z4\\s*G4",
+        "platform": "xeon_w",
+        "max_gpu_mm": 312,
+        "source": "https://h20195.www2.hp.com/v2/getpdf.aspx/c05527757.pdf p.7-8, 12-13",
+        "psus": {
+          "465": {
+            "aux8": 0,
+            "aux6": 0,
+            "per_card_w": 0,
+            "two_card_w": 0,
+            "note": "no graphics power cables"
+          },
+          "750": {
+            "aux8": 0,
+            "aux6": 2,
+            "per_card_w": null,
+            "two_card_w": null,
+            "note": "2x 6-pin: an 8-pin card needs an adapter HP does not list"
+          },
+          "1000": {
+            "aux8": 4,
+            "aux6": 0,
+            "per_card_w": null,
+            "two_card_w": null,
+            "note": "4x 6+2-pin; needs HP Fan and Front Card Guide Kit for dual high-end"
+          }
+        },
+        "kit_note": "HP requires the Fan and Front Card Guide Kit (1MY89AV / 1XM33AA) for an RTX A4000-class card",
+        "dual_slots": "slots 1 and 3 (CPU x16)",
+        "max_gpu_note": "INFERRED: HP lists slots 1-5 as full-height full-length (with extender); full length = 312 mm",
+        "m2": "2 onboard M.2 Gen3 x4 slots from the CPU (QuickSpecs c05527757)",
+        "m2_ok": true
+      },
+      "HP Z6 G4": {
+        "match": "Z6\\s*G4",
+        "platform": "xeon_sp",
+        "max_gpu_mm": 312,
+        "source": "https://web.archive.org/web/2025/https://h20195.www2.hp.com/v2/getpdf.aspx/c05527761.pdf",
+        "psus": {
+          "1000": {
+            "aux8": 2,
+            "aux6": 0,
+            "per_card_w": null,
+            "two_card_w": null,
+            "note": "2x 6-pin convertible to 8-pin; the only PSU option"
+          }
+        },
+        "default_psu": "1000",
+        "dual_slots": "slots 2 and 5 (CPU x16)",
+        "m2": "M.2 on board (slot 4 drops to x4 when the second M.2 is used, QuickSpecs)",
+        "m2_ok": true,
+        "max_gpu_note": "INFERRED: full length with extender"
+      },
+      "Lenovo ThinkStation P520": {
+        "match": "P520",
+        "platform": "xeon_w",
+        "max_gpu_mm": 312,
+        "source": "https://download.lenovo.com/pccbbs/thinkcentre_pdf/ts_p520_p520c_power_configurator_v1.6.pdf p.10-12",
+        "psus": {
+          "690": {
+            "aux8": 2,
+            "aux6": 0,
+            "per_card_w": 265,
+            "two_card_w": 180,
+            "note": "CPU <=140 W: one card <=265 W + one <=180 W"
+          },
+          "900": {
+            "aux8": 2,
+            "aux6": 0,
+            "per_card_w": 295,
+            "two_card_w": 250,
+            "note": "2x 250 W, or 295 W + 75 W"
+          },
+          "1000": {
+            "aux8": 2,
+            "aux6": 2,
+            "per_card_w": 320,
+            "two_card_w": 320,
+            "note": "2x 320 W"
+          }
+        },
+        "dual_slots": "slots 2 and 4 (CPU x16 Gen3)",
+        "max_gpu_note": "INFERRED: Lenovo lists slots 2/4 as 'full height, full length'; a full-length PCIe card is <= 312 mm (PCIe CEM)",
+        "m2": "2 onboard M.2 PCIe NVMe slots ('M.2 Slots: 2 via onboard slots', PSREF Dec 2023 p.3)",
+        "m2_ok": true,
+        "m2_source": "https://psref.lenovo.com/syspool/Sys/PDF/ThinkStation/ThinkStation_P520/ThinkStation_P520_Spec.pdf"
+      }
+    },
+    "benchmarks": {
+      "_about": "tg/pp = tokens/s. MEASURED values link their source; ESTIMATED values show the formula. llama.cpp latest b11946 (2026-10-28).",
+      "per_gpu": {
+        "gpu": {
+          "llama2_7b_q4_0_tg": 76.92,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013#discussioncomment-14182757",
+          "qwen3_14b_q4k_tg_4k": 31.2,
+          "qwen3_14b_q4k_tg_16k": 22.7,
+          "src_14b": "https://www.hardware-corner.net/gpu-llm-benchmarks/rtx-3060-12gb/",
+          "moe_35b_a3b_offload_tg": 45,
+          "moe_note": "Qwen3.6-35B-A3B Q4_K_M, -ncmoe 26, Ryzen 5 3600 + DDR4-3200, ~12k ctx",
+          "src_moe": "https://note.com/testex/n/n8c51a0285478"
+        },
+        "gpu_4060ti16": {
+          "llama2_7b_q4_0_tg": 64.03,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013",
+          "qwen3_14b_q4k_tg_4k": 27.4,
+          "qwen3_14b_q4k_tg_16k": 22.4,
+          "src_14b": "https://www.hardware-corner.net/gpu-llm-benchmarks/rtx-4060-ti-16gb/",
+          "gpt_oss_20b_tg": 90.98,
+          "src_oss": "https://github.com/ggml-org/llama.cpp/discussions/15396#discussioncomment-14398274"
+        },
+        "gpu_5060ti16": {
+          "llama2_7b_q4_0_tg": 95.69,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013#discussioncomment-16868218",
+          "qwen3_14b_q4k_tg_4k": 41.1,
+          "qwen3_14b_q4k_tg_16k": 32.9,
+          "src_14b": "https://www.hardware-corner.net/gpu-llm-benchmarks/rtx-5060-ti-16gb/",
+          "gpt_oss_20b_tg": 111.51,
+          "src_oss": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+          "moe_30b_a3b_partial_tg": 35.4,
+          "moe_note": "Qwen3-30B-A3B Q4_K_M, -ngl 33, Ryzen 7 3700X DDR4",
+          "src_moe": "https://github.com/ggml-org/llama.cpp/discussions/24528#discussioncomment-18243371"
+        },
+        "gpu_a4000": {
+          "llama2_7b_q4_0_tg": 85.17,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013#discussioncomment-14130794",
+          "qwen25_14b_localscore_tg": 32.0,
+          "src_14b": "https://www.localscore.ai/model/2"
+        },
+        "gpu_3090": {
+          "llama2_7b_q4_0_tg": 161.89,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013",
+          "qwen3_14b_q4k_tg_4k": 70.0,
+          "qwen3_30b_a3b_q4k_tg_4k": 153.6,
+          "qwen3_32b_q4k_tg_4k": 35.1,
+          "src": "https://www.hardware-corner.net/gpu-llm-benchmarks/rtx-3090/"
+        },
+        "gpu_a5000": {
+          "llama2_7b_q4_0_tg": 135.83,
+          "src_7b": "https://github.com/ggml-org/llama.cpp/discussions/15013#discussioncomment-14150776",
+          "qwen25_14b_localscore_tg": 50.4,
+          "src_14b": "https://www.localscore.ai/model/2"
+        }
+      },
+      "dual_3060": {
+        "moe_35b_a3b_tensor_split_mtp_tg_code": 129,
+        "dense_27b_tensor_split_mtp_tg_code": 57.0,
+        "dense_27b_layer_split_dflash_tg_code": 36.3,
+        "src": "https://github.com/Captain-Tripps/qwen38-dual-rtx-3060/tree/main/",
+        "moe_one_vs_two_cards_tg": "27.7 -> 52.8",
+        "src2": "https://github.com/Mr5elfDe5truct/prestige/pull/103",
+        "label": "MEASURED"
+      },
+      "pcie_width": {
+        "finding": "Layer split decode barely depends on link width: x8 vs x1 -5% (5060 Ti), ~x2 eGPU -2% (3060), AMD chipset x4 -3.5% (ROCm). No dual-3060 x4-vs-x8 measurement exists; tensor-split sensitivity UNVERIFIED.",
+        "src": [
+          "https://github.com/ggml-org/llama.cpp/discussions/15013#discussioncomment-14145116",
+          "https://github.com/ggml-org/llama.cpp/discussions/28767#discussioncomment-18448202",
+          "https://github.com/ggml-org/llama.cpp/discussions/15697#discussioncomment-18407326"
+        ],
+        "label": "MEASURED (proxies)"
+      },
+      "cpu_offload_estimates": {
+        "formula": "tg_max = 0.65 x RAM bandwidth / active expert bytes per token",
+        "qwen3_30b_a3b_all_experts_in_ram": {
+          "DDR4-3200 2ch (AM4, 51.2 GB/s)": 30.5,
+          "DDR5-6000 2ch (AM5, 96 GB/s)": 57,
+          "DDR4-2666 4ch (Xeon W, 85.3 GB/s)": 51
+        },
+        "label": "ESTIMATED",
+        "note": "no measured Xeon W-2100/2200 quad-channel offload run was found; CPU compute (4-6 cores) may cap it"
+      },
+      "speculative": {
+        "finding": "Draft model (Qwen2.5-Coder-0.5B) on 3090 + Coder-32B: 34.8 -> 51.3 tg (1.47x). MTP (merged 2026-05-16, PR #22673) on 3x3060 27B: 18.5 -> 32.2 (1.74x). No gain when experts sit in system RAM.",
+        "src": [
+          "https://github.com/ggml-org/llama.cpp/pull/10455#issuecomment-2496264086",
+          "https://github.com/ggml-org/llama.cpp/pull/22673"
+        ],
+        "label": "MEASURED"
+      },
+      "software": {
+        "ollama": "v0.40.12 supports CC 8.6 (3060/3090/A4000), 8.9 (4060 Ti), 12.0 (5060 Ti) with driver >= 550",
+        "llama_cpp": "sm_120 (5060 Ti) built only with CUDA >= 12.8; Ubuntu release binaries ship CUDA 12.8 and 13.4",
+        "linux_note": "multi-GPU layer split on Windows/WDDM measured ~half the decode speed of Ubuntu on the same hardware (discussion #28767) - use Ubuntu"
+      },
+      "fit_estimates": {
+        "14B Q4 + 32k ctx": "16.3 GB f16 KV (13.1 GB with q8_0 KV): no on 12 GB, yes on 16 GB with q8 KV",
+        "27B dense Q4 + 8k": "18.5 GB: needs 24 GB or 2x12",
+        "30B-A3B MoE Q4 + 8k": "20.1 GB: 24 GB or 2x12 fully on GPU; on 12/16 GB use --n-cpu-moe",
+        "label": "ESTIMATED"
+      }
+    },
+    "gpu_families": {
+      "gpu": {
+        "name": "RTX 3060 12GB",
+        "vram_gb": 12,
+        "bandwidth_gbs": 360,
+        "power_w": 170,
+        "psu_w": 550,
+        "aux8": 1,
+        "connectors": "1x 8-pin (AIB)",
+        "cc": "8.6",
+        "length_mm_typ": 242,
+        "slots_typ": 2,
+        "source": "https://www.asus.com/motherboards-components/graphics-cards/dual/dual-rtx3060-o12g-v2/techspec/"
+      },
+      "gpu_4060ti16": {
+        "name": "RTX 4060 Ti 16GB",
+        "vram_gb": 16,
+        "bandwidth_gbs": 288,
+        "power_w": 165,
+        "psu_w": 550,
+        "aux8": 1,
+        "connectors": "1x 8-pin",
+        "cc": "8.9",
+        "length_mm_typ": 244,
+        "slots_typ": 2.5,
+        "pcie_lanes": 8,
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/"
+      },
+      "gpu_5060ti16": {
+        "name": "RTX 5060 Ti 16GB",
+        "vram_gb": 16,
+        "bandwidth_gbs": 448,
+        "power_w": 180,
+        "psu_w": 600,
+        "aux8": 1,
+        "connectors": "1x 8-pin",
+        "cc": "12.0 (needs driver >= 570.153.02 / CUDA 12.8)",
+        "length_mm_typ": null,
+        "slots_typ": 2.5,
+        "pcie_lanes": 8,
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5060-family/"
+      },
+      "gpu_a4000": {
+        "name": "RTX A4000 16GB",
+        "vram_gb": 16,
+        "bandwidth_gbs": 448,
+        "power_w": 140,
+        "psu_w": 450,
+        "aux8": 0,
+        "aux6": 1,
+        "connectors": "1x 6-pin",
+        "cc": "8.6",
+        "length_mm_typ": 241,
+        "slots_typ": 1,
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/products/workstations/nvidia-rtx-a4000-datasheet.pdf"
+      },
+      "gpu_3090": {
+        "name": "RTX 3090 24GB",
+        "vram_gb": 24,
+        "bandwidth_gbs": 936,
+        "power_w": 350,
+        "psu_w": 750,
+        "aux8": 2,
+        "connectors": "2x 8-pin (FE 12-pin via adapter); AIB up to 3x 8-pin",
+        "cc": "8.6",
+        "length_mm_typ": 313,
+        "slots_typ": 3,
+        "source": "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/"
+      },
+      "gpu_a5000": {
+        "name": "RTX A5000 24GB",
+        "vram_gb": 24,
+        "bandwidth_gbs": 768,
+        "power_w": 230,
+        "psu_w": 650,
+        "aux8": 1,
+        "connectors": "1x 8-pin",
+        "cc": "8.6",
+        "length_mm_typ": 267,
+        "slots_typ": 2,
+        "source": "https://www.nvidia.com/content/dam/en-zz/Solutions/products/workstations/nvidia-rtx-a5000-datasheet.pdf"
+      }
+    },
+    "platforms": {
+      "am4": {
+        "name": "AM4 (Ryzen, DDR4 2-channel)",
+        "mem_bw_gbs": 51.2,
+        "cpu_w": 105
+      },
+      "am5": {
+        "name": "AM5 (Ryzen 7000, DDR5 2-channel)",
+        "mem_bw_gbs": 83.2,
+        "cpu_w": 105
+      },
+      "xeon_w": {
+        "name": "Xeon W (C422, DDR4 4-channel)",
+        "mem_bw_gbs": 85.3,
+        "cpu_w": 140
+      },
+      "xeon_sp": {
+        "name": "Xeon Scalable (C621/C622, DDR4 6-channel)",
+        "mem_bw_gbs": 128.0,
+        "cpu_w": 150
+      }
+    }
+  },
+  "tax_basis": "Florida Rule 12A-1.045(3): shipping on ship-only listings is taxable; 6% state + 1% Miami-Dade surtax",
+  "dr_import": {
+    "note": "Dominican Republic courier Category B: up to US$200 FOB per shipment, personal use, tax-free (Decreto 402-05) + US$0.25/kg; above US$200 duties and ITBIS apply at rates NOT verified. Not included in the budget.",
+    "source": "https://www.aduanas.gob.do/preguntas-frecuentes/"
+  },
+  "variation_require": "\\b(64|96|128|192|256)\\s?GB(?!\\s*(SSD|NVMe|HDD|M\\.2|storage))"
+}

@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "_about": "Every element this module uses. Executors reference them as @@<key>@@ (css) or @@<key>.text@@. Prefer role+name / aria-label / data-* selectors; relative XPath only when needed.",
+  "locators": {}
+}

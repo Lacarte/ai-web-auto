@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/@Workspace/@Development/@Projects/ai-web-auto/@created-extensions/youtube-quick-save/**)"
+    ]
+  }
+}

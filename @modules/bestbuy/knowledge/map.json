@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "pages": {
+    "home": {
+      "url": "https://www.bestbuy.com/?intl=nosplash",
+      "purpose": "Entry page (intl=nosplash skips the country-choice splash, from the user's link). Searches start from the header box.",
+      "ready_when_any": ["search_box"]
+    },
+    "search": {
+      "url": "https://www.bestbuy.com/site/searchpage.jsp",
+      "purpose": "Search results: st=<query> (Best Buy adds id=pcat17071). ~16-18 cards; cards render when scrolled into view.",
+      "ready_when_any": ["result_card"],
+      "notes": "No pagination was seen for the GPU searches probed on 2026-10-29: one page per search (max_pages 1). Availability messages are for the store in the header ('Your store Rio Hondo Mall' when probed)."
+    }
+  }
+}

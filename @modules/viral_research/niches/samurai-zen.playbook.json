@@ -1,0 +1,239 @@
+{
+  "niche": "Samurai zen music",
+  "one_liner": "Give the genre's faceless samurai a face — a Black samurai on Yasuke's journey — and put him in the formats that already work: long sleep and focus ambient, short epic taiko, lo-fi playlists.",
+  "formula_html": "Give <span class=\"slot a\">the faceless samurai a face</span> — <span class=\"slot d\">a Black samurai on Yasuke's journey</span> — with <span class=\"slot b\">a sound no one else has</span>, in <span class=\"slot c\">the formats that already win</span>.",
+  "start_here": [
+    "Claim @BlackSamuraiZen today (free on 2026-10-25) and set the channel up once (Channel).",
+    "Design the character once: face visible, black lacquered armour, one gold and one red accent.",
+    "Make idea #1 (an epic taiko piece, 3–4 min) and idea #2 (a lo-fi playlist with a tracklist).",
+    "Then a long sleep video every week; post on Saturdays or Sundays.",
+    "Fill the scorecard at day 7 and day 28; keep the formats that land in their band."
+  ],
+  "tracks": [
+    {
+      "key": "ambient", "label": "Long ambient · 3–6 h", "short": "sleep · focus · meditation", "status": "Recipe from concepts — packaging gives no edge here",
+      "status_kind": "untested",
+      "summary": "12 outliers vs 12 ordinary videos of the same channels: they are packaged almost identically. What wins is the concept and the use (sleep median 344×, philosophy 43×), and posting on weekends.",
+      "arrangement": {
+        "title": "Content formula — a 2-hour sleep or focus video", "caption": "No cuts, no hook: a mood that evolves. Most-replayed moments are scattered (12–89%).",
+        "length_s": 7200,
+        "blocks": [
+          {"label": "Sound bed", "note": "rain or water, low drone", "kind": "intro", "start": 0, "end": 120},
+          {"label": "The motif", "note": "shakuhachi enters", "kind": "verse", "start": 120, "end": 900},
+          {"label": "Movement 1", "note": "koto + taiko heartbeat", "kind": "chorus", "start": 900, "end": 2700},
+          {"label": "Movement 2", "note": "kalimba / mbira — the signature", "kind": "solo", "start": 2700, "end": 4800},
+          {"label": "Deep sleep", "note": "slower, quieter, no drums", "kind": "outro", "start": 4800, "end": 7200}
+        ],
+        "markers": [
+          {"at": 120, "label": "No cuts", "note": "0 cuts per minute in every measured outlier"},
+          {"at": 4800, "label": "Chapters", "note": "a chapter per movement (4 of 12 outliers)"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "[The Black Samurai's ___] — Japanese Zen Music for [use] | [instrument] & [nature] ([N] Hours)",
+         "example": "The Black Samurai Sleeps — Japanese Zen Music for Deep Sleep | Shakuhachi & Rain (3 Hours)",
+         "do": ["Character first: that is your difference", "Name the use people search: sleep, focus, meditation", "About 70 characters, “|” separators"],
+         "dont": ["Open with a kanji word only — 111 videos do it and only 7% of the newest beat their channel", "Use Assassin's Creed, Ghost of Tsushima, The Last Samurai or Afro Samurai in titles"],
+         "evidence": [
+           {"label": "The use: sleep / healing", "concept": "sleep / healing / anxiety"},
+           {"label": "The kanji-title habit (crowded)", "concept": "Japanese-word title (kanji concept name)"},
+           {"label": "Title length (characters)", "slot": "en-long/title/chars"},
+           {"label": "Separators “|”", "slot": "en-long/title/pipe"}]},
+        {"title": "Thumbnail", "what": "formula",
+         "template": "The Black samurai, FACE VISIBLE, calm, three-quarter view\nOne kanji + its romaji word, small (2–3 words of text at most)\nMuted cinematic palette, lots of empty space, one red accent",
+         "example": "Him kneeling by a rain-dark stone basin, black armour with gold edges, 眠 NEMURI above",
+         "do": ["Show the face — the genre hides it under a straw hat", "Keep the same look on every upload"],
+         "dont": ["Big text blocks", "A face that resembles a real actor or a game character"],
+         "evidence": [
+           {"label": "Words on the thumbnail", "measure": "en-long/thumb_text_words"},
+           {"kind": "observation", "label": "The genre's look", "text": "faceless samurai under a straw hat, one kanji, muted palette — KUMAMICHI (2.1M views), KOI, SYOUKAKU"}]},
+        {"title": "Sound & picture", "what": "formula",
+         "template": "Shakuhachi + koto  ×  kalimba / mbira  ×  a slow taiko heartbeat, over rain or water\nOne image or a slow loop for the whole video — no cuts\nMaster around −14 LUFS · 3–6 hours: your example channel posts ~6-hour videos, 3 a week",
+         "do": ["The East-African instruments are the signature — no one in the sample uses them"],
+         "dont": ["Cut the picture", "Loud drums in sleep videos"],
+         "evidence": [
+           {"label": "Loudness (LUFS)", "measure": "en-long/lufs"},
+           {"label": "Length (seconds)", "measure": "en-long/duration_s"},
+           {"label": "Cuts per minute", "measure": "en-long/cuts_per_min"},
+           {"label": "The instrument concept", "concept": "shakuhachi / koto zen ambient"}]},
+        {"title": "Description", "what": "formula",
+         "template": "[One line of story: where the Black Samurai is tonight]\n\nFor:\n• deep sleep\n• focus and study\n• meditation and martial-arts practice\n\n[3–4 short lines: this chapter of Yasuke's journey, told gently]\n\n🎧 Free to use in your streams with credit: “Music: Black Samurai Zen”\n🎶 Composed with AI tools · inspired by the life of Yasuke (Kyoto, 1581)\n\n#japanesezenmusic #samuraimusic #blacksamurai #sleepmusic #meditationmusic #shakuhachi #yasuke",
+         "do": ["Many short lines rather than paragraphs", "About 7 hashtags", "A tracklist with timestamps on playlists"],
+         "evidence": [
+           {"label": "Lines (outliers write shorter lines)", "slot": "en-long/description/lines"},
+           {"label": "Length (characters)", "slot": "en-long/description/chars"},
+           {"label": "Hashtags", "slot": "en-long/description/hashtags"},
+           {"kind": "observation", "label": "What viewers ask", "text": "track names at a timestamp, and permission to use the music on streams"}]},
+        {"title": "Tags", "what": "formula",
+         "template": "japanese zen music, zen music, meditation music, healing music, relaxing music, shakuhachi, koto, stress relief, mindfulness, focus music, study music, sleep music, samurai music, samurai meditation music, black samurai, black samurai music, yasuke, yasuke music, bushido meditation music",
+         "do": ["About 19 tags: the niche's common set + your Black Samurai words"],
+         "dont": ["Game, film or anime titles you don't own"],
+         "evidence": [
+           {"label": "Number of tags", "slot": "en-long/tags/count"},
+           {"kind": "observation", "label": "Searches", "text": "autocomplete: “yasuke music”, “black samurai music”, “bushido meditation music”, “japanese bamboo flute music sleep with rain”"}]}
+      ]
+    },
+    {
+      "key": "taiko", "label": "Epic taiko · 3–4 min", "short": "proven, almost empty", "status": "Concept proven · 1 recent video in the sample", "status_kind": "holds",
+      "summary": "Epic taiko / war drums: 15 of 25 beat their channel, on 11 channels, median 143× — and only one was posted in the last 90 days.",
+      "arrangement": {
+        "title": "Content formula — an epic taiko piece, 3:30", "caption": "The amber frame: where viewers rewind in the two taiko outliers (46–59%).",
+        "length_s": 210, "replay_zone": [0.45, 0.6],
+        "blocks": [
+          {"label": "Hit", "note": "one drum, then silence", "kind": "hook", "start": 0, "end": 8},
+          {"label": "Build", "note": "the pulse rises", "kind": "verse", "start": 8, "end": 60},
+          {"label": "Battle", "note": "taiko + djembe + choir", "kind": "chorus", "start": 60, "end": 120},
+          {"label": "Breath", "note": "shakuhachi alone", "kind": "solo", "start": 120, "end": 150},
+          {"label": "Final charge", "kind": "chorus", "start": 150, "end": 198},
+          {"label": "Hit", "kind": "outro", "start": 198, "end": 210}
+        ],
+        "markers": [
+          {"at": 0, "label": "Drum at 0:00", "note": "no intro"},
+          {"at": 120, "label": "The breath", "note": "a quiet bar before the climax"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "[KANJI] [ROMAJI] | [The Black Samurai's ___] | Epic Taiko & Samurai War Drums",
+         "example": "黒侍 KUROZAMURAI | The Black Samurai Rises | Epic Taiko & War Drums",
+         "evidence": [{"label": "Epic taiko / war drums", "concept": "epic taiko / war drums"},
+                      {"kind": "observation", "label": "Searches", "text": "“epic samurai music taiko”, “samurai war drums music”, “samurai fight music”, “yasuke fight music”"}]},
+        {"title": "Sound", "what": "formula",
+         "template": "Taiko + djembe / ngoma (his two worlds) + low male choir + shakuhachi\nOne drum hit at 0:00 · a breath at ~2:00 · final charge · end on a hit",
+         "evidence": [{"kind": "observation", "label": "The two taiko outliers", "text": "3:19 and 3:43 long; most replayed at 46% and 59%"}]},
+        {"title": "Thumbnail", "what": "formula",
+         "template": "The Black samurai mid-strike or standing before a giant taiko, firelight\nKanji + romaji, bold — this is the one format with energy",
+         "evidence": [{"kind": "observation", "label": "The genre", "text": "⛩️ SPIRIT OF THE WARRIOR (270×), 戦鼓神 SENGOSHIN (148×)"}]}
+      ]
+    },
+    {
+      "key": "lofi", "label": "Lo-fi playlist · 1–2 h", "short": "proven, almost empty", "status": "Concept proven · 1 recent video in the sample", "status_kind": "holds",
+      "summary": "Samurai lo-fi / hip-hop: 11 of 20 beat their channel, on 8 channels, lift 1.40 — MOONLIGHT SAMURAI did 409× with 324 subscribers.",
+      "arrangement": {
+        "title": "Content formula — a 1-hour lo-fi playlist", "caption": "A tracklist with timestamps: viewers ask for the name of the song at 9:35.",
+        "length_s": 3600, "replay_zone": [0.25, 0.3],
+        "blocks": [
+          {"label": "Track 1", "note": "your best beat first", "kind": "hook", "start": 0, "end": 180},
+          {"label": "Tracks 2–7", "kind": "verse", "start": 180, "end": 1260},
+          {"label": "Tracks 8–13", "kind": "chorus", "start": 1260, "end": 2340},
+          {"label": "Tracks 14–20", "note": "slower — night", "kind": "outro", "start": 2340, "end": 3600}
+        ],
+        "markers": [
+          {"at": 180, "label": "A chapter per track", "note": "4 of 12 outliers use chapters"},
+          {"at": 2340, "label": "Wind down", "note": "practice"}
+        ]
+      },
+      "cards": [
+        {"title": "Title", "what": "formula",
+         "template": "Black Samurai Lo-Fi 🎧 [beats to study / relax / sleep to] | [place, year] [Vol. N]",
+         "example": "Black Samurai Lo-Fi 🎧 beats to study to | Kyoto, 1581 — Vol. 1",
+         "evidence": [{"label": "Samurai lo-fi", "concept": "samurai lo-fi / hip-hop beats"},
+                      {"kind": "observation", "label": "Searches", "text": "“samurai lofi hip hop beats”, “samurai lofi mix”, “samurai lofi sleep”, “japanese samurai study music”"}]},
+        {"title": "Sound & picture", "what": "formula",
+         "template": "Boom-bap 80–90 BPM + koto / shamisen samples + kalimba hooks\nOne illustrated scene of the Black samurai with headphones, a slow loop\nTracklist with timestamps in the description and as chapters",
+         "evidence": [{"kind": "observation", "label": "The genre", "text": "illustrated samurai with headphones and big HIP HOP text (Meiji HipHop Playlist, 409×)"}]}
+      ]
+    },
+    {
+      "key": "shorts", "label": "Shorts", "short": "trailers", "status": "Observations only", "status_kind": "observation",
+      "summary": "Few samurai-zen Shorts beat their channel (5 outliers, all small). Use Shorts as trailers: 30 seconds of the taiko hit or the lo-fi hook, linked to the long version.",
+      "cards": [
+        {"title": "Shorts", "what": "practice",
+         "template": "0:00 the strongest moment (drum hit, beat drop, or the shakuhachi motif)\nThe Black samurai on screen in the first frame\nText: one line of his story · end on the first frame (loop)\nRelated video → the long version",
+         "evidence": [{"label": "Shorts description length", "slot": "en-shorts/description/chars"},
+                      {"kind": "observation", "label": "Sample", "text": "5 Shorts outliers, all on small channels: no reliable pattern"}]}
+      ]
+    }
+  ],
+  "channel": [
+    {"title": "Channel name", "what": "formula",
+     "template": "[the character] + [the niche word] — 2–3 words\n→ Black Samurai Zen",
+     "example": "Black Samurai Zen · Yasuke Zen · Black Samurai Zen Music — @BlackSamuraiZen, @YasukeZen and @BlackSamuraiZenMusic were free on 2026-10-25",
+     "do": ["Say the niche in the name", "Claim the handle now", "One channel = one character and one sound"],
+     "dont": ["“Afro Samurai” (an anime trademark)", "Game or film names"],
+     "evidence": [{"label": "Niche words in the name", "channels": "niche_in_name"},
+                  {"label": "One format per channel", "channels": "one_sound"}]},
+    {"title": "The character & his world", "what": "formula",
+     "template": "One recurring Black samurai, face visible, same armour every time\nHis world: Yasuke's real journey — Mozambique → Jesuit ship → Kyoto 1581 → Oda Nobunaga → Honnō-ji 1582\nEach upload = one place or moment of that journey, told gently, “inspired by”",
+     "do": ["Treat the history with respect: “inspired by the life of Yasuke”", "Keep him calm and dignified"],
+     "dont": ["Caricature or stereotypes", "Claim facts the history doesn't support"],
+     "evidence": [{"label": "Black samurai / Yasuke", "concept": "black samurai / Yasuke"},
+                  {"kind": "observation", "label": "What those 8 videos are", "text": "game soundtracks and rap songs — none is zen music: the zen version is open ground, and untested"}]},
+    {"title": "Signature sound", "what": "formula",
+     "template": "Japanese: shakuhachi, koto, taiko\n× East African: kalimba / mbira, kora, ngoma drums\n= his two worlds, in every upload",
+     "evidence": [{"kind": "observation", "label": "Gap", "text": "none of the 213 on-niche videos mentions kalimba, mbira or kora"}]},
+    {"title": "Handle & About", "what": "formula",
+     "template": "@BlackSamuraiZen\n\nAbout:\nJapanese zen music from the journey of a Black samurai.\nSleep, focus and meditation music — new chapters every weekend.\nInspired by the life of Yasuke (Kyoto, 1581). Music made with AI tools; free to use in streams with credit.",
+     "evidence": [{"kind": "practice", "label": "Not measured", "text": "About pages are not in the data"}]},
+    {"title": "Upload rhythm", "what": "formula",
+     "template": "2–3 uploads a week: 1 long sleep/focus video (3–6 h) + 1 taiko or lo-fi + Shorts trailers\nPost on Saturday or Sunday\n(Aether Journey: about 3 six-hour videos a week)",
+     "evidence": [{"label": "Posted on a weekend", "measure": "en-long/weekend_post"},
+                  {"label": "Winning channels' rhythm", "channels": "rhythm"},
+                  {"label": "Small channels break out", "channels": "small"}]},
+    {"title": "Pinned comment & community", "what": "formula",
+     "template": "Pin: the tracklist (playlists) or “the next chapter of his journey → [link]”\nAnswer stream-use questions with the credit line\nComment filters on (Yasuke is a debated topic online)",
+     "evidence": [{"kind": "observation", "label": "On the outliers", "text": "viewers ask for track names and stream use; martial artists comment on the warrior videos"}]},
+    {"title": "Upload settings (every video)", "what": "checklist",
+     "template": "Category: Music\nLanguage: English\nComments: on, with blocked-word filters\nAudience: not made for kids\nAltered or synthetic content: yes, when the visuals look real\nChapters: one per movement or track\nVisibility: scheduled for Saturday or Sunday",
+     "evidence": [{"label": "Comments on", "slot": "en-long/settings/comments_on"},
+                  {"label": "Chapters", "slot": "en-long/settings/chapters"},
+                  {"kind": "policy", "label": "Disclosure, audience", "text": "not visible in the data — YouTube policy"}]}
+  ],
+  "ideas_lead": "Score = evidence × demand × gap (each 1 to 3, from the concept table) − cost. Black Samurai ideas reuse proven formats; the Spanish ones test an empty market.",
+  "ideas": [
+    {"n": 1, "ranking": "en-long", "concept": "epic taiko", "title": "黒侍 KUROZAMURAI | The Black Samurai Rises | Epic Taiko & War Drums", "e": 3, "d": 3, "g": 3, "lever": "character + taiko × ngoma", "thumbnail": "him before a giant taiko, firelight", "hook": "one drum hit, then silence"},
+    {"n": 2, "ranking": "en-long", "concept": "samurai lo-fi", "title": "Black Samurai Lo-Fi 🎧 beats to study to | Kyoto, 1581 — Vol. 1", "e": 3, "d": 3, "g": 3, "lever": "character + series", "thumbnail": "illustrated, headphones on, Kyoto rooftops", "hook": "the best beat first"},
+    {"n": 3, "ranking": "en-long", "concept": "epic taiko", "title": "本能寺 HONNŌ-JI 1582 | The Last Night | Epic Taiko & Shakuhachi", "e": 3, "d": 3, "g": 3, "lever": "a real chapter of his story", "thumbnail": "a temple in flames, him in silhouette", "hook": "distant fire, then the drums"},
+    {"n": 4, "ranking": "en-long", "concept": "samurai lo-fi", "title": "Black Samurai Lo-Fi 🎧 Afro × Edo beats | kalimba, koto & boom-bap — Vol. 2", "e": 3, "d": 3, "g": 3, "lever": "signature sound", "thumbnail": "him with a kalimba, warm lantern light", "hook": "a kalimba riff over a dusty beat"},
+    {"n": 5, "ranking": "en-shorts", "concept": "epic taiko", "title": "the black samurai's war drums 🥁", "e": 3, "d": 3, "g": 3, "lever": "trailer of #1", "hook": "the drum hit at 0:00"},
+    {"n": 6, "ranking": "en-shorts", "concept": "samurai lo-fi", "title": "the black samurai has a lo-fi playlist", "e": 3, "d": 3, "g": 3, "lever": "trailer of #2", "hook": "beat drop at 0:00"},
+    {"n": 7, "ranking": "en-long", "concept": "epic taiko", "title": "主君 OATH | The Black Samurai and Nobunaga | Epic Taiko & Choir", "e": 3, "d": 3, "g": 3, "lever": "story chapter", "thumbnail": "him kneeling before a lord, banners", "hook": "a choir breath, then taiko"},
+    {"n": 8, "ranking": "en-long", "concept": "samurai lo-fi", "title": "Black Samurai Lo-Fi 🎧 rainy night in Azuchi Castle — Vol. 3", "e": 3, "d": 3, "g": 3, "lever": "series + place", "thumbnail": "rain on a castle window, him reading", "hook": "rain, then the beat"},
+    {"n": 9, "ranking": "en-long", "concept": "sleep / healing", "title": "The Black Samurai Sleeps — Japanese Zen Music for Deep Sleep | Shakuhachi & Rain (3 Hours)", "e": 3, "d": 3, "g": 2, "lever": "character + use", "thumbnail": "him resting by a stone basin, rain, 眠 NEMURI", "hook": "rain bed, shakuhachi at 2:00"},
+    {"n": 10, "ranking": "en-long", "concept": "philosophy", "title": "BUSHIDO — The Way of the Black Samurai | Japanese Zen Music for Discipline & Focus", "e": 3, "d": 2, "g": 3, "lever": "principle + character", "thumbnail": "him in seiza, 武士道 above", "hook": "a single koto pluck"},
+    {"n": 11, "ranking": "en-long", "concept": "black samurai", "title": "Yasuke's Path（弥助の道）— Japanese Zen Music of the Black Samurai | Shakuhachi & Kalimba", "e": 2, "d": 3, "g": 3, "lever": "the history + signature sound", "thumbnail": "him walking a mountain path, 道", "hook": "footsteps, kalimba, then shakuhachi"},
+    {"n": 12, "ranking": "en-long", "concept": "sleep / healing", "title": "Mbira & Shakuhachi — Two Worlds, One Silence | Zen Sleep Music of the Black Samurai (6 Hours)", "e": 3, "d": 3, "g": 2, "lever": "signature sound + long version", "thumbnail": "two instruments on a tatami, moonlight", "hook": "mbira drops in the rain"},
+    {"n": 13, "ranking": "en-long", "concept": "philosophy", "title": "The Outsider's Way — Stoic Samurai Music for Discipline (inspired by Yasuke)", "e": 3, "d": 2, "g": 3, "lever": "his story as a lesson", "thumbnail": "him alone on a bridge, dawn", "hook": "a deep taiko heartbeat"},
+    {"n": 14, "ranking": "en-long", "concept": "sleep / healing", "title": "黒の雨 KURO NO AME — Black Samurai Rain Ambience for Sleep (8 Hours)", "e": 3, "d": 3, "g": 2, "lever": "length people search (“10 hours”)", "thumbnail": "rain on black armour", "hook": "heavy rain, a far bell"},
+    {"n": 15, "ranking": "en-shorts", "concept": "black samurai", "title": "who was the black samurai? (Kyoto, 1581)", "e": 2, "d": 3, "g": 3, "lever": "history in 30 s", "hook": "his portrait at 0:00 + a taiko hit"},
+    {"n": 16, "ranking": "en-shorts", "concept": "sleep / healing", "title": "fall asleep with the black samurai (rain + shakuhachi)", "e": 3, "d": 3, "g": 2, "lever": "trailer of #9", "hook": "rain and the first note"},
+    {"n": 17, "ranking": "en-long", "concept": "focus / study", "title": "Black Samurai Focus — 2 Hours of Deep Work Music | Taiko Heartbeat & Koto", "e": 2, "d": 3, "g": 2, "lever": "use", "thumbnail": "him writing calligraphy, 集中", "hook": "a slow taiko pulse"},
+    {"n": 18, "ranking": "en-long", "concept": "black samurai", "title": "Arrival in Kyoto, 1581 — Japanese Zen Music of the Black Samurai's First Spring", "e": 2, "d": 3, "g": 3, "lever": "story chapter", "thumbnail": "him under cherry blossoms, a city in the distance", "hook": "street ambience fading into koto"},
+    {"n": 19, "ranking": "en-long", "concept": "focus / study", "title": "Black Samurai Study Session — 4 × 25 min Pomodoro with Temple Bells", "e": 2, "d": 3, "g": 2, "cost": 1, "lever": "format", "thumbnail": "him studying by lantern, a timer", "hook": "a bell marks the start"},
+    {"n": 20, "ranking": "en-shorts", "concept": "epic taiko", "title": "taiko × ngoma — two drums, one warrior", "e": 3, "d": 3, "g": 3, "lever": "signature sound", "hook": "both drums answer each other at 0:00"},
+    {"n": 21, "ranking": "en-long", "concept": "shakuhachi zen ambient", "title": "静か SHIZUKA — Black Samurai Meditation | Shakuhachi & Bamboo Water", "e": 3, "d": 3, "g": 1, "lever": "the core library (crowded)", "thumbnail": "him by a bamboo water spout", "hook": "water, then shakuhachi"},
+    {"n": 22, "ranking": "en-long", "concept": "shakuhachi zen ambient", "title": "Shakuhachi & Kora — Night Meditation of the Black Samurai", "e": 3, "d": 3, "g": 1, "lever": "signature sound", "thumbnail": "two players by a fire at night", "hook": "kora arpeggio, then flute"},
+    {"n": 23, "ranking": "en-long", "concept": "animal spirit", "title": "烏 KARASU — The Black Samurai and the Crow | Japanese Zen Music", "e": 2, "d": 2, "g": 1, "lever": "companion (the genre's habit, fading)", "thumbnail": "him and a crow, empty space", "hook": "a crow call, then koto"},
+    {"n": 24, "ranking": "en-long", "concept": "season", "title": "Snow on Black Armour — Winter Zen Music of the Black Samurai", "e": 1, "d": 2, "g": 1, "lever": "season (fading)", "thumbnail": "snow on his shoulders", "hook": "wind and snow"},
+    {"n": 25, "ranking": "en-long", "concept": "jazz fusion", "bet": true, "title": "Black Samurai Jazz — Shamisen & Upright Bass for a Slow Evening", "e": 1, "d": 2, "g": 3, "lever": "genre fusion", "thumbnail": "him in a smoky Edo bar", "hook": "a walking bass line"},
+    {"n": 26, "ranking": "es-long", "concept": "Spanish gap", "bet": true, "title": "El Samurái Negro — Música Zen Japonesa para Dormir | Shakuhachi y Lluvia (3 horas)", "e": 1, "d": 1, "g": 3, "lever": "an empty market", "thumbnail": "the same character, Spanish text", "hook": "lluvia, luego shakuhachi"},
+    {"n": 27, "ranking": "es-long", "concept": "Spanish gap", "bet": true, "title": "Yasuke — Música Épica Samurái con Tambores Taiko", "e": 1, "d": 1, "g": 3, "lever": "an empty market", "thumbnail": "taiko and fire", "hook": "un golpe de tambor"},
+    {"n": 28, "ranking": "es-shorts", "concept": "Spanish gap", "bet": true, "title": "¿quién fue Yasuke, el samurái africano?", "e": 1, "d": 1, "g": 3, "lever": "history in Spanish", "hook": "su retrato + taiko"},
+    {"n": 29, "ranking": "es-shorts", "concept": "Spanish gap", "bet": true, "title": "los tambores del samurái negro 🥁", "e": 1, "d": 1, "g": 3, "lever": "trailer in Spanish", "hook": "golpe de tambor a las 0:00"},
+    {"n": 30, "ranking": "en-long", "concept": "focus / study", "title": "Black Samurai Training Music — Martial Arts Practice with Taiko & Shakuhachi (1 Hour)", "e": 2, "d": 3, "g": 2, "lever": "the martial-arts audience in the comments", "thumbnail": "him training with a bokken at dawn", "hook": "a strike, then the pulse"}
+  ],
+  "avoid_concepts": ["Japanese-word title (kanji concept name)", "season or moment"],
+  "gallery_notes": {
+    "vFJuk4U-V7Q": "Your example channel Aether Journey: every upload ~6 h, 3 a week, normal 6,000 views — this one 2.1M.",
+    "gbbAty6h7f0": "324 subscribers → 409× its normal: lo-fi works for tiny channels."
+  },
+  "confidence": [
+    "Packaging gives no edge here: only 2 patterns separated outliers from controls (weekend posting, fewer words), and the back-test could not run.",
+    "The recipe rests on concepts (lift, channels, recent supply) and on the channels' habits, not on title tricks.",
+    "“Black samurai / Yasuke” is proven as a topic (7 of 8 beat their channel, 6 channels) — but those are game soundtracks and rap songs, several over a year old. Black Samurai ZEN is untested: a bet next to proven formats.",
+    "Yasuke music pulls beyond games: Netflix's Yasuke soundtrack (“Black Gold” 880K views, the album 953K) and fan songs up to 4.5M. The zen and lo-fi attempts found so far are tiny (1,171, 181 and 28 views) — their channels' normals were not read, so they neither prove nor disprove the angle.",
+    "The “Spanish” outliers were Portuguese (Komorebi Zenata): Spanish samurai zen is nearly empty — unknown demand.",
+    "9 of 9 view counts re-checked on YouTube matched. Long videos were measured on their first 90 seconds.",
+    "Vision labels: 17 of 63 images (time limit on a shared CPU); thumbnails were also reviewed by eye."
+  ],
+  "risks": [
+    "Yasuke is a real person and a heated topic online (the 2025 game debate): present the channel as “inspired by”, keep facts careful, and use comment filters.",
+    "Trademarks: Assassin's Creed, Ghost of Tsushima, Samurai Champloo, The Last Samurai, Afro Samurai and Netflix's Yasuke (and its “Black Gold” theme) — not in titles, tags or names.",
+    "“Black Samurai” is also a 1976 film and an existing reggae artist (BlackSamuraiVEVO): “Black Samurai Zen” is distinct, but check the name before investing in branding.",
+    "Covers of game or film music get Content ID claims: compose your own pieces.",
+    "Mass-produced, repetitive ambient videos can lose monetisation (“inauthentic content”): vary each chapter, sound and image.",
+    "Disclose realistic AI visuals; check that your AI music tool allows commercial use."
+  ],
+  "scorecard_text": "For each published video, write its link and its views at 7 and 28 days, then divide by your channel's median (new channel: the median of your first 5 uploads). Keep the formats that land in or above their band."
+}

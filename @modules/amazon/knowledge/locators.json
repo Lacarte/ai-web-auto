@@ -1,0 +1,259 @@
+{
+ "version": 1,
+ "_about": "Learned live on amazon.com search pages on 2026-10-28 (scratch/amazon/probe_search.py). Cards carry data-asin and data-cy sections - Amazon's own stable hooks, not generated classes. Product-page locators learned 2026-10-28 (scratch/amazon/probe_product.py, probe_buybox.py) once the extension could read product pages (execute_script falls back to chrome.scripting where the debugger is refused).",
+ "locators": {
+  "search_box": {
+   "page": "home",
+   "css": "#twotabsearchtextbox",
+   "xpath": "//input[@id='twotabsearchtextbox']",
+   "role": "searchbox",
+   "name": "Search Amazon",
+   "description": "Global search input in the header; on every Amazon page. type_cdp finds it by the xpath (clicks it, clears, types).",
+   "verified": "2026-10-28",
+   "last_count": 1
+  },
+  "search_submit": {
+   "page": "home",
+   "css": "#nav-search-submit-button",
+   "role": "button",
+   "name": "Go",
+   "description": "The header search button (input type=submit). Clicked with a trusted CDP click after typing the query.",
+   "notes": "user-supplied absolute XPath /html/body/div[1]/header/div[1]/div[1]/div[2]/div/form/div[3]/div/span/input - same element, registered by its id (absolute XPaths break on layout changes)"
+  },
+  "deliver_to": {
+   "page": "search",
+   "css": "#glow-ingress-line2",
+   "description": "Delivery location shown in the header (city + ZIP) - prices and delivery dates are for this address. Read only; never changed.",
+   "verified": "2026-10-28",
+   "last_count": 1
+  },
+  "result_card": {
+   "page": "search",
+   "css": "[data-component-type=\"s-search-result\"]",
+   "description": "One search result; data-asin is the product id.",
+   "verified": "2026-10-28",
+   "last_count": 16
+  },
+  "card_title": {
+   "within": "result_card",
+   "css": "[data-cy=\"title-recipe\"]",
+   "description": "Brand line (sponsored cards and 'Amazon Renewed') + product title.",
+   "verified": "2026-10-28",
+   "last_count": 16
+  },
+  "card_price": {
+   "within": "result_card",
+   "css": ".a-price:not([data-a-strike]) .a-offscreen",
+   "description": "Featured offer price. Missing when the card says 'See options' or has no featured offer.",
+   "verified": "2026-10-28",
+   "last_count": 11
+  },
+  "card_list_price": {
+   "within": "result_card",
+   "css": ".a-price[data-a-strike] .a-offscreen",
+   "state": "transient",
+   "description": "Struck-through 'List:' / was price; only on discounted items.",
+   "verified": "2026-10-28",
+   "last_count": 7
+  },
+  "card_delivery": {
+   "within": "result_card",
+   "css": "[data-cy=\"delivery-recipe\"]",
+   "description": "'FREE delivery Tomorrow, Oct 29', '$9.99 delivery Nov 24 - Dec 4', 'Only 7 left in stock', 'Temporarily out of stock'.",
+   "verified": "2026-10-28",
+   "last_count": 16
+  },
+  "card_secondary_offer": {
+   "within": "result_card",
+   "css": "[data-cy=\"secondary-offer-recipe\"]",
+   "state": "transient",
+   "description": "'More Buying Choices $439.45(12+ used & new offers)' - the lowest other offer, condition not stated.",
+   "verified": "2026-10-28",
+   "last_count": 4
+  },
+  "card_rating": {
+   "within": "result_card",
+   "css": ".a-icon-alt",
+   "state": "transient",
+   "description": "'4.6 out of 5 stars'.",
+   "verified": "2026-10-28",
+   "last_count": 16
+  },
+  "card_prime": {
+   "within": "result_card",
+   "css": "i.a-icon-prime",
+   "role": "img",
+   "name": "Prime",
+   "state": "transient",
+   "description": "Prime badge on a search card (aria-label 'Prime'). Absent = not Prime. 'FREE delivery ... for Prime members' is a different signal (prime_only_free).",
+   "verified": "2026-10-28"
+  },
+  "card_reviews": {
+   "within": "result_card",
+   "css": "[aria-label$=\"ratings\"], [aria-label$=\"rating\"]",
+   "state": "transient",
+   "description": "aria-label '3,172 ratings'.",
+   "verified": "2026-10-28",
+   "last_count": 16
+  },
+  "card_link": {
+   "within": "result_card",
+   "css": "a[href*=\"/dp/\"]",
+   "description": "Product link (/dp/<asin>).",
+   "verified": "2026-10-28",
+   "last_count": 75
+  },
+  "results_info": {
+   "page": "search",
+   "css": "[data-component-type=\"s-result-info-bar\"]",
+   "description": "'1-16 of 453 results for \"rtx 3060 12gb\"' + sort menu.",
+   "verified": "2026-10-28",
+   "last_count": 1
+  },
+  "next_page": {
+   "page": "search",
+   "css": "a.s-pagination-next",
+   "state": "transient",
+   "description": "Next page link (href has page=N); absent on the last page.",
+   "verified": "2026-10-28",
+   "last_count": 1
+  },
+  "no_results": {
+   "page": "search",
+   "text": "No results for",
+   "state": "transient",
+   "description": "'No results for your search query.' - e.g. nothing in the price range."
+  },
+  "captcha_form": {
+   "page": "search",
+   "css": "form[action*=\"validateCaptcha\"]",
+   "state": "transient",
+   "description": "Amazon's robot check. Stops the run for the human; never solved or bypassed."
+  },
+  "human_check": {
+   "page": "search",
+   "css": "#tmms-challenge, form#checkpointForm, form[action*=\"/checkpoint/validate\"]",
+   "text": "Check the box to continue",
+   "state": "transient",
+   "description": "Amazon's 'I am human' checkbox checkpoint (seen 2026-10-30). The person ticks it; the script only waits, never clicks it."
+  },
+  "product_title": {
+   "page": "product",
+   "css": "#productTitle",
+   "description": "Product page title.",
+   "verified": "2026-10-28"
+  },
+  "product_asin": {
+   "page": "product",
+   "css": "#ASIN, input[name=\"ASIN\"]",
+   "description": "The page's ASIN (hidden input) - evidence the page is the requested product.",
+   "verified": "2026-10-28"
+  },
+  "product_availability": {
+   "page": "product",
+   "css": "#availability",
+   "state": "transient",
+   "description": "Availability line: 'In Stock', 'Only 1 left in stock - order soon.', 'Currently unavailable.', 'Temporarily out of stock.' Not enough alone: a page can say 'In stock' with no buy button.",
+   "verified": "2026-10-28"
+  },
+  "add_to_cart": {
+   "page": "product",
+   "css": "#add-to-cart-button",
+   "state": "transient",
+   "description": "Featured (new / renewed) offer's Add to Cart. Presence = it can be bought. READ ONLY - NEVER clicked.",
+   "verified": "2026-10-28"
+  },
+  "add_to_cart_used": {
+   "page": "product",
+   "css": "#add-to-cart-button-ubb",
+   "state": "transient",
+   "description": "Add to Cart of a USED buy box ('Buy Used: $198.22', 'Used: Very Good' - live on B07QC8RSZB, whose card had no price). READ ONLY - NEVER clicked.",
+   "notes": "#usedOfferListingID is NOT a used signal: the hidden input is also on pages whose featured offer is new (B0CTK1SFVD, sold by Amazon.com)",
+   "verified": "2026-10-28"
+  },
+  "buy_now": {
+   "page": "product",
+   "css": "#buy-now-button",
+   "state": "transient",
+   "description": "Presence only. NEVER clicked.",
+   "verified": "2026-10-28"
+  },
+  "see_all_offers": {
+   "page": "product",
+   "css": "#buybox-see-all-buying-choices",
+   "state": "transient",
+   "description": "'See All Buying Options': no featured offer - no single price to track."
+  },
+  "out_of_stock": {
+   "page": "product",
+   "css": "#outOfStock",
+   "state": "transient",
+   "description": "Out-of-stock buy box."
+  },
+  "buybox": {
+   "page": "product",
+   "css": "#desktop_buybox, #buybox",
+   "description": "The buy box (offer type, condition, seller, availability).",
+   "verified": "2026-10-28"
+  },
+  "core_price": {
+   "page": "product",
+   "css": "#corePrice_feature_div .a-offscreen, #corePriceDisplay_desktop_feature_div .priceToPay, #apex_desktop .apex-pricetopay-value",
+   "description": "Buy box price to pay ('$399.97'; priceToPay reads '$399 . 97' - spaces are removed before parsing).",
+   "verified": "2026-10-28"
+  },
+  "selected_variant": {
+   "page": "product",
+   "css": "[id=\"tp-inline-twister-dim-values-container\"] li:has(input[aria-checked=\"true\"]), [id=\"tp-inline-twister-dim-values-container\"] li[data-initiallyselected=\"true\"]",
+   "state": "transient",
+   "description": "The selected option in the inline variation menu (data-asin = that variant). Its own price is the real price of what the page sells.",
+   "notes": "user-supplied absolute XPath /html/body/div[1]/div[1]/div[2]/div[6]/div[4]/div[23]/div[1]/div[3]/div/div/div/div[2]/div/div points inside this item (the swatch's price block); registered by Amazon's own ids/attributes because absolute XPaths break on layout changes",
+   "verified": "2026-10-28"
+  },
+  "variant_label": {
+   "within": "selected_variant",
+   "css": ".swatch-title-text",
+   "description": "Option name ('10*2.5*0.35inch F62G0').",
+   "verified": "2026-10-28"
+  },
+  "variant_price": {
+   "within": "selected_variant",
+   "css": ".apex-pricetopay-value [aria-hidden=\"true\"], .apex-pricetopay-accessibility-label",
+   "description": "Selected option's price to pay ('$25.99'). The a-offscreen span inside is EMPTY here; the aria-hidden span holds the price.",
+   "verified": "2026-10-28"
+  },
+  "variant_availability": {
+   "within": "selected_variant",
+   "css": "[id^=\"twisterAvailability\"]",
+   "state": "transient",
+   "description": "Option availability (' In Stock'), hidden text.",
+   "verified": "2026-10-28"
+  },
+  "variant_prime": {
+   "within": "selected_variant",
+   "css": "i.a-icon-prime",
+   "state": "transient",
+   "description": "Prime badge slot of the option (hidden ms3slot); absent = that option is not Prime.",
+   "verified": "2026-10-28"
+  },
+  "buybox_prime": {
+   "page": "product",
+   "css": "#desktop_buybox i.a-icon-prime, #apex_desktop i.a-icon-prime, #corePrice_feature_div i.a-icon-prime",
+   "state": "transient",
+   "description": "Visible Prime badge by the price / in the buy box (Amazon.com-sold B0CTK1SFVD: yes; third-party renewed B0BK36KLDD: no).",
+   "verified": "2026-10-28"
+  },
+  "delivery_block": {
+   "page": "product",
+   "css": "#mir-layout-DELIVERY_BLOCK, #deliveryBlockMessage",
+   "description": "'FREE delivery Friday, October 30' / '$X delivery ...'.",
+   "verified": "2026-10-28"
+  },
+  "merchant_info": {
+   "page": "product",
+   "css": "#merchantInfoFeature_feature_div, #tabular-buybox, #merchant-info",
+   "description": "'Shipper / Seller Respec Store', 'Sold by ZAYAUPVL'.",
+   "verified": "2026-10-28"
+  }
+ }
+}

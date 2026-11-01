@@ -1,0 +1,150 @@
+{
+  "name": "llm-parts",
+  "description": "Local-LLM workstation parts: a Lenovo P520, a cheap 24GB RTX card, a 12GB RTX card. Alerts when a matching offer appears, comes back in stock or drops in price; the dashboard compares the best eBay vs Amazon price. Totals = price + shipping to the delivery address (eBay ZIP 33101; Amazon = the account's address); landed adds ~7% FL tax.",
+  "interval_minutes": 10,
+  "tax_rate": 0.07,
+  "stores": [
+    "ebay",
+    "amazon",
+    "bestbuy"
+  ],
+  "reject_sets": {
+    "not_a_card": [
+      "\\blaptop\\b|\\bnotebook\\b|\\bmobile\\b|gaming (pc|desktop|computer)|desktop (pc|computer)|\\bcomputer\\b|\\bcore\\s?i[3579]\\b|\\bryzen\\s?[3579]\\b|\\bssd\\b|\\b\\d+\\s?GB\\s+(ram|ddr\\d?)\\b|\\blot of\\b|\\bbundle\\b|mining rig"
+    ],
+    "accessory": [
+      "replacement|cooling fan|\\bfans? only\\b|\\bfans? for\\b|\\bfor (rtx|nvidia|geforce|gpu)\\b|compatible with|heatsink|backplate|water\\s?block|\\bshroud\\b|\\bbracket\\b|\\bcable\\b|\\briser\\b|nvlink|\\bbridge\\b|thermal pad|\\bbios chip\\b"
+    ]
+  },
+  "flag_sets": {
+    "risky": [
+      "\\bmodded\\b|\\bmod(ified)? fans?\\b|\\brepaired\\b|\\breflow(ed)?\\b|\\bno backplate\\b|\\bbent\\b|\\bcracked\\b|\\bmissing\\b|\\bfan noise\\b|\\bcoil whine\\b"
+    ]
+  },
+  "products": {
+    "Lenovo P520 (64GB+)": {
+      "queries": {
+        "ebay": [
+          "lenovo thinkstation p520 64gb"
+        ],
+        "amazon": [
+          "lenovo thinkstation p520 64gb"
+        ]
+      },
+      "min": 250,
+      "max": 900,
+      "max_price": 650,
+      "require": [
+        "\\bP520\\b",
+        "\\b(64|96|128|192|256|384|512|768|1024)\\s?GB\\b(?!\\s*(?:\\w+\\s+)?(?:SSD|HDD|NVMe|M\\.2|SATA|SAS|storage|hard|drive|disk|eMMC|flash|HD\\b))"
+      ],
+      "reject": [
+        "\\bP520c\\b",
+        "\\bbare\\s?bones?\\b",
+        "motherboard only|power supply only|\\bpsu only\\b|chassis only|case only|heatsink only|front bezel|side panel|\\bfan only\\b",
+        "\\bfor (lenovo|thinkstation|p520)\\b|\\b(L?R)?DIMM\\b|\\bPC4-\\d+|\\b(ram|memory) kit\\b|\\bkit \\(\\d"
+      ],
+      "allow_excluded": [
+        "no (gpu|graphics|video card)"
+      ],
+      "prefer": [
+        "\\b900\\s?W\\b",
+        "\\b1000\\s?W\\b"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "ebay": {
+        "min_feedback": 50
+      },
+      "amazon": {
+        "pages": 2
+      },
+      "_ram_rule": "the user's rule (2026-10-29): always 64GB RAM or more; sizes followed by SSD/HDD/NVMe are storage"
+    },
+    "RTX 24GB ($450-$600)": {
+      "queries": {
+        "ebay": [
+          "rtx 3090 24gb",
+          "titan rtx 24gb",
+          "quadro rtx 6000 24gb",
+          "rtx a5000 24gb"
+        ],
+        "amazon": [
+          "rtx 3090 24gb",
+          "rtx a5000 24gb",
+          "titan rtx 24gb"
+        ],
+        "bestbuy": [
+          "rtx 24gb"
+        ]
+      },
+      "min": 400,
+      "max": 650,
+      "max_price": 600,
+      "require": [
+        "\\b(rtx\\s?3090|3090|titan\\s?rtx|quadro\\s?rtx\\s?6000|rtx\\s?a5000|a5000|4090)\\b"
+      ],
+      "reject": [
+        "\\b(3080|3070|3060|4080|4070|4060|2080|2070)\\b",
+        "\\ba6000\\b|6000\\s?ada|\\b48\\s?GB\\b|\\b20\\s?GB\\b|\\ba4500\\b"
+      ],
+      "reject_sets": [
+        "not_a_card",
+        "accessory"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "suspicious_below": 900,
+      "ebay": {
+        "min_feedback": 50
+      },
+      "amazon": {
+        "pages": 2
+      }
+    },
+    "RTX 12GB ($200-$400)": {
+      "queries": {
+        "ebay": [
+          "rtx 3060 12gb",
+          "rtx 2060 12gb",
+          "rtx 3080 12gb",
+          "rtx 4070 12gb"
+        ],
+        "amazon": [
+          "rtx 3060 12gb",
+          "rtx 2060 12gb",
+          "rtx 4070 12gb"
+        ],
+        "bestbuy": [
+          "rtx 3060 12gb"
+        ]
+      },
+      "min": 150,
+      "max": 420,
+      "max_price": 400,
+      "require": [
+        "\\b(3060|2060|3080|4070|5070)\\b",
+        "\\b12\\s?GB\\b|\\b12G\\b"
+      ],
+      "reject": [
+        "\\b3060\\s?Ti\\b",
+        "\\b(6|8)\\s?GB\\b"
+      ],
+      "reject_sets": [
+        "not_a_card",
+        "accessory"
+      ],
+      "flag_sets": [
+        "risky"
+      ],
+      "ebay": {
+        "min_feedback": 25
+      },
+      "amazon": {
+        "pages": 3
+      }
+    }
+  }
+}

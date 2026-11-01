@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "actions": {
+    "search_products": {
+      "page": "home",
+      "description": "Search eBay listings for a query and price range, items located in North America (LH_PrefLoc=3), shipping to the configured ZIP, in the user's conditions (LH_ItemCondition=1500|1000|2000|2010|3000|2020|2030; 7000 For parts only when the query asks for parts). Buy It Now by default (price + shipping lowest first); auction=True searches auctions only, ending soonest first. Read and follow pages until the exact matches end; drop parts/not-working listings unless the query asked for parts.",
+      "inputs": {
+        "query": "search words",
+        "min/max": "price range in USD",
+        "max_pages": "default settings.max_pages",
+        "auction": "True: LH_Auction=1&_sop=1 (ending soonest); each card gives current_bid, bids, time_left, ends"
+      },
+      "steps": [
+        "search_via=form (default): bring the bound tab to the front; type_cdp the query into search_box; check the box holds exactly the query and search_submit (#gh-search-btn) is uncovered; CDP-click it.",
+        "Wait for a results page whose _nkw is the query; then load it with the filters merged in (LH_BIN, LH_PrefLoc=1, _stpos=ZIP, LH_ItemCondition without 7000, _udlo/_udhi, _sop=15, _ipg=120; eBay's _from/_trksid kept).",
+        "Wait for result_card or no_results; stop on CAPTCHA/sign-in.",
+        "Read down the page with mouse-wheel flicks (module_kit.read_down) - pacing; all cards are already in the DOM.",
+        "Read result_card -> card_item_link id + card text lines; ignore cards after fewer_words_divider and the /itm/123456 placeholder.",
+        "Exclude by condition and title (ebay_rules.exclusion_reason).",
+        "More pages while a next_page exists and the page still added exact matches: read on to Next, pause, CDP-click it (evidence _pgn=N), else open its href.",
+        "search_via=url: navigate straight to the filtered search URL and scroll by script (background tab)."
+      ],
+      "evidence": "Every kept item has an item id and a price parsed from its card; the page's results_count was read; excluded items are listed with their reason.",
+      "uses": [
+        "search_box",
+        "search_submit",
+        "result_card",
+        "card_item_link",
+        "results_count",
+        "fewer_words_divider",
+        "next_page",
+        "no_results"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "retry": "a page that does not load is reloaded once; a CAPTCHA stops the run",
+      "implemented_by": "ebay_search.search_products",
+      "cli": "python ebay_search.py search \"rtx 3060 12gb\" --min 150 --max 450"
+    },
+    "sold_comps": {
+      "page": "home",
+      "description": "Search sold + completed listings for a query to get the real recent market price (median and middle range).",
+      "steps": [
+        "Same as search_products with LH_Sold=1&LH_Complete=1 instead of LH_BIN."
+      ],
+      "evidence": "Items carry a 'Sold <date>' line and a price.",
+      "uses": [
+        "result_card",
+        "card_item_link",
+        "results_count",
+        "fewer_words_divider",
+        "next_page",
+        "no_results"
+      ],
+      "sensitive": false,
+      "implemented_by": "ebay_search.search_products",
+      "cli": "python ebay_search.py search \"rtx 3060 12gb\" --sold"
+    },
+    "read_listing": {
+      "page": "home",
+      "description": "Open one listing, extract price/shipping to ZIP/condition/returns/seller/specifics/photos, read the seller's description frame, and score trust.",
+      "inputs": {
+        "item_id": "eBay item number"
+      },
+      "steps": [
+        "Navigate to /itm/<id>; wait for item_title; highlight the price.",
+        "Read item_title, price_primary, bin_price/bid_price, condition, quantity, seller_card, shipping_section, returns_section, item_specifics/spec_pair, photos, store_info, seller_ratings; screenshot.",
+        "Check the page's 'eBay item number' equals the requested id.",
+        "Open description_frame's src (itm.ebaydesc.com) and read its text.",
+        "assess_listing: landed cost, exclusion, description risk phrases, testing evidence, trust score."
+      ],
+      "evidence": "Page item number == requested id; title and price read; evidence JSON + screenshot saved with timestamp and sha256.",
+      "uses": [
+        "item_title",
+        "price_primary",
+        "bin_price",
+        "bid_price",
+        "buy_it_now_button",
+        "place_bid_button",
+        "condition",
+        "quantity",
+        "seller_card",
+        "shipping_section",
+        "returns_section",
+        "shop_confidence",
+        "item_specifics",
+        "spec_pair",
+        "photos",
+        "description_frame",
+        "store_info",
+        "seller_ratings",
+        "description_body",
+        "buy_box"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "retry": "reload once; never clicks anything on the item page",
+      "implemented_by": "ebay_search.read_listing",
+      "cli": "python ebay_search.py read 128147436297"
+    },
+    "confirm_option": {
+      "page": "home",
+      "description": "On a multi-option listing, select the chosen options in the page and confirm the displayed price equals the embedded-data price. Never clicks Buy It Now / Add to cart.",
+      "steps": [
+        "Open /itm/<id>; wait for msku_panel.",
+        "For each chosen option: CDP-click the msku_menu_button whose label is the menu name; wait for its listbox; CDP-click the msku_option whose data-sku-value-name equals the value; wait until the button shows the value.",
+        "Read price_primary and compare with the embedded price."
+      ],
+      "evidence": "Every menu button shows the chosen value and price_primary equals the embedded-data price (within $0.01); screenshot saved.",
+      "uses": [
+        "msku_panel",
+        "msku_menu_button",
+        "msku_option",
+        "price_primary",
+        "item_title"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "retry": "one retry per menu; a mismatch is reported, never 'fixed'",
+      "implemented_by": "ebay_search.confirm_option"
+    },
+    "watch_products": {
+      "page": "home",
+      "description": "Poll saved queries (watches/<name>.json) every interval_minutes (>= 5), newest listings first; alert with sound + Windows notification on NEW matching listings and PRICE DROPS; keep each item's price/condition history and mark items that disappear.",
+      "inputs": {
+        "watch": "watches/<name>.json: queries with query, min/max, max_price, require/reject, conditions, min_feedback"
+      },
+      "steps": [
+        "Preflight once; work in a dedicated tab.",
+        "Each cycle: search_products(sort=10 newly listed, 1 page) per query.",
+        "diff() against state.json: first cycle is a baseline (no alerts); later cycles alert on new matches under max_price and price drops; listings no longer on the first page get gone_since.",
+        "Write state.json and alerts.jsonl; play the alert; show it in the page overlay.",
+        "Sleep interval_minutes; reconnect with backoff if the browser drops; stop and alert on CAPTCHA."
+      ],
+      "evidence": "alerts.jsonl entry with item id, URL, price, condition, seller; state.json history per item.",
+      "uses": [
+        "result_card",
+        "card_item_link",
+        "results_count",
+        "fewer_words_divider",
+        "next_page",
+        "no_results"
+      ],
+      "sensitive": false,
+      "requires_idle": false,
+      "retry": "a dropped session reconnects with backoff (60 s doubling to 15 min); CAPTCHA stops the loop",
+      "implemented_by": "ebay_watch.cycle",
+      "cli": "python ebay_watch.py watches/gpus.json  (--once for one cycle, --test-alert)"
+    },
+    "read_auction": {
+      "page": "item",
+      "description": "Open an auction listing (read-only) and read the current bid, bid count, time left / end time and watchers. Watchers are shown only on the listing page ('108 people are watching this.'); without that signal the count is unknown, not 0.",
+      "inputs": {
+        "item_id": "eBay item number of an auction"
+      },
+      "steps": [
+        "Human pause, then navigate the bound tab to https://www.ebay.com/itm/<id>; wait for item_title.",
+        "Glance down with 1-3 wheel flicks (form mode).",
+        "Read bid_price, bid_count, end_time, watchers_signal and the page's 'eBay item number'.",
+        "NEVER touch place_bid_button or Watch: presence only."
+      ],
+      "evidence": "The page's item number equals the requested id (else an error); bid_count and end_time are read.",
+      "uses": [
+        "item_title",
+        "bid_price",
+        "bid_count",
+        "end_time",
+        "watchers_signal",
+        "place_bid_button"
+      ],
+      "sensitive": false,
+      "implemented_by": "ebay_search.read_auction"
+    }
+  }
+}

@@ -33,6 +33,14 @@ The trade-offs this codebase settled on, the hard way:
 
 ## Quick start
 
+Install the dependencies:
+
+```bash
+install.bat
+```
+
+It creates `venv`, installs `requirements.txt`, and prints the steps for loading the extension. To do it by hand instead:
+
 ```bash
 python -m venv venv
 venv\Scripts\activate

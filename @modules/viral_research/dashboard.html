@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viral research</title>
+<style>
+:root{color-scheme:dark;--bg:#101214;--panel:#191d20;--panel2:#202529;--line:#30363b;--fg:#f1f3f3;--muted:#9aa4a8;--accent:#9db9ff;--ok:#35c08a;--warn:#f0ad4b;--bad:#ff5f6e;--mono:"JetBrains Mono",Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:13px/1.5 Inter,"Segoe UI",sans-serif}
+body{background:radial-gradient(750px 400px at 88% -12%,rgba(157,185,255,.07),transparent 68%),var(--bg)}
+header{display:flex;align-items:center;gap:24px;min-height:68px;padding:12px clamp(16px,3vw,36px);background:#15181b;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#bad0ff,#8bafff);color:#162039;font:700 17px "Segoe UI",sans-serif}
+h1{margin:0;font:700 16px/1.2 Inter,"Segoe UI",sans-serif;letter-spacing:-.03em}
+h1 span{font-weight:400;color:#c4ccd0}
+.sub{margin-top:3px;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw}
+.actions{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.elapsed{font:11px var(--mono);color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font-size:11px;font-weight:600;text-transform:capitalize}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.running{background:rgba(157,185,255,.1);border-color:rgba(157,185,255,.35);color:var(--accent)}
+.pill.finished{background:rgba(53,192,138,.1);border-color:rgba(53,192,138,.35);color:var(--ok)}
+.pill.stopped,.pill.stalled,.pill.waiting,.pill.incomplete{background:rgba(240,173,75,.1);border-color:rgba(240,173,75,.35);color:var(--warn)}
+.pill.crashed,.pill.failed,.pill.blocked{background:rgba(255,95,110,.1);border-color:rgba(255,95,110,.35);color:var(--bad)}
+.banner{margin:0 0 18px;padding:13px 16px;border-radius:10px;font-size:12px;line-height:1.6;border:1px solid rgba(240,173,75,.45);background:rgba(240,173,75,.1);color:#f5c980}
+.banner.bad{border-color:rgba(255,95,110,.45);background:rgba(255,95,110,.08);color:#ffb3ba}
+.banner.ok{border-color:rgba(53,192,138,.45);background:rgba(53,192,138,.08);color:#9be3c4}
+.errs{display:flex;gap:6px;flex-wrap:wrap}.errs .chip.bad{color:var(--bad);border-color:rgba(255,95,110,.4)}
+.lasterr{margin-top:8px;color:var(--muted);font:10px/1.5 var(--mono);word-break:break-word}
+button,.btn{font:600 12px Inter,"Segoe UI",sans-serif;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer;text-decoration:none}
+button.danger{border-color:rgba(255,95,110,.45);color:var(--bad);background:rgba(255,95,110,.08)}
+button:disabled{opacity:.4;cursor:default}
+main{display:grid;grid-template-columns:minmax(285px,340px) minmax(0,1fr);min-height:calc(100vh - 68px)}
+.sidebar{padding:24px 18px 32px clamp(16px,2.5vw,32px);background:#15181b;border-right:1px solid var(--line);min-width:0}
+.content{padding:24px clamp(16px,3vw,42px) 40px;min-width:0}
+.card{padding:17px 18px;margin-bottom:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.card h2{margin:0 0 12px;font:600 13px Inter,"Segoe UI",sans-serif}
+.eyebrow{display:block;margin-bottom:5px;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+.intro h2{margin:0;font:600 22px/1.25 "Segoe UI",Inter,sans-serif;letter-spacing:-.03em}
+.intro p{margin:6px 0 16px;color:var(--muted);font-size:12px;max-width:80ch}
+.now{font-size:13px;line-height:1.55}
+.now b{color:var(--accent);font-weight:600}
+.small{color:var(--muted);font-size:11px;line-height:1.5}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#8bafff,#bad0ff);transition:width .4s}
+.bar.indeterminate i{width:35%!important;animation:slide 1.4s infinite ease-in-out}
+@keyframes slide{0%{margin-left:-35%}100%{margin-left:100%}}
+.taskline{display:flex;justify-content:space-between;color:var(--muted);font:11px var(--mono)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.proc{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #292f33}
+.proc:last-child{border-bottom:0}
+.proc .n{min-width:34px;height:20px;padding:0 6px;border-radius:99px;display:grid;place-items:center;font:600 10px var(--mono);border:1px solid var(--line);color:var(--muted)}
+.proc.on .n{color:var(--ok);border-color:rgba(53,192,138,.45);background:rgba(53,192,138,.1)}
+.proc .w{flex:1;min-width:0} .proc .w b{font-weight:600;font-size:12px}
+.proc .w div{color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:4px}
+.about-grid .cell{padding:11px 13px;border:1px solid #292f33;border-radius:10px;background:var(--panel2)}
+.about-grid .cell b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px}
+details summary{cursor:pointer;color:var(--accent);font-size:11px;margin-top:6px}
+details ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:11px}
+.steps{display:flex;flex-direction:column;gap:0;margin-bottom:26px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.step{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;padding:12px 16px;border-bottom:1px solid #292f33}
+.step:last-child{border-bottom:0}
+.step.running{background:rgba(157,185,255,.06)}
+.dot{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--panel2);font:11px var(--mono);color:var(--muted)}
+.step.running .dot{background:var(--accent);border-color:var(--accent);color:#162039;box-shadow:0 0 0 4px rgba(157,185,255,.1)}
+.step.done .dot{background:rgba(53,192,138,.17);border-color:rgba(53,192,138,.4);color:var(--ok)}
+.step.stopped .dot{background:rgba(240,173,75,.15);border-color:rgba(240,173,75,.4);color:var(--warn)}
+.step.failed .dot{background:rgba(255,95,110,.17);border-color:rgba(255,95,110,.4);color:var(--bad)}
+.step .t{font-weight:600;font-size:13px}
+.step .a{color:var(--muted);font-size:12px;margin-top:2px}
+.step .f{margin-top:5px;font:11px/1.5 var(--mono);color:#c8d6ff;overflow-wrap:anywhere}
+.step .d{font:10px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:right;padding:5px 4px;border-bottom:1px solid #292f33}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:11px}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:22px}
+.vid{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);display:flex;flex-direction:column}
+.vid .img{position:relative;aspect-ratio:16/9;background:var(--panel2);display:grid;place-items:center;color:var(--muted);font-size:11px}
+.vid img{width:100%;height:100%;object-fit:cover;display:block}
+.vid .x{position:absolute;left:8px;top:8px;padding:3px 8px;border-radius:99px;background:rgba(16,18,20,.85);color:var(--ok);font:700 12px var(--mono)}
+.vid .b{position:absolute;right:8px;top:8px;padding:3px 7px;border-radius:99px;background:rgba(16,18,20,.85);color:var(--accent);font:600 10px var(--mono)}
+.vid .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
+.vid a.title{color:var(--fg);text-decoration:none;font-weight:600;font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid .meta{color:var(--muted);font-size:11px}
+.vid .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.chip{padding:2px 7px;border-radius:99px;border:1px solid var(--line);font:10px var(--mono);color:var(--muted)}
+.chip.on{color:var(--ok);border-color:rgba(53,192,138,.4)}
+.chip.vis{color:#c8d6ff;border-color:rgba(157,185,255,.35)}
+.filters{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.filters button.active{border-color:var(--accent);color:var(--accent)}
+.log{height:340px;overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#0c0e10;font:11px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}
+.log .warn{color:var(--warn)} .log .error{color:var(--bad)}
+.empty{color:var(--muted);padding:18px 0}
+@media (max-width:900px){main{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid var(--line)}.sub{max-width:90vw}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="mark">VR</div>
+    <div><h1>Viral research <span id="niche"></span></h1><div class="sub" id="rundir"></div></div></div>
+  <div class="actions">
+    <span class="elapsed" id="requests"></span>
+    <span class="elapsed" id="elapsed"></span>
+    <span class="pill" id="status">waiting</span>
+    <button class="danger" id="stop" disabled title="Stops the pipeline; run the same command again to continue">Stop run</button>
+  </div>
+</header>
+<main>
+  <aside class="sidebar">
+    <div class="card"><h2>Now</h2><div class="now" id="now">Connecting…</div>
+      <div id="taskbox" hidden><div class="bar" id="bar"><i id="barfill" style="width:0%"></i></div>
+        <div class="taskline"><span id="taskcount"></span><span id="tasketa"></span></div></div></div>
+    <div class="card"><h2>YouTube access</h2><div id="gate" class="small">-</div></div>
+    <div class="card"><h2>Processes on this computer</h2><div id="procs"></div></div>
+    <div class="card"><h2>Rankings</h2>
+      <table><thead><tr><th>ranking</th><th>scored</th><th>≥3×</th><th>short-listed</th><th>controls</th><th>measured</th></tr></thead>
+        <tbody id="buckets"><tr><td colspan="6" class="empty">not scored yet</td></tr></tbody></table></div>
+    <div class="card"><h2>Problems</h2><div class="errs" id="errs"><span class="empty">none</span></div><div class="lasterr" id="lasterr"></div></div>
+    <div class="card"><h2>Files</h2><div class="links" id="files"><span class="empty">none yet</span></div></div>
+  </aside>
+  <section class="content">
+    <div class="banner" id="banner" hidden></div>
+    <div class="intro"><span class="eyebrow">What this run does</span><h2 id="goal">Viral research</h2>
+      <p id="goaltext"></p></div>
+    <div class="about-grid" id="about"></div>
+    <div class="intro" style="margin-top:26px"><span class="eyebrow">How it works</span><h2>The 9 stages</h2>
+      <p>Each stage saves its results in the run folder, so a stopped or blocked run continues where it stopped.</p></div>
+    <div class="steps" id="steps"></div>
+    <div class="intro"><span class="eyebrow">Outliers</span><h2 id="headline">Waiting for the shortlist</h2>
+      <p>Videos that beat their own channel's normal (views ÷ the channel's median for the same format). Vision labels come from your local model; pacing and loudness appear once a video is downloaded and measured.</p></div>
+    <div class="gallery" id="gallery"></div>
+    <div class="intro"><span class="eyebrow">Progress log</span></div>
+    <div class="filters"><button id="fall" class="active">All</button><button id="fwarn">Warnings &amp; errors</button>
+      <button id="fclear">Clear view</button><span class="elapsed" id="logcount"></span></div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+<script>
+const token = "__TOKEN__";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dur = s => s == null ? "" : s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s/60)}m ${String(s%60).padStart(2,"0")}s` : `${Math.floor(s/3600)}h ${String(Math.floor(s%3600/60)).padStart(2,"0")}m`;
+const num = n => n == null ? "-" : n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1e3 ? (n/1e3).toFixed(n >= 1e4 ? 0 : 1)+"K" : String(n);
+const clock = t => t ? new Date(t * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"}) : "-";
+const LANG = {en: "English", es: "Spanish"};
+let since = 0, lines = [], filter = "all", cleared = 0, galleryKey = "", aboutKey = "";
+
+function renderLog() {
+  const shown = lines.filter(l => l.seq >= cleared && (filter === "all" || l.level !== "info"));
+  const box = $("log"), atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  box.innerHTML = shown.map(l => `<div class="${l.level}">${esc(l.text)}</div>`).join("");
+  $("logcount").textContent = `${shown.length} lines`;
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+function renderAbout(a) {
+  const key = JSON.stringify(a);
+  if (key === aboutKey) return;
+  aboutKey = key;
+  const langs = a.languages.map(l => LANG[l] || l);
+  $("goal").textContent = `What gets ${a.niche} videos far more views than usual`;
+  $("goaltext").textContent = `It finds ${a.niche} videos on YouTube that got far more views than their own channel normally gets, ` +
+    `in ${langs.join(" and ")}, with Shorts and long videos ranked separately (${a.languages.length * 2} rankings). It then measures what those ` +
+    `outliers do that the same channels' ordinary videos don't, and Claude turns the evidence into a point-by-point production brief.`;
+  const searches = a.languages.map(l => `<li><b>${esc(LANG[l] || l)}:</b> ${(a.queries[l] || []).map(esc).join(" · ")}` +
+    `${(a.hashtags[l] || []).length ? " · " + a.hashtags[l].map(h => "#" + esc(h)).join(" ") : ""}</li>`).join("");
+  $("about").innerHTML = [
+    ["Searches", `${a.languages.map(l => `${esc(LANG[l] || l)}: ${(a.queries[l] || []).length} queries + ${(a.hashtags[l] || []).length} hashtags`).join("<br>")}
+      <details><summary>show them</summary><ul>${searches}</ul></details>`],
+    ["Outlier", "views ≥ 3× the channel's median for the same format; 1.5-3× is borderline"],
+    ["Controls", "ordinary videos (0.5-1.5×) from the same channels, so the comparison is fair"],
+    ["Limits", `up to ${a.outliers_per_bucket} outliers per ranking, at most 3 per channel; videos up to ${a.max_age_days} days old; ` +
+      `media for the top ${a.measure_per_bucket} outliers + ${a.measure_per_bucket} controls per ranking`],
+    ["YouTube", `${a.pacing ?? 1.5} s between requests, pauses on a bot check; ${a.cookies ? "with cookies (signed in)" : "anonymous (no cookies)"}`],
+    ["Free, local tools", `yt-dlp, ffmpeg, faster-whisper (${esc(a.whisper_model || "-")})${a.vision_model ? `, ${esc(a.vision_model)} vision model` : ""}`],
+  ].map(([k, v]) => `<div class="cell"><b>${k}</b>${v}</div>`).join("");
+}
+
+function nowText(s) {
+  const run = s.stages.find(g => g.status === "running");
+  const idx = run ? s.stages.indexOf(run) + 1 : null;
+  const where = run ? `<b>Stage ${idx}/${s.stages.length} · ${esc(run.title)}</b><br>` : "";
+  const g = s.gate || {};
+  if (s.status === "waiting" || (s.status === "running" && g.state === "paused"))
+    return where + `Paused: YouTube asked this computer for a bot check. The same request is retried at <b>${clock(g.until || s.blocked_until)}</b> (attempt ${g.attempts ?? "?"}); nothing is skipped.`;
+  if (s.status === "running" || s.status === "stalled")
+    return where + (s.task ? esc(s.task.label) : "working…") + (s.status === "stalled" ? ` - no progress for ${dur(s.idle_seconds)}` : "");
+  return {finished: "Finished. pack.md is ready: Claude writes the report from it.",
+          blocked: "Ended: YouTube kept refusing. What was collected is kept and analysed as far as possible.",
+          incomplete: "Ended with too few videos measured; see pack.md (marked PARTIAL).",
+          stopped: "Stopped. Run the same command again to continue.", crashed: "The pipeline process ended unexpectedly. Run the same command again to continue.",
+          failed: "Failed - see Problems and the log."}[s.status] || "Waiting for a run to start.";
+}
+
+function render(s) {
+  $("niche").textContent = "· " + s.niche;
+  $("rundir").textContent = s.run_dir;
+  $("status").textContent = s.status;
+  $("status").className = "pill " + s.status;
+  $("elapsed").textContent = s.elapsed != null ? "elapsed " + dur(s.elapsed) : "";
+  $("requests").textContent = s.requests != null ? `${s.requests} YouTube requests` : "";
+  $("stop").disabled = !s.pid || !["running", "stalled", "waiting"].includes(s.status);
+  const banners = {
+    stalled: ["", `No progress for ${dur(s.idle_seconds)} - YouTube is probably rate-limiting. The pipeline keeps retrying; if it stays stalled, Stop and run the same command later (it continues where it stopped).`],
+    crashed: ["bad", "The pipeline process ended without finishing (closed window, crash or reboot). Everything collected is kept: run the same command again to continue."],
+    failed: ["bad", "The run failed - see the last problem on the left and the log below. Run the same command again to continue."],
+    stopped: ["", "Stopped. Everything collected is kept: run the same command again to continue."],
+    finished: ["ok", "Finished. The evidence pack is ready - ask Claude to write the report from pack.md."],
+    waiting: ["", `YouTube asked this computer for a bot check ("Sign in to confirm you're not a bot"). Paused until ${clock(s.blocked_until)}, then the same videos are retried automatically - nothing is skipped. Faster: change the internet connection (router restart / phone hotspot), or set cookies_from_browser in module.json (a secondary Google account).`],
+    blocked: ["bad", `YouTube kept refusing (bot check) - the run ended as blocked; what was collected is kept${s.files["pack.md"] ? " and pack.md compares it (marked PARTIAL)" : ""}. Run the same command again later, from another connection, or with cookies (module.json). ${s.end_reason || ""}`],
+    incomplete: ["", `Too few videos could be measured: pack.md compares titles, thumbnails and metadata only (marked PARTIAL). ${s.end_reason || ""}`],
+  };
+  const rl = s.errors && s.errors.recent_rate_limits;
+  const bn = banners[s.status] || (rl ? ["", `${rl} rate-limit answers from YouTube in the last 10 minutes - collection slows down but continues.`] : null);
+  $("banner").hidden = !bn;
+  if (bn) { $("banner").className = "banner " + bn[0]; $("banner").textContent = bn[1]; }
+
+  $("now").innerHTML = nowText(s);
+  const t = s.task;
+  $("taskbox").hidden = !t || !["running", "stalled", "waiting"].includes(s.status);
+  if (t) {
+    $("bar").className = "bar" + (t.pct == null ? " indeterminate" : "");
+    $("barfill").style.width = (t.pct ?? 35) + "%";
+    $("taskcount").textContent = t.total ? `${t.done}/${t.total} (${t.pct}%)` : "working…";
+    $("tasketa").textContent = s.status === "waiting" ? "paused" : s.status === "stalled" ? "stalled" : t.eta != null ? `~${dur(t.eta)} left` : "";
+  }
+
+  const g = s.gate || {};
+  $("gate").innerHTML = g.state === "ok" || !g.state
+    ? `<span class="chip on">OK</span> ${g.pacing ?? 1.5} s between requests${s.requests != null ? ` · ${s.requests} requests this run` : ""}`
+    : `<span class="chip" style="color:var(--warn)">${g.state === "paused" ? "paused" : "retrying"}</span> bot check, attempt ${g.attempts}` +
+      `<dl class="kv" style="margin-top:8px"><dt>blocked since</dt><dd>${clock(g.since)}</dd>` +
+      (g.state === "paused" ? `<dt>${g.gives_up_after <= g.until ? "last try" : "next try"}</dt><dd>${clock(g.until)}</dd>` : "") +
+      (g.state === "paused" && g.gives_up_after <= g.until ? "" : `<dt>keeps trying</dt><dd>until ${clock(g.gives_up_after)}</dd>`) +
+      `<dt>if still refused</dt><dd>the run works on with what is already collected</dd></dl>`;
+
+  $("procs").innerHTML = (s.processes || []).map(p => `<div class="proc ${p.count ? "on" : ""}"><span class="n">${p.count || "idle"}</span>
+    <div class="w"><b>${esc(p.name)}</b><div>${esc(p.about)}${p.detail ? ` · ${esc(p.detail)}` : ""}</div></div></div>`).join("");
+
+  const ek = Object.entries((s.errors || {}).by_kind || {});
+  $("errs").innerHTML = s.errors && s.errors.total ? `<span class="chip bad">${s.errors.total} total</span>` + ek.map(([k, n]) => `<span class="chip">${esc(k.replace("_", " "))}: ${n}</span>`).join("") : '<span class="empty">none</span>';
+  const last = ((s.errors || {}).last || []).slice(-1)[0];
+  $("lasterr").textContent = last ? "last: " + last.message : "";
+  document.title = (t && t.pct != null && s.status === "running" ? `[${t.pct}%] ` : s.status === "finished" ? "✓ " : s.status === "waiting" ? "⏸ " : "") + "Viral research · " + s.niche;
+  if (s.status === "finished" && window.lastStatus && window.lastStatus !== "finished") chime();
+  window.lastStatus = s.status;
+
+  if (s.about) renderAbout(s.about);
+  const facts = s.facts || {};
+  $("steps").innerHTML = s.stages.map((g, i) => `<div class="step ${g.status}"><span class="dot">${g.status === "done" ? "✓" : i + 1}</span>
+    <div><div class="t">${esc(g.title)}</div><div class="a">${esc(g.about || "")}</div>${facts[g.key] ? `<div class="f">${g.status === "pending" ? "already in the folder from an earlier run: " : ""}${esc(facts[g.key])}</div>` : ""}</div>
+    <span class="d">${g.status === "pending" ? "" : esc(g.status)}${g.seconds != null ? "<br>" + dur(g.seconds) : ""}</span></div>`).join("");
+
+  if (s.buckets.length) $("buckets").innerHTML = s.buckets.map(b => `<tr><td>${esc(b.bucket)}</td><td>${b.scored}</td><td>${b.outliers}</td>
+    <td>${b.shortlisted}</td><td>${b.controls}</td><td>${b.measured}/${b.shortlisted + b.controls}</td></tr>`).join("");
+  const f = Object.entries(s.files);
+  $("files").innerHTML = f.length ? f.map(([n, u]) => `<a class="btn" href="${u}" target="_blank">${esc(n)}</a>`).join("") : '<span class="empty">none yet</span>';
+  const key = JSON.stringify(s.gallery.map(g => [g.id, g.thumb, g.measured, g.vision]));
+  if (key !== galleryKey) {
+    galleryKey = key;
+    $("headline").textContent = s.gallery.length ? `${s.gallery.length} outliers short-listed` : "Waiting for the shortlist";
+    $("gallery").innerHTML = s.gallery.map(g => {
+      const v = g.vision;
+      const vis = v ? `<span class="chip vis">${v.text ? "title text" : "no text"}</span>` +
+        (v.face != null ? `<span class="chip vis">${v.face ? "face" : "no face"}</span>` : "") +
+        (v.style ? `<span class="chip vis">${esc(v.style)}</span>` : "") : "";
+      return `<div class="vid"><div class="img">${g.thumb ? `<img src="${g.thumb}" alt="">` : "thumbnail pending"}
+      <span class="x">${g.multiplier}×</span><span class="b">${esc(g.bucket)}</span></div>
+      <div class="body"><a class="title" href="${esc(g.url)}" target="_blank" title="${esc(g.title)}">${esc(g.title)}</a>
+      <span class="meta">${esc(g.channel)} · ${num(g.views)} views</span>
+      <div class="chips">${vis}${g.measured ? `<span class="chip">${g.cuts_per_min ?? "-"} cuts/min</span><span class="chip ${g.starts_loud ? "on" : ""}">${g.starts_loud ? "starts loud" : "soft start"}</span>` : '<span class="chip">not measured</span>'}
+      ${g.sheet ? `<a class="chip" href="${g.sheet}" target="_blank">frames</a>` : ""}</div></div></div>`;
+    }).join("");
+  }
+  if (s.log.length) { lines = lines.concat(s.log).slice(-3000); since = s.next_seq; renderLog(); }
+}
+
+function chime() {
+  try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.setValueAtTime(.08, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + .6); o.start(); o.stop(a.currentTime + .6); } catch (e) {}
+}
+
+async function poll() {
+  try { const r = await fetch("/api/state?since=" + since, {cache: "no-store"}); render(await r.json()); }
+  catch (e) { $("status").textContent = "dashboard offline"; $("status").className = "pill stopped"; }
+  setTimeout(poll, 1000);
+}
+$("fall").onclick = () => { filter = "all"; $("fall").classList.add("active"); $("fwarn").classList.remove("active"); renderLog(); };
+$("fwarn").onclick = () => { filter = "warn"; $("fwarn").classList.add("active"); $("fall").classList.remove("active"); renderLog(); };
+$("fclear").onclick = () => { cleared = since; renderLog(); };
+$("stop").onclick = async () => {
+  if (!confirm("Stop the run? Everything collected so far is kept; run the same command again to continue.")) return;
+  const r = await fetch("/api/stop", {method: "POST", headers: {"X-Control-Token": token}});
+  alert(r.ok ? "Stopped." : await r.text());
+};
+poll();
+</script>
+</body>
+</html>

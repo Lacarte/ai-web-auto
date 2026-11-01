@@ -1,0 +1,208 @@
+{
+ "version": 1,
+ "_about": "Every element the eBay module uses. Scripts reference them as @@key@@ (css) or @@key.text@@. eBay ships stable data-testid hooks on item pages and data-listingid on result cards - prefer them over generated class names. Fix a broken selector here, then: python @modules/module_kit.py verify ebay --write",
+ "locators": {
+  "search_box": {
+   "page": "home",
+   "css": "input[name=\"_nkw\"]",
+   "xpath": "//input[@name='_nkw']",
+   "role": "combobox",
+   "name": "Search for anything",
+   "description": "Global search input (id gh-ac, form field name _nkw, in form#gh-f -> /sch/i.html); present on every eBay page. type_cdp finds it by the xpath (clicks it, clears, types)."
+  },
+  "search_submit": {
+   "page": "home",
+   "css": "#gh-search-btn",
+   "role": "button",
+   "name": "Search",
+   "description": "The header Search button (button type=submit; the point under its centre is its label span gh-search-button__label). The same form has 'Clear search' and 'Camera icon' buttons - never take the first button in the form.",
+   "verified": "2026-10-28"
+  },
+  "result_card": {
+   "page": "search",
+   "css": "li[data-listingid]",
+   "description": "One search result. data-listingid is eBay's own attribute; the item id comes from the /itm/ link inside."
+  },
+  "card_item_link": {
+   "within": "result_card",
+   "css": "a[href*=\"/itm/\"]",
+   "description": "Link to the listing; /itm/<id>. A placeholder card links /itm/123456 and is skipped."
+  },
+  "results_count": {
+   "page": "search",
+   "css": ".srp-controls__count-heading, h1",
+   "description": "'N results for <query>' - N counts exact matches only."
+  },
+  "fewer_words_divider": {
+   "page": "search",
+   "text": "Results matching fewer words",
+   "description": "Divider after the exact matches; everything after it is filler.",
+   "state": "transient"
+  },
+  "next_page": {
+   "page": "search",
+   "css": "a[aria-label*=\"next\" i], a.pagination__next",
+   "description": "Next results page; absent or aria-disabled on the last page.",
+   "state": "transient"
+  },
+  "no_results": {
+   "page": "search",
+   "text": "No exact matches found",
+   "description": "Empty result for the query+filters.",
+   "state": "transient"
+  },
+  "item_title": {
+   "page": "item",
+   "css": "[data-testid=\"x-item-title\"]",
+   "description": "Listing title (h1 inside)."
+  },
+  "price_primary": {
+   "page": "item",
+   "css": "[data-testid=\"x-price-primary\"]",
+   "description": "Primary price ('US $299.97')."
+  },
+  "bin_price": {
+   "page": "item",
+   "css": "[data-testid=\"x-bin-price\"]",
+   "description": "Buy It Now price; absent on auction-only listings.",
+   "state": "transient"
+  },
+  "bid_price": {
+   "page": "item",
+   "css": "[data-testid=\"x-bid-price\"]",
+   "description": "Current bid on auctions ('US $1,375.00' + bids + time) - never treated as a purchase price.",
+   "state": "transient",
+   "notes": "confirmed on live auctions 900028432262 and 840049637356 (scratch/ebay/probe_watchers.py)",
+   "verified": "2026-10-28"
+  },
+  "bid_count": {
+   "page": "item",
+   "css": "[data-testid=\"x-bid-count\"]",
+   "state": "transient",
+   "description": "Auction bid count ('28 bids').",
+   "verified": "2026-10-28"
+  },
+  "end_time": {
+   "page": "item",
+   "css": "[data-testid=\"x-end-time\"]",
+   "state": "transient",
+   "description": "Auction end: 'Ends in 1d 19hFriday, 05:55 PM' (ux-timer inside).",
+   "verified": "2026-10-28"
+  },
+  "watchers_signal": {
+   "page": "item",
+   "css": "[data-testid=\"x-wtb-signals\"]",
+   "state": "transient",
+   "description": "Demand signal: 'People want this. 108 people are watching this.' Absent when few watch - then the count is unknown, not 0.",
+   "verified": "2026-10-28"
+  },
+  "buy_it_now_button": {
+   "page": "item",
+   "css": "[data-testid=\"x-bin-action\"]",
+   "description": "Read for presence only. NEVER clicked by this module.",
+   "state": "transient"
+  },
+  "place_bid_button": {
+   "page": "item",
+   "css": "[data-testid=\"x-bid-action\"]",
+   "description": "Read for presence only (auction). NEVER clicked.",
+   "state": "transient",
+   "notes": "confirmed on a live auction; read for presence only, NEVER clicked",
+   "verified": "2026-10-28"
+  },
+  "condition": {
+   "page": "item",
+   "css": "[data-testid=\"x-item-condition\"]",
+   "description": "'Condition: Used'."
+  },
+  "quantity": {
+   "page": "item",
+   "css": "[data-testid=\"x-quantity\"]",
+   "description": "'Quantity: 2 available 3 sold'.",
+   "state": "transient"
+  },
+  "seller_card": {
+   "page": "item",
+   "css": "[data-testid=\"x-sellercard-atf\"]",
+   "description": "Seller name, (feedback count), % positive."
+  },
+  "shipping_section": {
+   "page": "item",
+   "css": "[data-testid=\"d-shipping-minview\"]",
+   "description": "Shipping cost and method, 'Located in:', delivery estimate 'to <ZIP>'."
+  },
+  "returns_section": {
+   "page": "item",
+   "css": "[data-testid=\"x-returns-minview\"]",
+   "description": "Return policy ('30 days returns. Seller pays for return shipping')."
+  },
+  "shop_confidence": {
+   "page": "item",
+   "css": "[data-testid=\"x-shop-with-confidence\"]",
+   "description": "Top Rated Plus / Money Back Guarantee badges.",
+   "state": "transient"
+  },
+  "item_specifics": {
+   "page": "item",
+   "css": "[data-testid=\"x-about-this-item\"]",
+   "description": "Item specifics section (Brand, Model, MPN, memory size ...)."
+  },
+  "spec_pair": {
+   "within": "item_specifics",
+   "css": "dl dt",
+   "description": "Item-specifics label (<dt>); its value is the next <dd>. Semantic dl/dt/dd, verified 2026-10-28 (the ux-labels-values testid is only used in the shipping section)."
+  },
+  "photos": {
+   "page": "item",
+   "css": "[data-testid=\"x-photos\"]",
+   "description": "Photo gallery; image URLs rewritten to s-l1600 for full size."
+  },
+  "description_frame": {
+   "page": "item",
+   "css": "iframe#desc_ifr",
+   "description": "Seller's description iframe (itm.ebaydesc.com) - the extension reads only the main frame, so its src is opened."
+  },
+  "store_info": {
+   "page": "item",
+   "css": "[data-testid=\"x-store-information\"]",
+   "description": "About this seller: % positive, items sold, joined, response time."
+  },
+  "seller_ratings": {
+   "page": "item",
+   "css": "[data-testid=\"x-feedback-detail-seller-rating\"]",
+   "description": "Detailed seller ratings, last 12 months.",
+   "state": "transient"
+  },
+  "description_body": {
+   "page": "description",
+   "css": "body",
+   "description": "Description document body."
+  },
+  "buy_box": {
+   "page": "item",
+   "css": "[data-testid=\"x-evo-atf-right-river\"]",
+   "description": "Right-hand buy box (title, price, options, buttons). Variation pickers inside it are listbox buttons/selects."
+  },
+  "msku_panel": {
+   "page": "item",
+   "css": "[data-testid=\"x-msku-evo\"]",
+   "state": "transient",
+   "description": "Option panel of a multi-option listing (CPU / RAM / GPU / Storage menus). Seen 2026-10-28 (user-supplied HTML).",
+   "fallbacks": [],
+   "notes": "user-supplied absolute XPath of the panel, kept only as a reference: /html/body/div[2]/main/div[1]/div[1]/div[4]/div[2]/div"
+  },
+  "msku_menu_button": {
+   "within": "msku_panel",
+   "css": "button[aria-haspopup=\"listbox\"]",
+   "state": "transient",
+   "description": "One option menu; its label (span.btn__label) is 'CPU:', 'RAM:' ...; aria-controls points at its listbox.",
+   "notes": "user-supplied absolute XPaths: .../div[5]/div[1]/span/button (CPU), .../div[5]/div[2]/span/button (RAM)"
+  },
+  "msku_option": {
+   "within": "msku_panel",
+   "css": "[role=\"option\"][data-sku-value-name]",
+   "state": "transient",
+   "description": "One choice; data-sku-value-name equals the option name in the page's embedded MSKU data."
+  }
+ }
+}

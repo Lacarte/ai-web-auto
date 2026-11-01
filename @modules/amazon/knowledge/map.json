@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "pages": {
+    "home": {
+      "url": "https://www.amazon.com/",
+      "purpose": "Entry page; preflight lands here, then searches navigate by URL.",
+      "ready_when_any": [
+        "search_box"
+      ]
+    },
+    "search": {
+      "url": "https://www.amazon.com/s",
+      "purpose": "Search results. URL params: k (query), s (sort: price-asc-rank), rh=p_36:<min cents>-<max cents> (price range; low-price/high-price redirect to it), page.",
+      "ready_when_any": [
+        "result_card",
+        "no_results"
+      ],
+      "notes": "16 results per page plus sponsored cards. A price-ascending search is full of accessories and smaller cards - the caller's title rules do the real filtering."
+    },
+    "product": {
+      "url_pattern": "https://www.amazon.com/dp/{asin}",
+      "purpose": "Product page: the real price of the selected option, availability (buy button + availability line), offer type (new / used), Prime, delivery, seller. Read-only - Add to cart / Buy Now are read for presence and NEVER clicked.",
+      "ready_when_any": [
+        "product_title"
+      ],
+      "notes": "Another installed extension injects a chrome-extension:// frame here, so Chrome refuses the debugger: execute_script reads the page through chrome.scripting (MAIN world) instead (extension capability script_fallback, 2026-10-28). Trusted CDP input (wheel, clicks) does not work on this page; scrolling falls back to scrollBy."
+    }
+  }
+}

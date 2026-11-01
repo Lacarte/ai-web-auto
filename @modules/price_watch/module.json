@@ -1,0 +1,21 @@
+{
+  "name": "price_watch",
+  "title": "Price watch (eBay + Amazon)",
+  "description": "Track products across stores on a timer: alert (sound + Windows notification) when a matching offer appears, comes back in stock or drops in price, and compare the best landed price per product across eBay and Amazon. Drives the ebay and amazon modules (their preflight, locators and rules); has no pages of its own. Alert only.",
+  "app_url": "https://www.ebay.com/",
+  "origins": [
+    "https://www.ebay.com",
+    "https://www.amazon.com"
+  ],
+  "requires_login": false,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension; one background tab per store",
+  "uses_modules": ["ebay", "amazon"],
+  "entry_points": {
+    "watch": "price_watch.py"
+  },
+  "settings": {
+    "min_interval_minutes": 5,
+    "downloads_dir": "@downloads"
+  },
+  "updated": "2026-10-28"
+}

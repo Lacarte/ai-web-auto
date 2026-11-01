@@ -1,0 +1,64 @@
+{
+  "name": "ebay",
+  "title": "eBay product search",
+  "description": "Search eBay US for products (Buy It Now, sold comps), read listing pages and the seller's description, and rank what can be bought by landed cost to the ship-to ZIP and seller trust. Read-only: never bids, buys, watches or adds to cart. Jobs (jobs/*.json) turn a shopping goal into searches + rules. ebay_watch.py polls saved queries (watches/*.json) on a timer and alerts on new listings and price drops.",
+  "app_url": "https://www.ebay.com/",
+  "origins": [
+    "https://www.ebay.com",
+    "https://itm.ebaydesc.com"
+  ],
+  "requires_login": false,
+  "driver": "ai-web-auto platform: backend ws://localhost:8765 + AI Web-Auto extension (BrowserAgent)",
+  "entry_points": {
+    "search": "ebay_search.py",
+    "rules": "ebay_rules.py",
+    "jobs": "jobs/job_runner.py",
+    "watch": "ebay_watch.py"
+  },
+  "settings": {
+    "ship_to_zip": "33101",
+    "sales_tax_rate": 0.07,
+    "condition_ids": [
+      1500,
+      1000,
+      2000,
+      2010,
+      3000,
+      2020,
+      2030
+    ],
+    "_condition_ids": "the user's list (2026-10-28): Open box 1500, New 1000, Certified refurbished 2000, Excellent/Very good/Good refurbished 2010/2020/2030, Used 3000. 7000 (For parts or not working) is added ONLY when the query itself asks for parts ('for parts'); the text rules in ebay_rules.py are the backstop",
+    "parts_condition_id": 7000,
+    "item_location": 3,
+    "_item_location": "LH_PrefLoc (verified live 2026-10-28): 1 US only, 3 North America (the user's choice), 2 Worldwide, 98 Default",
+    "auction_sort": 1,
+    "_auction_sort": "auction searches: LH_Auction=1, _sop=1 = time: ending soonest",
+    "auction_details_max_age_minutes": 60,
+    "max_pages": 3,
+    "pause_seconds": [
+      3.0,
+      9.0
+    ],
+    "long_pause": {
+      "chance": 0.12,
+      "seconds": [
+        15,
+        40
+      ]
+    },
+    "search_via": "form",
+    "form_fallback_url": true,
+    "_form_fallback_url": "when typing can't reach the page (hidden tab while the user uses Chrome, or the box still wrong after one retry) the same search is opened by its URL and the page records it; false = fail the search instead (live 2026-10-28)",
+    "type_ms_per_char": [
+      45,
+      140
+    ],
+    "read_bursts": [
+      4,
+      14
+    ],
+    "min_trust": 55,
+    "downloads_dir": "@downloads"
+  },
+  "updated": "2026-10-28"
+}
