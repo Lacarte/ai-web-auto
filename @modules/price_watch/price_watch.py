@@ -933,16 +933,16 @@ class StoreTabs:
 # ── main ─────────────────────────────────────────────────────────────────────
 
 def pick_port(want: str | int = "auto") -> int:
-    """'auto': 8765 unless another program already listens there (then 8766 - the extension's second address)."""
+    """'auto': first free port in 8765-8769 (the extension tries the same range)."""
     if str(want) != "auto":
         return int(want)
     import socket
-    for port in (8765, 8766):
+    for port in range(8765, 8770):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(0.3)  # a closed loopback port takes ~2 s to refuse on Windows
             if sock.connect_ex(("127.0.0.1", port)) != 0:
                 return port
-    raise SystemExit("ports 8765 and 8766 are both in use - stop the other backend first")
+    raise SystemExit("ports 8765-8769 are all in use")
 
 
 def load_watch(path: Path) -> dict:
@@ -975,8 +975,7 @@ def main(argv=None) -> int:
     ap.add_argument("--once", action="store_true", help="run one cycle and exit")
     ap.add_argument("--report", action="store_true", help="rebuild dashboard.html from the saved state and exit")
     ap.add_argument("--test-alert", action="store_true", help="play the alert and exit")
-    ap.add_argument("--port", default="auto", help="backend port; auto = 8765, or 8766 when another program holds 8765 "
-                                                    "(AI Web-Auto tries both)")
+    ap.add_argument("--port", default="auto", help="backend port; auto = first free port in 8765-8769")
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if a.test_alert:

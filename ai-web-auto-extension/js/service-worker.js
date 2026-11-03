@@ -20,8 +20,8 @@ import { WebSocketClient } from './modules/ws-client.js';
 import { MessageRouter } from './modules/message-router.js';
 import { diffSnapshots, computeStats, summarizeForAI } from './modules/dom-observer.js';
 
-// 8765 first; 8766 when another program holds 8765 (start the backend with --port 8766 / WebSocketServer(port=8766))
-const WS_URLS = ['ws://localhost:8765', 'ws://localhost:8766'];
+// Try ports 8765-8769; the backend picks the first free one from the same range
+const WS_URLS = [8765, 8766, 8767, 8768, 8769].map(p => `ws://localhost:${p}`);
 const ws = new WebSocketClient(WS_URLS);
 const router = new MessageRouter(ws);
 
